@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies", "saleor-upstream"],
+  "docker": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "Agrupa los bumps de imágenes oficiales de Saleor en un solo PR",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "ghcr.io/saleor/saleor",
+        "ghcr.io/saleor/saleor-dashboard"
+      ],
+      "groupName": "saleor oficial",
+      "schedule": ["before 9am on monday"]
+    }
+  ],
+  "commitMessagePrefix": "chore(deps):"
+}

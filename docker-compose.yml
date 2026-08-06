@@ -1,0 +1,54 @@
+# Stack Saleor de Ventu — desarrollo local.
+# api/dashboard usan imágenes OFICIALES fijadas por tag (ver README:
+# "Cómo se mantiene sincronizado con el Saleor oficial"). Renovate sube los tags.
+#
+# Saleor 3.20 es LTS. Al bumpear, cambiá los tags de api y dashboard juntos.
+
+services:
+  api:
+    image: ghcr.io/saleor/saleor:3.20
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgres://saleor:saleor@db:5432/saleor
+      - REDIS_URL=redis://redis:6379/0
+    restart: unless-stopped
+
+  dashboard:
+    image: ghcr.io/saleor/saleor-dashboard:3.20.15
+    ports:
+      - "9000:80"
+    restart: unless-stopped
+
+  ventu-sync:
+    build: ./apps/ventu-sync
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    env_file: .env
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=saleor
+      - POSTGRES_PASSWORD=saleor
+      - POSTGRES_DB=saleor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
