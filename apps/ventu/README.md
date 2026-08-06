@@ -1,0 +1,56 @@
+# app Ventu
+
+El **cerebro** de Ventu 2.0 sobre Saleor: la app principal que aloja los módulos
+que extienden Saleor (Ley 4 de la constitución). Se registra como **una** Saleor
+App con permisos `MANAGE_PRODUCTS` / `MANAGE_ORDERS` / `MANAGE_CHANNELS`. Pagos
+va en una app aparte (`apps/ventu-pagos`) por su permiso especial.
+
+## Módulos
+
+| Módulo | Modo | Estado |
+|---|---|---|
+| `catalog/` — Catálogo & Abastecimiento | Publica | **spine listo** (stock/precio/visibilidad) |
+| Pricing | Publica | pendiente |
+| OMS & Facturación SII | Reacciona | stub (webhook de órdenes recibido, sin despachar) |
+| Impuestos / Envíos | Inyecta | pendiente |
+
+## Endpoints
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/health` | liveness |
+| GET | `/manifest` | manifest para instalar la App en Saleor |
+| POST | `/register` | recibe el `auth_token` que emite Saleor al instalar |
+| POST | `/webhooks/saleor` | eventos async de orden (→ OMS/Facturación, stub) |
+| POST | `/catalog/publish` | publica un lote de variantes (stock + precio) |
+
+## Catálogo — publicar
+
+```bash
+curl -X POST http://localhost:8080/catalog/publish \
+  -H "Authorization: Bearer $VENTU_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"sku":"UBNT-ROUTER-X","available":42,
+                 "prices":[{"channel_slug":"retail-cl","amount":12990}]}]}'
+```
+
+El publicador fija stock de forma absoluta e idempotente
+(`quantity = available_deseado + allocated_actual` en el warehouse VENTU),
+precio por channel, y asegura la publicación. Resuelve la variante por SKU.
+
+> Creación de producto/variante para SKUs que aún no existen en Saleor (mapeo de
+> tipos y atributos del catálogo normalizado) es el próximo incremento; hoy el
+> publicador opera sobre variantes existentes.
+
+## Local
+
+```bash
+pip install -r requirements.txt
+PYTHONPATH=.. uvicorn ventu.main:app --reload --port 8080   # desde apps/
+```
+
+## Config (env)
+
+Ver `.env.example` en la raíz: `SALEOR_API_URL`, `SALEOR_AUTH_TOKEN`,
+`SALEOR_WAREHOUSE_ID` / `SALEOR_WAREHOUSE_SLUG`, `SALEOR_ENSURE_PUBLISHED`,
+`VENTU_ADMIN_TOKEN`, `SALEOR_WEBHOOK_SECRET`.
