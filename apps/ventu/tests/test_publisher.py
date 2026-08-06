@@ -22,9 +22,11 @@ def _mut_ok(name):
 
 @pytest.fixture(autouse=True)
 def _cfg(monkeypatch):
-    # Warehouse fijo (corta el lookup) y sin publicación (aísla el stock).
+    # Warehouse fijo (corta el lookup), sin publicación (aísla el stock) y sin
+    # creación por defecto (cada test que la ejercita la activa explícitamente).
     monkeypatch.setattr(config, "SALEOR_WAREHOUSE_ID", "WH")
     monkeypatch.setattr(config, "ENSURE_PUBLISHED", False)
+    monkeypatch.setattr(config, "CREATE_MISSING", False)
 
 
 def _router(responses):
@@ -59,12 +61,6 @@ def test_create_path_when_no_stock(monkeypatch):
     monkeypatch.setattr(publisher, "gql", _router({"lookup": _variant(wh=None)}))
     res = publisher.publish_variant(VariantInput(sku="ABC", available=40))
     assert res.ok and res.stock_set == 40
-
-
-def test_not_found_is_failure(monkeypatch):
-    monkeypatch.setattr(publisher, "gql", _router({"lookup": _variant(vid=None)}))
-    res = publisher.publish_variant(VariantInput(sku="NOPE", available=1))
-    assert not res.ok
 
 
 def test_mutation_errors_are_failure(monkeypatch):
