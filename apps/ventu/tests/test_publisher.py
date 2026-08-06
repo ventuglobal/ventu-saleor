@@ -74,3 +74,36 @@ def test_mutation_errors_are_failure(monkeypatch):
                         _router({"lookup": _variant(allocated=0), "update": bad}))
     res = publisher.publish_variant(VariantInput(sku="ABC", available=40))
     assert not res.ok
+
+
+def test_creates_missing_variant(monkeypatch):
+    """SKU inexistente + CREATE_MISSING → crea producto+variante y publica stock."""
+    monkeypatch.setattr(config, "CREATE_MISSING", True)
+    monkeypatch.setattr(publisher.product_type, "default_product_type_id", lambda: "PT1")
+    seen = []
+
+    def router(query, variables=None, **kw):
+        seen.append(query)
+        if "productVariant(sku" in query:
+            return _variant(vid=None)                 # no existe
+        if "productCreate" in query:
+            return {"data": {"productCreate": {"product": {"id": "P9"}, "errors": []}}}
+        if "productVariantCreate" in query:
+            return {"data": {"productVariantCreate": {
+                "productVariant": {"id": "V9", "product": {"id": "P9"}}, "errors": []}}}
+        if "productVariantStocksCreate" in query:
+            return _mut_ok("productVariantStocksCreate")
+        raise AssertionError(f"query inesperada: {query[:40]}")
+
+    monkeypatch.setattr(publisher, "gql", router)
+    res = publisher.publish_variant(VariantInput(sku="NEW-1", available=7, name="Router X"))
+    assert res.ok and res.created and res.stock_set == 7
+    assert any("productCreate" in q for q in seen)
+    assert any("productVariantCreate" in q for q in seen)
+
+
+def test_create_disabled_reports_not_found(monkeypatch):
+    monkeypatch.setattr(config, "CREATE_MISSING", False)
+    monkeypatch.setattr(publisher, "gql", _router({"lookup": _variant(vid=None)}))
+    res = publisher.publish_variant(VariantInput(sku="NOPE", available=1))
+    assert not res.ok and not res.created

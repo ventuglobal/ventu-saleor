@@ -30,6 +30,7 @@ class VariantInput:
     available: int = 0
     prices: List[ChannelPrice] = field(default_factory=list)
     name: Optional[str] = None
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, d: dict) -> "VariantInput":
@@ -37,6 +38,7 @@ class VariantInput:
             sku=str(d["sku"]),
             available=int(d.get("available") or 0),
             name=d.get("name"),
+            description=d.get("description"),
             prices=[ChannelPrice(channel_slug=p["channel_slug"], amount=float(p["amount"]))
                     for p in (d.get("prices") or [])],
         )
@@ -48,3 +50,4 @@ class PublishResult:
     ok: bool
     detail: str = ""
     stock_set: Optional[int] = None
+    created: bool = False

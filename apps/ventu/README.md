@@ -34,13 +34,14 @@ curl -X POST http://localhost:8080/catalog/publish \
                  "prices":[{"channel_slug":"retail-cl","amount":12990}]}]}'
 ```
 
-El publicador fija stock de forma absoluta e idempotente
+El publicador resuelve la variante por SKU; si no existe (y `SALEOR_CREATE_MISSING`
+está activo) **crea** un producto simple con su variante (ProductType por defecto
+"Ventu Default"). Luego fija stock de forma absoluta e idempotente
 (`quantity = available_deseado + allocated_actual` en el warehouse VENTU),
-precio por channel, y asegura la publicación. Resuelve la variante por SKU.
+precio por channel, y asegura la publicación.
 
-> Creación de producto/variante para SKUs que aún no existen en Saleor (mapeo de
-> tipos y atributos del catálogo normalizado) es el próximo incremento; hoy el
-> publicador opera sobre variantes existentes.
+> Atributos ricos del catálogo normalizado (marca, categoría, imágenes) se
+> agregan en un incremento posterior; hoy la creación usa un producto simple.
 
 ## Local
 

@@ -6,13 +6,15 @@ Empuja el estado deseado de una variante (identificada por SKU) a Saleor:
   2. Precio por channel (el precio final ya calculado por Pricing).
   3. Publicación del producto en el channel (idempotente; MVP: siempre publicado).
 
-Identidad: la variante se resuelve por `externalReference` (el SKU que la App
-Ventu controla) y, como respaldo, por el campo `sku` nativo de Saleor.
+Identidad: la variante se resuelve por SKU; al crear, se fija además el
+`externalReference` = SKU (la clave estable que la App Ventu controla) tanto en
+el producto como en la variante.
 
-Creación de producto/variante (para SKUs que aún no existen en Saleor) requiere
-el mapeo de tipos de producto y atributos del catálogo normalizado — es el
-próximo incremento. Hoy el publicador opera sobre variantes existentes y reporta
-`no encontrado` para las que faltan (las recoge el reconciler / la creación).
+Si el SKU no existe y `SALEOR_CREATE_MISSING` está activo, se **crea** un
+producto simple (ProductType por defecto "Ventu Default") con una variante, y
+luego se publica stock/precio como en el caso de actualización. Atributos ricos
+del catálogo normalizado (marca, categoría) se agregan en un incremento
+posterior.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ import logging
 from typing import Iterable, List, Optional
 
 from ..saleor_client import data_errors, gql, payload
-from . import warehouse
+from . import product_type, warehouse
 from .models import PublishResult, VariantInput
 
 logger = logging.getLogger("ventu.catalog")
@@ -71,6 +73,24 @@ mutation($id: ID!, $channelId: ID!) {
 }
 """
 
+_PRODUCT_CREATE = """
+mutation($input: ProductCreateInput!) {
+  productCreate(input: $input) {
+    product { id }
+    errors { field message code }
+  }
+}
+"""
+
+_VARIANT_CREATE = """
+mutation($input: ProductVariantCreateInput!) {
+  productVariantCreate(input: $input) {
+    productVariant { id product { id } }
+    errors { field message code }
+  }
+}
+"""
+
 
 def _mutation_errors(body: dict, name: str) -> list:
     return (payload(body).get(name) or {}).get("errors") or []
@@ -81,6 +101,51 @@ def _resolve(sku: str) -> Optional[dict]:
     if data_errors(body):
         raise RuntimeError(f"lookup errors: {data_errors(body)}")
     return payload(body).get("productVariant")
+
+
+def _create(item: VariantInput) -> dict:
+    """Crea un producto simple + su variante para un SKU que no existe en Saleor.
+
+    Devuelve un nodo con la misma forma que `_resolve` (id, product{id},
+    stocks:[]) para que el flujo posterior (stock/precio/publicación) sea
+    uniforme. La variante recién creada no tiene stock aún → ruta create.
+    """
+    pt_id = product_type.default_product_type_id()
+    name = item.name or item.sku
+
+    prod = gql(_PRODUCT_CREATE, {"input": {
+        "name": name,
+        "productType": pt_id,
+        "externalReference": item.sku,
+        **({"description": item.description} if item.description else {}),
+    }})
+    if data_errors(prod):
+        raise RuntimeError(f"product create: {data_errors(prod)}")
+    perrs = (payload(prod).get("productCreate") or {}).get("errors") or []
+    if perrs:
+        raise RuntimeError(f"product create errors: {perrs}")
+    product_id = ((payload(prod).get("productCreate") or {}).get("product") or {}).get("id")
+    if not product_id:
+        raise RuntimeError("product create: sin id")
+
+    var = gql(_VARIANT_CREATE, {"input": {
+        "product": product_id,
+        "sku": item.sku,
+        "name": name,
+        "externalReference": item.sku,
+        "trackInventory": True,
+        "attributes": [],
+    }})
+    if data_errors(var):
+        raise RuntimeError(f"variant create: {data_errors(var)}")
+    verrs = (payload(var).get("productVariantCreate") or {}).get("errors") or []
+    if verrs:
+        raise RuntimeError(f"variant create errors: {verrs}")
+    node = (payload(var).get("productVariantCreate") or {}).get("productVariant")
+    if not node or not node.get("id"):
+        raise RuntimeError("variant create: sin id")
+    node.setdefault("stocks", [])
+    return node
 
 
 def _set_stock(variant_id: str, wh_id: str, target: int, *, exists: bool) -> list:
@@ -111,12 +176,17 @@ def _ensure_published(product_id: str, channel_id: str) -> list:
 
 
 def publish_variant(item: VariantInput) -> PublishResult:
-    """Publica stock + precios + visibilidad de una variante existente en Saleor."""
+    """Publica una variante a Saleor: la crea si no existe, luego fija stock +
+    precios + visibilidad. Idempotente (resuelve por SKU antes de crear)."""
     from .. import config
 
+    created = False
     node = _resolve(item.sku)
     if not node or not node.get("id"):
-        return PublishResult(item.sku, ok=False, detail="variante no encontrada en Saleor")
+        if not config.CREATE_MISSING:
+            return PublishResult(item.sku, ok=False, detail="variante no encontrada en Saleor")
+        node = _create(item)
+        created = True
     variant_id = node["id"]
     product_id = (node.get("product") or {}).get("id")
 
@@ -149,7 +219,8 @@ def publish_variant(item: VariantInput) -> PublishResult:
                 if errs:
                     return PublishResult(item.sku, ok=False, detail=f"publish: {errs}")
 
-    return PublishResult(item.sku, ok=True, detail="ok", stock_set=target)
+    return PublishResult(item.sku, ok=True, detail="created" if created else "updated",
+                         stock_set=target, created=created)
 
 
 def publish_batch(items: Iterable[VariantInput]) -> List[PublishResult]:
