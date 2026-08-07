@@ -1,0 +1,4 @@
+# Runtime base del reactor (liviano; el CI de tests puros usa solo esto + pytest).
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
