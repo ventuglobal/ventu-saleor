@@ -1,0 +1,101 @@
+query CheckoutFind($id: ID!, $languageCode: LanguageCodeEnum!) {
+	checkout(id: $id) {
+		id
+		email
+		lines {
+			id
+			quantity
+			totalPrice {
+				gross {
+					amount
+					currency
+				}
+			}
+			variant {
+				translation(languageCode: $languageCode) {
+					name
+				}
+				product {
+					id
+					name
+					slug
+					translation(languageCode: $languageCode) {
+						name
+					}
+					thumbnail {
+						url
+						alt
+					}
+					category {
+						name
+						translation(languageCode: $languageCode) {
+							name
+						}
+					}
+				}
+				pricing {
+					price {
+						gross {
+							amount
+							currency
+						}
+					}
+					priceUndiscounted {
+						gross {
+							amount
+							currency
+						}
+					}
+				}
+				name
+				id
+				selectionAttributes: attributes(variantSelection: VARIANT_SELECTION) {
+					attribute {
+						name
+						slug
+						inputType
+						translation(languageCode: $languageCode) {
+							name
+						}
+					}
+					values {
+						name
+						value
+						translation(languageCode: $languageCode) {
+							name
+						}
+						file {
+							url
+						}
+					}
+				}
+				nonSelectionAttributes: attributes(variantSelection: NOT_VARIANT_SELECTION) {
+					attribute {
+						name
+						slug
+						inputType
+						translation(languageCode: $languageCode) {
+							name
+						}
+					}
+					values {
+						name
+						value
+						translation(languageCode: $languageCode) {
+							name
+						}
+						file {
+							url
+						}
+					}
+				}
+			}
+		}
+		totalPrice {
+			gross {
+				amount
+				currency
+			}
+		}
+	}
+}
