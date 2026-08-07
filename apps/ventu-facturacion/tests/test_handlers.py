@@ -20,7 +20,7 @@ def test_decide_factura_when_valid_rut_and_razon():
 def test_decide_boleta_without_rut_or_razon():
     assert handlers.decide_document_type({"rut": "", "razon_social": ""}) == "boleta"
     assert handlers.decide_document_type({"rut": "77844948-K", "razon_social": ""}) == "boleta"
-    assert handlers.decide_document_type({"rut": "1-9", "razon_social": "X"}) == "boleta"  # rut inválido
+    assert handlers.decide_document_type({"rut": "77844948-0", "razon_social": "X"}) == "boleta"  # dv inválido
 
 
 def test_extract_receptor_from_metadata_list():
