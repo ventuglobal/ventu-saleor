@@ -1,0 +1,52 @@
+mutation CheckoutCreate($channel: String!, $languageCode: LanguageCodeEnum!) {
+	checkoutCreate(input: { channel: $channel, languageCode: $languageCode, lines: [] }) {
+		checkout {
+			id
+			email
+			lines {
+				id
+				quantity
+				totalPrice {
+					gross {
+						amount
+						currency
+					}
+				}
+				variant {
+					product {
+						id
+						name
+						slug
+						thumbnail {
+							url
+							alt
+						}
+						category {
+							name
+						}
+					}
+					pricing {
+						price {
+							gross {
+								amount
+								currency
+							}
+						}
+					}
+					name
+					id
+				}
+			}
+			totalPrice {
+				gross {
+					amount
+					currency
+				}
+			}
+		}
+		errors {
+			field
+			code
+		}
+	}
+}

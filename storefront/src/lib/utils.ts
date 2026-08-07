@@ -1,0 +1,82 @@
+import { ProductsPerPage } from "@/app/config";
+import { clsx, type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
+import { formatPrice, formatDate as formatLocaleDate } from "@/config/locale";
+
+/** Custom semantic type tokens from tailwind.config.cjs — must be registered so twMerge
+ *  does not treat `text-display` + `text-foreground` as conflicting `text-*` utilities. */
+const twMerge = extendTailwindMerge({
+	extend: {
+		classGroups: {
+			"font-size": [{ text: ["display", "h1", "h2", "h3", "lead", "eyebrow"] }],
+			"text-color": [{ text: ["bestseller"] }],
+			"border-color": [{ border: ["bestseller"] }],
+		},
+	},
+});
+
+/** Merge class names with clsx and tailwind-merge for proper Tailwind class deduplication */
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+/** @deprecated Use formatDate from @/config/locale instead */
+export const formatDate = formatLocaleDate;
+
+/** @deprecated Use formatPrice from @/config/locale instead */
+export const formatMoney = formatPrice;
+
+export const formatMoneyRange = (
+	range: {
+		start?: { amount: number; currency: string } | null;
+		stop?: { amount: number; currency: string } | null;
+	} | null,
+	locale?: string,
+) => {
+	const { start, stop } = range || {};
+	const startMoney = start && formatMoney(start.amount, start.currency, locale);
+	const stopMoney = stop && formatMoney(stop.amount, stop.currency, locale);
+
+	if (startMoney === stopMoney) {
+		return startMoney;
+	}
+
+	return `${startMoney} - ${stopMoney}`;
+};
+
+export function getHrefForVariant({
+	productSlug,
+	variantId,
+}: {
+	productSlug: string;
+	variantId?: string;
+}): string {
+	const pathname = `/products/${encodeURIComponent(productSlug)}`;
+
+	if (!variantId) {
+		return pathname;
+	}
+
+	const query = new URLSearchParams({ variant: variantId });
+	return `${pathname}?${query.toString()}`;
+}
+
+export type PaginatedListVariables = {
+	first?: number;
+	after?: string | null;
+	last?: number;
+	before?: string | null;
+};
+
+export const getPaginatedListVariables = ({
+	params,
+}: {
+	params: { [key: string]: unknown };
+}): PaginatedListVariables => {
+	const cursor = typeof params?.cursor === "string" ? params?.cursor : null;
+	const direction = params?.direction === "prev" ? "prev" : "next";
+
+	return direction === "prev"
+		? { last: ProductsPerPage, before: cursor }
+		: { first: ProductsPerPage, after: cursor };
+};
