@@ -26,6 +26,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from . import config
 from .catalog.models import VariantInput
 from .catalog.publisher import publish_batch
+from .pricing.models import CostInput
+from .pricing.service import compute_channel_prices, publish_prices_for
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ventu")
@@ -104,6 +106,40 @@ async def catalog_publish(request: Request, _: None = Depends(_require_admin)) -
         "failed": len(results) - ok,
         "results": [r.__dict__ for r in results],
     }
+
+
+# ─────────────────────────── pricing (Publica) ───────────────────────────
+
+@app.post("/pricing/publish")
+async def pricing_publish(request: Request, _: None = Depends(_require_admin)) -> dict:
+    """Computa el precio final por channel (costo + margen + fees + IVA) y lo
+    escribe en Saleor.
+
+    Body: {"items": [{"sku": "...", "cost_net": 8500}]}
+    """
+    body = await request.json()
+    raw_items = body.get("items") or []
+    if not isinstance(raw_items, list):
+        raise HTTPException(status_code=400, detail="'items' debe ser una lista")
+    items = [CostInput.from_dict(d) for d in raw_items]
+    results = publish_prices_for(items)
+    ok = sum(1 for r in results if r.ok)
+    return {
+        "published": ok,
+        "failed": len(results) - ok,
+        "results": [r.__dict__ for r in results],
+    }
+
+
+@app.post("/pricing/quote")
+async def pricing_quote(request: Request, _: None = Depends(_require_admin)) -> dict:
+    """Devuelve el precio computado por channel SIN escribir en Saleor (dry-run)."""
+    body = await request.json()
+    cost_net = body.get("cost_net")
+    if cost_net is None:
+        raise HTTPException(status_code=400, detail="falta 'cost_net'")
+    prices = compute_channel_prices(float(cost_net))
+    return {"cost_net": float(cost_net), "prices": [p.__dict__ for p in prices]}
 
 
 # ─────────────────────────── órdenes (Reacciona) ───────────────────────────

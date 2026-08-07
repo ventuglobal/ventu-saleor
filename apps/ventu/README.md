@@ -9,8 +9,8 @@ va en una app aparte (`apps/ventu-pagos`) por su permiso especial.
 
 | Módulo | Modo | Estado |
 |---|---|---|
-| `catalog/` — Catálogo & Abastecimiento | Publica | **spine listo** (stock/precio/visibilidad) |
-| Pricing | Publica | pendiente |
+| `catalog/` — Catálogo & Abastecimiento | Publica | **listo** (crea/actualiza, stock, visibilidad) |
+| `pricing/` — Pricing | Publica | **listo** (costo → margen/fees/IVA → channel-listing) |
 | OMS & Facturación SII | Reacciona | stub (webhook de órdenes recibido, sin despachar) |
 | Impuestos / Envíos | Inyecta | pendiente |
 
@@ -22,7 +22,9 @@ va en una app aparte (`apps/ventu-pagos`) por su permiso especial.
 | GET | `/manifest` | manifest para instalar la App en Saleor |
 | POST | `/register` | recibe el `auth_token` que emite Saleor al instalar |
 | POST | `/webhooks/saleor` | eventos async de orden (→ OMS/Facturación, stub) |
-| POST | `/catalog/publish` | publica un lote de variantes (stock + precio) |
+| POST | `/catalog/publish` | publica un lote de variantes (crea/actualiza + stock) |
+| POST | `/pricing/publish` | computa precio final por channel y lo escribe |
+| POST | `/pricing/quote` | dry-run: devuelve el precio computado sin escribir |
 
 ## Catálogo — publicar
 

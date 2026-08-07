@@ -223,6 +223,25 @@ def publish_variant(item: VariantInput) -> PublishResult:
                          stock_set=target, created=created)
 
 
+def publish_prices(sku: str, prices) -> PublishResult:
+    """Escribe SOLO precios por channel de una variante existente (sin stock ni
+    creación). Es el writer que usa el módulo Pricing tras computar el precio.
+    `prices` es un iterable de objetos con `.channel_slug` y `.amount`."""
+    node = _resolve(sku)
+    if not node or not node.get("id"):
+        return PublishResult(sku, ok=False, detail="variante no encontrada en Saleor")
+    variant_id = node["id"]
+
+    for price in prices:
+        cid = warehouse.channel_id(price.channel_slug)
+        if not cid:
+            return PublishResult(sku, ok=False, detail=f"channel '{price.channel_slug}' no existe")
+        errs = _set_price(variant_id, cid, price.amount)
+        if errs:
+            return PublishResult(sku, ok=False, detail=f"precio: {errs}")
+    return PublishResult(sku, ok=True, detail="prices")
+
+
 def publish_batch(items: Iterable[VariantInput]) -> List[PublishResult]:
     results: List[PublishResult] = []
     for item in items:
