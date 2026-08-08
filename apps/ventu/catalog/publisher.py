@@ -63,10 +63,10 @@ mutation($id: ID!, $input: [ProductVariantChannelListingAddInput!]!) {
 """
 
 _PRODUCT_CHANNEL_LISTING = """
-mutation($id: ID!, $channelId: ID!) {
+mutation($id: ID!, $channelId: ID!, $isPublished: Boolean!) {
   productChannelListingUpdate(
     id: $id
-    input: {updateChannels: [{channelId: $channelId, isPublished: true, isAvailableForPurchase: true}]}
+    input: {updateChannels: [{channelId: $channelId, isPublished: $isPublished, isAvailableForPurchase: $isPublished}]}
   ) {
     errors { field message code }
   }
@@ -168,8 +168,12 @@ def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
     return _mutation_errors(body, "productVariantChannelListingUpdate")
 
 
-def _ensure_published(product_id: str, channel_id: str) -> list:
-    body = gql(_PRODUCT_CHANNEL_LISTING, {"id": product_id, "channelId": channel_id})
+def _ensure_published(product_id: str, channel_id: str, *, published: bool = True) -> list:
+    """Asigna el producto al channel. `published` controla la visibilidad; la
+    asignación se hace igual porque es prerequisito del precio de la variante."""
+    body = gql(_PRODUCT_CHANNEL_LISTING, {
+        "id": product_id, "channelId": channel_id, "isPublished": published,
+    })
     if data_errors(body):
         raise RuntimeError(f"publish errors: {data_errors(body)}")
     return _mutation_errors(body, "productChannelListingUpdate")
@@ -200,6 +204,19 @@ def publish_variant(item: VariantInput) -> PublishResult:
     if errs:
         return PublishResult(item.sku, ok=False, detail=f"stock: {errs}")
 
+    # ── channel listing del producto ANTES del precio: Saleor rechaza el precio
+    # de una variante cuyo producto no está asignado al channel
+    # (PRODUCT_NOT_ASSIGNED_TO_CHANNEL). La asignación es prerequisito; la
+    # visibilidad la sigue gobernando ENSURE_PUBLISHED.
+    if product_id:
+        for price in item.prices:
+            cid = warehouse.channel_id(price.channel_slug)
+            if cid:
+                errs = _ensure_published(product_id, cid,
+                                         published=config.ENSURE_PUBLISHED)
+                if errs:
+                    return PublishResult(item.sku, ok=False, detail=f"publish: {errs}")
+
     # ── precios por channel ──
     for price in item.prices:
         cid = warehouse.channel_id(price.channel_slug)
@@ -209,15 +226,6 @@ def publish_variant(item: VariantInput) -> PublishResult:
         errs = _set_price(variant_id, cid, price.amount)
         if errs:
             return PublishResult(item.sku, ok=False, detail=f"precio: {errs}")
-
-    # ── visibilidad (idempotente) ──
-    if config.ENSURE_PUBLISHED and product_id:
-        for price in item.prices:
-            cid = warehouse.channel_id(price.channel_slug)
-            if cid:
-                errs = _ensure_published(product_id, cid)
-                if errs:
-                    return PublishResult(item.sku, ok=False, detail=f"publish: {errs}")
 
     return PublishResult(item.sku, ok=True, detail="created" if created else "updated",
                          stock_set=target, created=created)
