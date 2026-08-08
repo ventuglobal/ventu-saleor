@@ -1,0 +1,28 @@
+name: CI (facturacion)
+
+on:
+  pull_request:
+    paths:
+      - "apps/ventu-facturacion/ventu_facturacion/**"
+      - "apps/ventu-facturacion/tests/**"
+      - ".github/workflows/ci-facturacion.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/ventu-facturacion/**"
+
+jobs:
+  ventu-facturacion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        # Solo la lógica pura (handlers) → no requiere Playwright/AWS del emisor.
+        run: pip install pytest
+      - name: Compile (reactor)
+        run: python -m py_compile apps/ventu-facturacion/ventu_facturacion/handlers.py
+      - name: Test (pure handlers)
+        run: pytest apps/ventu-facturacion/tests -q

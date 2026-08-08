@@ -33,6 +33,16 @@ services:
     env_file: .env
     restart: unless-stopped
 
+  # Facturación SII — Saleor App aparte (necesita Playwright para el login SII).
+  ventu-facturacion:
+    build: ./apps/ventu-facturacion
+    ports:
+      - "8095:8095"
+    depends_on:
+      - api
+    env_file: .env
+    restart: unless-stopped
+
   db:
     image: postgres:15-alpine
     environment:
