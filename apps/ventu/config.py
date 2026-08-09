@@ -26,6 +26,15 @@ DEFAULT_PRODUCT_TYPE_NAME = os.getenv("SALEOR_DEFAULT_PRODUCT_TYPE_NAME", "Ventu
 DEFAULT_CATEGORY_SLUG = os.getenv("SALEOR_DEFAULT_CATEGORY_SLUG", "ventu")
 DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
 
+# ── miniaturas ──
+# Saleor genera cada miniatura en la PRIMERA petición a /thumbnail/, y solo
+# entonces la sube al storage y puede devolver su URL directa. Sin calentarlas,
+# la primera visita de cada producto pasa por la API en vez de ir al CDN.
+# Vacío ("") desactiva el calentamiento.
+THUMBNAIL_WARM_SIZES = [int(s) for s in
+                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024").split(",")
+                        if s.strip().isdigit()]
+
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).
 PRICING_CHANNELS = [c.strip() for c in os.getenv("PRICING_CHANNELS", "retail-cl,b2b-cl").split(",") if c.strip()]
