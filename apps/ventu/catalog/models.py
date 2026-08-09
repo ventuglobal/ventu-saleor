@@ -31,6 +31,9 @@ class VariantInput:
     prices: List[ChannelPrice] = field(default_factory=list)
     name: Optional[str] = None
     description: Optional[str] = None
+    # URLs de las fotos del producto. Saleor las descarga y las guarda en su
+    # storage (S3/R2 en despliegue real); se publican de forma idempotente.
+    images: List[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, d: dict) -> "VariantInput":
@@ -41,6 +44,7 @@ class VariantInput:
             description=d.get("description"),
             prices=[ChannelPrice(channel_slug=p["channel_slug"], amount=float(p["amount"]))
                     for p in (d.get("prices") or [])],
+            images=[str(u) for u in (d.get("images") or []) if u],
         )
 
 
