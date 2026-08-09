@@ -76,13 +76,17 @@ def test_creates_missing_variant(monkeypatch):
     """SKU inexistente + CREATE_MISSING → crea producto+variante y publica stock."""
     monkeypatch.setattr(config, "CREATE_MISSING", True)
     monkeypatch.setattr(publisher.product_type, "default_product_type_id", lambda: "PT1")
+    monkeypatch.setattr(publisher.category, "default_category_id", lambda: "CAT1")
     seen = []
+
+    created_input = {}
 
     def router(query, variables=None, **kw):
         seen.append(query)
         if "productVariant(sku" in query:
             return _variant(vid=None)                 # no existe
         if "productCreate" in query:
+            created_input.update((variables or {}).get("input") or {})
             return {"data": {"productCreate": {"product": {"id": "P9"}, "errors": []}}}
         if "productVariantCreate" in query:
             return {"data": {"productVariantCreate": {
@@ -96,6 +100,8 @@ def test_creates_missing_variant(monkeypatch):
     assert res.ok and res.created and res.stock_set == 7
     assert any("productCreate" in q for q in seen)
     assert any("productVariantCreate" in q for q in seen)
+    # Sin categoría Saleor rechaza publicar el producto (PRODUCT_WITHOUT_CATEGORY).
+    assert created_input.get("category") == "CAT1"
 
 
 def test_create_disabled_reports_not_found(monkeypatch):

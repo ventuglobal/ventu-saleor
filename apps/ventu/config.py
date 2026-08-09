@@ -21,6 +21,10 @@ CREATE_MISSING = os.getenv("SALEOR_CREATE_MISSING", "1") not in ("0", "false", "
 # una variante. Se resuelve/crea por slug (una vez, cacheado).
 DEFAULT_PRODUCT_TYPE_SLUG = os.getenv("SALEOR_DEFAULT_PRODUCT_TYPE_SLUG", "ventu-default")
 DEFAULT_PRODUCT_TYPE_NAME = os.getenv("SALEOR_DEFAULT_PRODUCT_TYPE_NAME", "Ventu Default")
+# Saleor exige categoría para publicar un producto (PRODUCT_WITHOUT_CATEGORY),
+# así que los SKUs creados por el publisher caen en una categoría por defecto.
+DEFAULT_CATEGORY_SLUG = os.getenv("SALEOR_DEFAULT_CATEGORY_SLUG", "ventu")
+DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
 
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).

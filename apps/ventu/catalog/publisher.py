@@ -23,7 +23,7 @@ import logging
 from typing import Iterable, List, Optional
 
 from ..saleor_client import data_errors, gql, payload
-from . import product_type, warehouse
+from . import category, product_type, warehouse
 from .models import PublishResult, VariantInput
 
 logger = logging.getLogger("ventu.catalog")
@@ -116,6 +116,8 @@ def _create(item: VariantInput) -> dict:
     prod = gql(_PRODUCT_CREATE, {"input": {
         "name": name,
         "productType": pt_id,
+        # Sin categoría Saleor rechaza la publicación (PRODUCT_WITHOUT_CATEGORY).
+        "category": category.default_category_id(),
         "externalReference": item.sku,
         **({"description": item.description} if item.description else {}),
     }})
