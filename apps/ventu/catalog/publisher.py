@@ -66,7 +66,12 @@ _PRODUCT_CHANNEL_LISTING = """
 mutation($id: ID!, $channelId: ID!, $isPublished: Boolean!) {
   productChannelListingUpdate(
     id: $id
-    input: {updateChannels: [{channelId: $channelId, isPublished: $isPublished, isAvailableForPurchase: $isPublished}]}
+    input: {updateChannels: [{
+      channelId: $channelId
+      isPublished: $isPublished
+      isAvailableForPurchase: $isPublished
+      visibleInListings: $isPublished
+    }]}
   ) {
     errors { field message code }
   }
@@ -172,7 +177,12 @@ def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
 
 def _ensure_published(product_id: str, channel_id: str, *, published: bool = True) -> list:
     """Asigna el producto al channel. `published` controla la visibilidad; la
-    asignación se hace igual porque es prerequisito del precio de la variante."""
+    asignación se hace igual porque es prerequisito del precio de la variante.
+
+    `visibleInListings` es un flag **aparte** de `isPublished` y por defecto es
+    False: sin él el producto es comprable por link directo pero no aparece en
+    listados ni búsqueda del storefront (vitrina vacía).
+    """
     body = gql(_PRODUCT_CHANNEL_LISTING, {
         "id": product_id, "channelId": channel_id, "isPublished": published,
     })
