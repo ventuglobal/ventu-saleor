@@ -15,28 +15,28 @@
 
 export const brandConfig = {
 	/** Site name used in titles, metadata, and headers */
-	siteName: "Saleor Store",
+	siteName: "Ventu",
 
 	/** Legal entity name for copyright notices */
-	copyrightHolder: "Saleor Demo Store",
+	copyrightHolder: "Ventu",
 
 	/** Organization name for structured data (JSON-LD) */
-	organizationName: "Saleor Store",
+	organizationName: "Ventu",
 
 	/** Default brand name for products without a brand */
-	defaultBrand: "Saleor Store",
+	defaultBrand: "Ventu",
 
 	/** Tagline/description for the store */
-	tagline: "Premium products with exceptional quality. Discover our curated collection.",
+	tagline: "Tecnología y suministros para tu empresa, con despacho en todo Chile.",
 
 	/** Homepage meta description */
-	description: "Starter pack for building performant e-commerce experiences with Saleor.",
+	description: "Catálogo mayorista de tecnología, redes y suministros. Precios con IVA incluido y despacho a todo Chile.",
 
 	/** Logo aria-label for accessibility */
-	logoAriaLabel: "Store",
+	logoAriaLabel: "Ventu",
 
 	/** Title template - %s will be replaced with page title */
-	titleTemplate: "%s | Saleor Store",
+	titleTemplate: "%s | Ventu",
 
 	/** Social media handles */
 	social: {
@@ -61,5 +61,5 @@ export function formatPageTitle(title: string): string {
  * Use CopyrightText component for dynamic year in Server Components.
  */
 export function getCopyrightText(year: number = new Date().getFullYear()): string {
-	return `© ${year} ${brandConfig.copyrightHolder}. All rights reserved.`;
+	return `© ${year} ${brandConfig.copyrightHolder}. Todos los derechos reservados.`;
 }

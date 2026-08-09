@@ -1,0 +1,604 @@
+{
+	"cart": {
+		"drawer": {
+			"itemCount": "{count, plural, one {# producto} other {# productos}}",
+			"subtotal": "Subtotal",
+			"shipping": "Despacho",
+			"shippingFree": "Gratis",
+			"shippingCalculated": "Se calcula al pagar",
+			"total": "Total",
+			"checkout": "Ir a pagar",
+			"continueShopping": "Seguir comprando",
+			"removeItem": "Quitar {product}",
+			"decreaseQuantity": "Disminuir cantidad",
+			"increaseQuantity": "Aumentar cantidad"
+		},
+		"page": {
+			"title": "Carro de compras",
+			"quantity": "Cant.: {count}",
+			"variant": "Variante: {name}",
+			"yourTotal": "Tu total",
+			"shippingNote": "El despacho se calcula en el paso siguiente",
+			"checkout": "Ir a pagar"
+		}
+	},
+	"productsListing": {
+		"breadcrumbHome": "Inicio",
+		"breadcrumbProducts": "Productos"
+	},
+	"common": {
+		"pagination": {
+			"previous": "Anterior",
+			"next": "Siguiente"
+		}
+	},
+	"pdp": {
+		"addToBag": "Agregar al carro",
+		"adding": "Agregando...",
+		"outOfStock": "Sin stock",
+		"selectOptions": "Elegir opciones",
+		"buyBox": {
+			"overBudgetHint": "Este producto tiene demasiadas opciones para mostrarlas aquí. Abre el enlace de una variante específica para comprar.",
+			"externalHint": "Las opciones de este producto se eligen en una experiencia personalizada. Abre el enlace de una variante específica para comprar.",
+			"selectedSummary": "Opciones elegidas"
+		},
+		"free": "GRATIS",
+		"breadcrumbHome": "Inicio",
+		"badges": {
+			"sale": "Oferta",
+			"new": "Nuevo",
+			"bestseller": "Más vendido"
+		},
+		"variant": {
+			"outOfStockTitle": "{name} - Sin stock",
+			"willChangeSelections": "{name} - Cambiará otras opciones elegidas",
+			"percentOffTitle": "{name} - {percent}% de descuento",
+			"outOfStockA11y": "sin stock",
+			"percentOffA11y": "{percent}% de descuento",
+			"selectedA11y": "seleccionado",
+			"chooseOption": "Elegir {label}",
+			"searchOptions": "Buscar {label}",
+			"noMatchingOptions": "No hay opciones que coincidan"
+		},
+		"attributes": {
+			"description": "Descripción",
+			"productDetails": "Detalles del producto",
+			"careInstructions": "Instrucciones de cuidado",
+			"shippingReturns": "Despacho y devoluciones",
+			"shippingBody": "Despacho gratis en compras sobre {freeShippingThreshold}. Entrega estándar de 3 a 5 días hábiles.",
+			"returnsBody": "Devoluciones gratis dentro de {returnsWindowDays} días desde la compra. Los productos deben estar sin uso y con sus etiquetas.",
+			"yes": "Sí",
+			"no": "No"
+		},
+		"zoom": {
+			"title": "{productName} — imagen ampliada",
+			"imageAlt": "{productName} — vista {index}",
+			"close": "Cerrar imagen ampliada",
+			"previous": "Imagen anterior",
+			"next": "Imagen siguiente",
+			"counter": "{current} / {total}"
+		}
+	},
+	"plp": {
+		"quickAdd": "Agregar rápido",
+		"filtersButton": "Filtros",
+		"filterLabels": {
+			"category": "Categoría",
+			"color": "Color",
+			"size": "Talla",
+			"price": "Precio",
+			"priceRange": "Rango de precio"
+		},
+		"sort": "Ordenar",
+		"sortOptions": {
+			"featured": "Destacados",
+			"newest": "Más nuevos",
+			"price_asc": "Precio: de menor a mayor",
+			"price_desc": "Precio: de mayor a menor",
+			"bestselling": "Más vendidos"
+		},
+		"resultCount": "{count, plural, one {# producto} other {# productos}}",
+		"clearAllFilters": "Borrar todos los filtros ({count})",
+		"clearAll": "Borrar todo",
+		"removeFilter": "Quitar el filtro {value}",
+		"noMatchingFilters": "Ningún producto coincide con tus filtros."
+	},
+	"search": {
+		"title": "Buscar",
+		"description": "Busca en todo nuestro catálogo de productos.",
+		"bar": {
+			"placeholder": "Buscar productos...",
+			"srOnlyLabel": "Buscar productos"
+		},
+		"resultsFor": "Resultados para \"{query}\"",
+		"resultCount": "{count, plural, one {# producto encontrado} other {# productos encontrados}}",
+		"noResultsTitle": "Sin resultados para \"{query}\"",
+		"noResultsBody": "No encontramos productos que coincidan con tu búsqueda. Prueba con otro término o revisa nuestras categorías.",
+		"browseAllProducts": "Ver todos los productos",
+		"goToHomepage": "Ir al inicio",
+		"noImage": "Sin imagen",
+		"sort": "Ordenar",
+		"sortOptions": {
+			"relevance": "Relevancia",
+			"price-asc": "Precio: de menor a mayor",
+			"price-desc": "Precio: de mayor a menor",
+			"name": "Nombre",
+			"newest": "Más nuevos"
+		}
+	},
+	"nav": {
+		"header": {
+			"mainAriaLabel": "Principal"
+		},
+		"breadcrumbAriaLabel": "Ruta de navegación",
+		"cartButton": "{count, plural, one {# producto en el carro, ver carro} other {# productos en el carro, ver carro}}",
+		"mobileMenu": {
+			"open": "Abrir menú",
+			"title": "Menú de navegación"
+		},
+		"userMenu": {
+			"open": "Abrir menú de usuario",
+			"login": "Iniciar sesión",
+			"myAccount": "Mi cuenta",
+			"myOrders": "Mis pedidos",
+			"logOut": "Cerrar sesión",
+			"unavailableAriaLabel": "Cuenta no disponible",
+			"unavailableTitle": "No se pudo cargar la cuenta"
+		},
+		"regionPicker": {
+			"ariaLabel": "Idioma y mercado",
+			"languageTitle": "Idioma",
+			"languageDescription": "Textos y formato del sitio",
+			"marketTitle": "Mercado",
+			"marketDescription": "Moneda, impuestos y despacho"
+		}
+	},
+	"account": {
+		"metadata": {
+			"loginTitle": "Iniciar sesión",
+			"loginDescription": "Inicia sesión para ver tus pedidos y direcciones guardadas.",
+			"signupTitle": "Crear cuenta",
+			"signupDescription": "Crea una cuenta para guardar tus direcciones y tu historial de pedidos.",
+			"accountTitle": "Mi cuenta"
+		},
+		"fields": {
+			"email": "Correo",
+			"emailAddress": "Correo electrónico",
+			"password": "Contraseña",
+			"firstName": "Nombre",
+			"lastName": "Apellido",
+			"confirmPassword": "Confirmar contraseña",
+			"currentPassword": "Contraseña actual",
+			"newPassword": "Contraseña nueva",
+			"confirmNewPassword": "Confirmar contraseña nueva",
+			"name": "Nombre",
+			"companyOptional": "Empresa (opcional)",
+			"streetAddress": "Dirección",
+			"streetAddress2Optional": "Depto., oficina, etc. (opcional)",
+			"city": "Ciudad",
+			"postalCode": "Código postal",
+			"stateProvince": "Región",
+			"countryCode": "Código de país",
+			"phoneOptional": "Teléfono (opcional)",
+			"country": "País",
+			"cityArea": "Comuna",
+			"localized": {
+				"province": "Provincia",
+				"district": "Distrito",
+				"state": "Región",
+				"zip": "Código postal",
+				"postal": "Código postal",
+				"postTown": "Localidad postal",
+				"prefecture": "Prefectura"
+			}
+		},
+		"placeholders": {
+			"email": "tu@ejemplo.cl",
+			"password": "Ingresa tu contraseña",
+			"firstName": "Nombre",
+			"lastName": "Apellido",
+			"newPasswordMin": "Al menos 8 caracteres…",
+			"confirmPassword": "Confirma tu contraseña",
+			"reenterPassword": "Vuelve a ingresar tu contraseña",
+			"countryCode": "CL"
+		},
+		"common": {
+			"cancel": "Cancelar",
+			"save": "Guardar",
+			"saving": "Guardando…",
+			"edit": "Editar",
+			"delete": "Eliminar",
+			"updated": "Actualizado",
+			"showPassword": "Mostrar contraseña",
+			"hidePassword": "Ocultar contraseña",
+			"free": "Gratis",
+			"qty": "Cant.: {count}",
+			"itemCount": "{count, plural, one {# producto} other {# productos}}",
+			"notSet": "Sin definir",
+			"change": "Cambiar",
+			"changing": "Cambiando…",
+			"sending": "Enviando…"
+		},
+		"errors": {
+			"invalidEmail": "Ingresa un correo electrónico válido",
+			"invalidEmailFirst": "Primero ingresa un correo electrónico válido",
+			"passwordRequired": "Ingresa tu contraseña",
+			"passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+			"passwordsMismatch": "Las contraseñas no coinciden",
+			"newPasswordRequired": "Ingresa una contraseña nueva",
+			"generic": "Ocurrió un error. Inténtalo de nuevo.",
+			"signInFailed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+			"invalidCredentials": "Correo o contraseña incorrectos. Inténtalo de nuevo.",
+			"rateLimited": "Demasiados intentos de inicio de sesión. Espera un momento e inténtalo de nuevo.",
+			"resetLinkFailed": "No se pudo enviar el enlace de recuperación",
+			"accountExists": "Ya existe una cuenta con este correo. Inicia sesión.",
+			"createAccountFailed": "No se pudo crear la cuenta",
+			"invalidResetToken": "Este enlace para restablecer la contraseña expiró. Solicita uno nuevo.",
+			"setPasswordFailed": "No se pudo establecer la contraseña",
+			"invalidConfirmToken": "Este enlace de confirmación expiró o ya fue usado. Intenta iniciar sesión o regístrate otra vez.",
+			"confirmFailed": "No se pudo confirmar la cuenta",
+			"loadOrdersFailed": "No pudimos cargar tus pedidos. Inténtalo de nuevo en un momento.",
+			"loadOrderFailed": "No pudimos cargar este pedido. Inténtalo de nuevo.",
+			"loadRecentOrdersFailed": "No pudimos cargar tus pedidos recientes.",
+			"updateProfileFailed": "No se pudo actualizar el perfil",
+			"changePasswordFailed": "No se pudo cambiar la contraseña",
+			"createAddressFailed": "No se pudo crear la dirección",
+			"updateAddressFailed": "No se pudo actualizar la dirección",
+			"deleteAddressFailed": "No se pudo eliminar la dirección",
+			"setDefaultAddressFailed": "No se pudo establecer la dirección predeterminada",
+			"deleteAccountFailed": "No se pudo solicitar la eliminación de la cuenta"
+		},
+		"login": {
+			"title": "Te damos la bienvenida",
+			"noAccount": "¿No tienes cuenta?",
+			"signUp": "Regístrate",
+			"forgotPassword": "¿Olvidaste tu contraseña?",
+			"resendResetLink": "Reenviar enlace de recuperación",
+			"submit": "Iniciar sesión",
+			"submitting": "Iniciando sesión…",
+			"resetSent": "Si existe una cuenta para {email}, enviamos un enlace para restablecer la contraseña. Nota: solo puedes solicitar un enlace cada 15 minutos."
+		},
+		"signup": {
+			"title": "Crear una cuenta",
+			"hasAccount": "¿Ya tienes cuenta?",
+			"signIn": "Inicia sesión",
+			"submit": "Crear cuenta",
+			"submitting": "Creando cuenta…",
+			"successTitle": "¡Cuenta creada!",
+			"successBody": "Revisa tu correo para verificar tu cuenta.",
+			"goToSignIn": "Ir a iniciar sesión",
+			"terms": "Al crear una cuenta, aceptas nuestros <terms>Términos del servicio</terms> y nuestra <privacy>Política de privacidad</privacy>.",
+			"termsLink": "Términos del servicio",
+			"privacyLink": "Política de privacidad"
+		},
+		"setPassword": {
+			"title": "Establecer contraseña nueva",
+			"subtitle": "Ingresa una contraseña nueva para {email}",
+			"submit": "Actualizar contraseña",
+			"submitting": "Actualizando…",
+			"backToSignIn": "Volver a iniciar sesión",
+			"successTitle": "¡Contraseña actualizada!",
+			"successBody": "Tu contraseña se restableció correctamente. Ya iniciaste sesión.",
+			"redirecting": "Te estamos llevando a la tienda…"
+		},
+		"confirm": {
+			"successTitle": "Cuenta confirmada",
+			"successBody": "Tu cuenta para {email} está activa.",
+			"signIn": "Iniciar sesión",
+			"continueShopping": "Seguir comprando",
+			"errorTitle": "No se pudo confirmar la cuenta",
+			"goToSignIn": "Ir a iniciar sesión",
+			"title": "Confirma tu cuenta",
+			"body": "Ingresa la contraseña de {email} para terminar de confirmar tu cuenta.",
+			"submit": "Confirmar cuenta",
+			"submitting": "Confirmando…",
+			"tryAgain": "Intentar de nuevo"
+		},
+		"nav": {
+			"ariaLabel": "Cuenta",
+			"backToStore": "Volver a la tienda",
+			"signOut": "Cerrar sesión",
+			"overview": "Resumen",
+			"orders": "Pedidos",
+			"addresses": "Direcciones",
+			"settings": "Configuración"
+		},
+		"overview": {
+			"welcome": "Hola de nuevo, {name}",
+			"subtitle": "Este es un resumen de la actividad de tu cuenta.",
+			"recentOrders": "Pedidos recientes",
+			"viewAll": "Ver todos",
+			"noOrdersYet": "Todavía no has hecho ningún pedido."
+		},
+		"orders": {
+			"title": "Pedidos",
+			"count": "{count, plural, =0 {Sin pedidos aún} one {# pedido} other {# pedidos}}",
+			"empty": "Todavía no has hecho ningún pedido.",
+			"loadMore": "Cargar más pedidos",
+			"signInRequired": "Inicia sesión para ver tus pedidos.",
+			"orderNumber": "PED-{number}"
+		},
+		"orderDetail": {
+			"placedOn": "Realizado el {date}",
+			"items": "Productos ({count})",
+			"subtotal": "Subtotal",
+			"shipping": "Despacho",
+			"tax": "IVA",
+			"total": "Total",
+			"shippingAddress": "Dirección de despacho",
+			"billingAddress": "Dirección de facturación",
+			"paymentMethod": "Medio de pago",
+			"paid": "Pagado",
+			"needHelp": "¿Necesitas ayuda?",
+			"signInRequired": "Inicia sesión para ver este pedido.",
+			"loadFailed": "No pudimos cargar este pedido. Inténtalo de nuevo.",
+			"timeline": "Seguimiento del pedido"
+		},
+		"orderStatus": {
+			"UNFULFILLED": "En preparación",
+			"UNCONFIRMED": "Pendiente de confirmación",
+			"PARTIALLY_FULFILLED": "Despachado parcialmente",
+			"FULFILLED": "Despachado"
+		},
+		"fulfillment": {
+			"orderConfirmed": "Pedido confirmado",
+			"orderConfirmedDescription": "Pago confirmado y pedido realizado",
+			"FULFILLED": "Despachado",
+			"FULFILLEDDescription": "Tu pedido fue despachado",
+			"CANCELED": "Despacho cancelado",
+			"CANCELEDDescription": "El envío fue cancelado",
+			"REFUNDED": "Reembolsado",
+			"REFUNDEDDescription": "El pago fue reembolsado",
+			"REFUNDED_AND_RETURNED": "Reembolsado y devuelto",
+			"REFUNDED_AND_RETURNEDDescription": "Productos devueltos y reembolsados",
+			"REPLACED": "Reemplazado",
+			"REPLACEDDescription": "Los productos fueron reemplazados",
+			"RETURNED": "Devuelto",
+			"RETURNEDDescription": "Los productos fueron devueltos",
+			"WAITING_FOR_APPROVAL": "Esperando aprobación",
+			"WAITING_FOR_APPROVALDescription": "El despacho está pendiente de aprobación",
+			"trackingUpdated": "Seguimiento actualizado",
+			"trackingNumber": "Número de seguimiento: {number}",
+			"descriptionWithItems": "{description} ({count, plural, one {# producto} other {# productos}})"
+		},
+		"settings": {
+			"title": "Configuración",
+			"subtitle": "Administra la configuración de tu cuenta",
+			"memberSince": "Cliente desde {date}"
+		},
+		"addresses": {
+			"title": "Direcciones",
+			"subtitle": "Administra tus direcciones guardadas",
+			"empty": "Aún no tienes direcciones guardadas.",
+			"addAddress": "Agregar dirección",
+			"editAddress": "Editar dirección",
+			"addNewAddress": "Agregar dirección nueva",
+			"editAddressDescription": "Actualiza los datos de tu dirección",
+			"addAddressDescription": "Agrega una dirección nueva a tu cuenta",
+			"editAddressAria": "Editar dirección",
+			"updateAddress": "Actualizar dirección",
+			"deleteAddressAria": "Eliminar dirección",
+			"defaultShipping": "Despacho predeterminado",
+			"defaultBilling": "Facturación predeterminada",
+			"makeDefaultShipping": "Usar como despacho predeterminado",
+			"makeDefaultBilling": "Usar como facturación predeterminada"
+		},
+		"deleteAccount": {
+			"title": "Eliminar cuenta",
+			"description": "Elimina de forma permanente tu cuenta y todos sus datos.",
+			"submit": "Eliminar cuenta",
+			"confirm": "Sí, eliminar mi cuenta",
+			"confirmBody": "Esta acción no se puede deshacer. Recibirás un correo de confirmación antes de que se elimine tu cuenta.",
+			"emailSent": "Enviamos un correo de confirmación. Revisa tu bandeja de entrada para completar la eliminación de la cuenta."
+		},
+		"changePassword": {
+			"submit": "Cambiar contraseña"
+		},
+		"unavailable": {
+			"title": "No se pudo cargar tu cuenta",
+			"body": "La tienda no está disponible por ahora. Recarga la página o inténtalo de nuevo en un momento."
+		}
+	},
+	"checkout": {
+		"steps": {
+			"information": "Datos",
+			"shipping": "Despacho",
+			"payment": "Pago",
+			"stepsAriaLabel": "Pasos de la compra",
+			"secureCheckout": "Compra segura",
+			"complete": "Listo",
+			"stepOf": "Paso {step} de {total}"
+		},
+		"actions": {
+			"saving": "Guardando…",
+			"loading": "Cargando…",
+			"continueToShipping": "Continuar al despacho",
+			"continueToPayment": "Continuar al pago",
+			"continue": "Continuar",
+			"continueAsGuest": "Continuar como invitado",
+			"preparingGuestCart": "Preparando el carro de invitado…",
+			"logIn": "Iniciar sesión",
+			"returnToInformation": "Volver a los datos",
+			"returnToShipping": "Volver al despacho",
+			"payNow": "Pagar ahora",
+			"payTotal": "Pagar {total}",
+			"completeOrder": "Completar pedido",
+			"placingOrder": "Realizando el pedido…",
+			"creatingOrder": "Creando el pedido…",
+			"processingPayment": "Procesando el pago…",
+			"continueShopping": "Seguir comprando",
+			"tryAgain": "Intentar de nuevo"
+		},
+		"errors": {
+			"sessionExpiredTitle": "La sesión de compra expiró",
+			"sessionExpiredMessage": "Este carro ya no está disponible. Agrega los productos otra vez para iniciar una compra nueva.",
+			"loadFailedTitle": "No se pudo cargar la compra",
+			"loadFailedMessage": "Tuvimos problemas para cargar tu carro. Inténtalo de nuevo o inicia una compra nueva desde la tienda.",
+			"orderNotFoundTitle": "Pedido no encontrado",
+			"orderNotFoundMessage": "No pudimos encontrar este pedido. Puede que se haya eliminado o que el enlace no sea válido.",
+			"emailRequired": "El correo es obligatorio",
+			"selectShippingAddress": "Elige una dirección de despacho",
+			"selectShippingMethod": "Elige un método de despacho",
+			"updateShippingMethodFailed": "No se pudo actualizar el método de despacho",
+			"orphanedCartMessage": "Este carro sigue asociado a una cuenta con sesión iniciada. Para comprar como invitado, crea un carro anónimo nuevo con los mismos productos, o inicia sesión.",
+			"orphanedCartBlocked": "Este carro sigue asociado a una cuenta con sesión iniciada. Continúa como invitado arriba, o inicia sesión.",
+			"discountApplyFailed": "No se pudo aplicar este código de descuento.",
+			"discountRemoveFailed": "No se pudo quitar el código de descuento.",
+			"invalidValue": "Valor no válido",
+			"updateEmailFailed": "No se pudo actualizar el correo",
+			"createAccountFailed": "No se pudo crear la cuenta",
+			"updateAddressFailed": "No se pudo actualizar la dirección",
+			"crashTitle": "Error en la compra",
+			"crashMessage": "Algo salió mal al cargar la compra. Inténtalo de nuevo."
+		},
+		"contact": {
+			"title": "Contacto",
+			"haveAccount": "¿Tienes cuenta?",
+			"createAccountLabel": "Crea una cuenta para comprar más rápido la próxima vez",
+			"activationNotice": "Después de comprar recibirás un correo para activar tu cuenta antes de poder iniciar sesión.",
+			"guestCheckout": "Compra como invitado",
+			"newCustomer": "¿Eres cliente nuevo?",
+			"signInTitle": "Iniciar sesión",
+			"resetPasswordTitle": "Restablece tu contraseña",
+			"resetPasswordSubtitle": "Ingresa una contraseña nueva para tu cuenta",
+			"processing": "Procesando…",
+			"passwordMinPlaceholder": "Contraseña (mínimo 8 caracteres)",
+			"signedIn": "Sesión iniciada"
+		},
+		"summary": {
+			"title": "Resumen del pedido",
+			"show": "Mostrar",
+			"hide": "Ocultar",
+			"toggleOrderSummary": "{action} el resumen del pedido",
+			"itemCount": "{count, plural, one {# producto} other {# productos}}",
+			"subtotal": "Subtotal",
+			"shipping": "Despacho",
+			"taxVat": "IVA",
+			"discount": "Descuento",
+			"total": "Total",
+			"includingVat": "IVA incluido",
+			"productFallback": "Producto",
+			"contact": "Contacto",
+			"shipTo": "Despachar a",
+			"method": "Método",
+			"delivery": "Entrega",
+			"digital": "Digital"
+		},
+		"promo": {
+			"placeholder": "Código de descuento",
+			"apply": "Aplicar",
+			"applying": "Aplicando…",
+			"removeAriaLabel": "Quitar el código de descuento"
+		},
+		"shipping": {
+			"methodTitle": "Método de despacho",
+			"loadingMethods": "Cargando métodos de despacho…",
+			"noAddressYet": "Vuelve atrás e ingresa primero tu dirección de despacho.",
+			"addressTitle": "Dirección de despacho",
+			"countryRegion": "País/Región",
+			"selectCountry": "Elige un país",
+			"backToSavedAddresses": "← Volver a las direcciones guardadas",
+			"emptySavedShipping": "Aún no tienes direcciones guardadas. Ingresa tu dirección de despacho abajo.",
+			"selectShippingAddressSheet": "Elige la dirección de despacho"
+		},
+		"billing": {
+			"title": "Dirección de facturación",
+			"sameAsShipping": "La misma dirección de despacho",
+			"selectBillingSheet": "Elige la dirección de facturación",
+			"emptySavedBilling": "No hay direcciones guardadas disponibles.",
+			"backToSavedAddresses": "Volver a las direcciones guardadas"
+		},
+		"addresses": {
+			"selectPrompt": "Elige una dirección",
+			"setDefaultShipping": "Usar como mi dirección de despacho predeterminada",
+			"setDefaultBilling": "Usar como mi dirección de facturación predeterminada",
+			"defaultBadge": "Predeterminada",
+			"emptySaved": "Aún no tienes direcciones guardadas."
+		},
+		"payment": {
+			"totalUpdatedTitle": "El total de tu pedido cambió",
+			"totalUpdatedBody": "El total cambió de {previous} a {next}. Revisa el resumen actualizado antes de completar tu pago.",
+			"deliveryInvalidTitle": "El método de despacho ya no está disponible",
+			"deliveryInvalidBody": "Vuelve al paso de despacho y elige un método válido antes de completar tu pedido.",
+			"completingTitle": "Procesando tu pedido",
+			"completingBody": "Estamos confirmando tu pago y creando tu pedido. Suele tomar unos segundos: no cierres ni recargues esta página.",
+			"initFailed": "No se pudo inicializar el sistema de pagos.",
+			"unavailable": "El sistema de pagos no está disponible. Inténtalo de nuevo.",
+			"loadingGateway": "Cargando el formulario de pago de {gateway}…",
+			"confirmingPayment": "Confirmando tu pago…",
+			"securingWithStripe": "Estamos asegurando tu pago con Stripe. Suele tomar unos segundos.",
+			"doNotClose": "No cierres ni recargues esta página.",
+			"completeOrderFailed": "No pudimos completar tu pedido. Inténtalo de nuevo.",
+			"placeOrderFailed": "No pudimos realizar tu pedido. Inténtalo de nuevo o contacta con soporte.",
+			"totalsRefreshFailed": "No pudimos actualizar los totales de la compra. Inténtalo de nuevo.",
+			"totalUnavailable": "El total de la compra no está disponible. Recarga la página e inténtalo de nuevo.",
+			"currencyUnavailable": "La moneda de la compra no está disponible. Recarga la página e inténtalo de nuevo.",
+			"validationFailed": "Falló la validación del pago",
+			"methodRequired": "No pudimos determinar el medio de pago elegido. Elige una opción de pago e inténtalo de nuevo.",
+			"detailsUnavailable": "No pudimos obtener los datos del pago. Inténtalo de nuevo.",
+			"expressReset": "Los botones de pago exprés se reiniciaron antes de confirmar el pago. Inténtalo de nuevo.",
+			"formReset": "El formulario de pago se reinició antes de confirmar tu tarjeta. Presiona Pagar otra vez sin recargar la página.",
+			"totalChanged": "El total del pedido cambió. Revisa el nuevo monto e inténtalo de nuevo.",
+			"bankDeclined": "Tu banco rechazó el pago. Inténtalo de nuevo o usa otra tarjeta.",
+			"sessionExpired": "La sesión de pago expiró después de la redirección. Inténtalo de nuevo.",
+			"channelUnresolved": "No pudimos resolver el canal de compra después del pago. Contacta con soporte.",
+			"unexpectedError": "Ocurrió un error inesperado al completar tu pago.",
+			"stripeConfigFailed": "Falló la configuración de la pasarela Stripe",
+			"stripeKeyMissing": "Falta la clave pública de Stripe. Revisa la configuración de la app de Stripe en el panel de Saleor.",
+			"dummyGateway": "Pago de prueba",
+			"failed": "El pago falló",
+			"interruptedBeforeCharge": "El pago se interrumpió antes de que se te cobrara. Puedes intentarlo de nuevo sin problema.",
+			"interruptedAfterAuthorize": "Tu pago se procesó, pero tu pedido aún no se ha realizado. No pagues de nuevo: usa «Completar pedido» abajo para terminar.",
+			"verificationUnavailable": "No pudimos verificar tu intento de pago anterior. Recarga la página y no pagues de nuevo hasta que se verifique.",
+			"authorizedTitle": "Pago autorizado: realiza tu pedido",
+			"authorizedBody": "Tu pago está autorizado (el cobro se hace cuando preparamos el pedido). Presiona abajo para realizar tu pedido; no se te cobrará de nuevo.",
+			"freeOrderBody": "El total de tu pedido es {total}. No se requiere pago: confirma abajo para realizar tu pedido.",
+			"dummyTestMode": "Modo de prueba. No necesitas datos de tarjeta: usa Pagar para completar un pedido de prueba.",
+			"stripeLoadTitle": "No se pudo cargar Stripe"
+		},
+		"confirmation": {
+			"orderNumber": "Pedido n.º {number}",
+			"thankYou": "¡Gracias por tu compra!",
+			"confirmedTitle": "Tu pedido está confirmado",
+			"confirmedEmail": "Recibirás un correo de confirmación en {email}",
+			"emailSent": "Correo de confirmación enviado",
+			"shippingAddress": "Dirección de despacho",
+			"billingAddress": "Dirección de facturación",
+			"estimatedDelivery": "Entrega estimada"
+		},
+		"server": {
+			"marketingSaveFailed": "No se pudo guardar la preferencia de marketing",
+			"invalidRedirectUrl": "URL de redirección no válida. Revisa los registros del servidor para más información.",
+			"createAccountFailed": "No se pudo crear la cuenta",
+			"noSaleorResponse": "Sin respuesta de Saleor",
+			"shippingMethodsFailed": "No se pudieron cargar los métodos de despacho",
+			"gatewayInitFailed": "Falló la inicialización de la pasarela de pago",
+			"totalVerifyFailed": "No pudimos verificar el total de la compra. Inténtalo de nuevo.",
+			"totalChanged": "El total de la compra cambió. Revisa tu pedido e inténtalo de nuevo.",
+			"paymentInitFailed": "Falló la inicialización del pago",
+			"paymentsDisabled": "Los pagos no están habilitados en este entorno.",
+			"paymentProcessFailed": "Falló el procesamiento del pago",
+			"completeOrderFailed": "No se pudo completar el pedido",
+			"orderCreateFailed": "El pago se procesó, pero no se pudo crear el pedido. Inténtalo de nuevo o contacta con soporte.",
+			"validationRulesUnavailable": "Reglas de validación no disponibles",
+			"setDefaultAddressFailed": "No se pudo establecer la dirección predeterminada",
+			"dummyNotAllowed": "El pago de prueba no está disponible en este entorno.",
+			"stripeNotEnabled": "Los pagos con Stripe no están habilitados en este entorno. Define NEXT_PUBLIC_ENABLE_STRIPE_PAYMENTS=true en el storefront."
+		},
+		"gateways": {
+			"noneTitle": "No hay pasarela de pago configurada",
+			"noneBody": "Para aceptar pagos, instala una app de pagos (como Saleor Dummy Payment para pruebas, o Stripe/Adyen para producción) desde el panel de Saleor.",
+			"unsupportedTitle": "Pasarela de pago no compatible",
+			"unsupportedList": "Esta compra no admite la o las pasarelas de pago disponibles: {gateways}.",
+			"unsupportedEmpty": "No hay una pasarela de pago compatible disponible para esta compra.",
+			"dummyMissingTitle": "Pago de prueba no disponible en esta compra",
+			"dummyMissingBody": "La app Dummy Payment está instalada, pero no está disponible para esta compra. En el panel de Saleor, revisa que la app esté activa, que los webhooks se entreguen correctamente y que la moneda de la compra sea compatible (USD para la app alojada).",
+			"noGatewayConfigured": "No hay pasarela de pago configurada. Contacta con soporte o configura una app de pagos en Saleor.",
+			"stripeUseCardForm": "El pago con Stripe se gestiona en el formulario de tarjeta. Completa el pago en la sección de Stripe de arriba.",
+			"paymentFailed": "El pago falló",
+			"paymentTryAgain": "El pago falló. Inténtalo de nuevo.",
+			"paymentWebhookFailed": "Falló el webhook de la app de pagos. En el panel de Saleor → Apps → Dummy Payment App, revisa que las entregas de webhooks se estén completando.",
+			"paymentInitFailed": "No se pudo inicializar el pago. Revisa que la app de pagos esté funcionando en Saleor."
+		}
+	}
+}

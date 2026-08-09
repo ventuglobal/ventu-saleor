@@ -272,3 +272,62 @@ def test_calienta_cada_formato(monkeypatch):
     assert res.ok
     assert gets == ["http://saleor/thumbnail/M1/2048/",
                     "http://saleor/thumbnail/M1/2048/webp/"]
+
+
+# ─────────────────── slug de la ficha (URL pública) ───────────────────
+
+def _slug_router(actual_slug, seen, existing=True):
+    def router(query, variables=None, **kw):
+        if "productVariant(sku" in query:
+            return _variant(allocated=0) if existing else _variant(vid=None)
+        if "productVariantStocksUpdate" in query:
+            return _mut_ok("productVariantStocksUpdate")
+        if "productVariantStocksCreate" in query:
+            return _mut_ok("productVariantStocksCreate")
+        if "product(id" in query and "slug" in query:
+            return {"data": {"product": {"slug": actual_slug}}}
+        if "productUpdate" in query:
+            seen.append((variables or {}).get("slug"))
+            return _mut_ok("productUpdate")
+        if "productCreate" in query:
+            seen.append(((variables or {}).get("input") or {}).get("slug"))
+            return {"data": {"productCreate": {"product": {"id": "P9"}, "errors": []}}}
+        if "productVariantCreate" in query:
+            return {"data": {"productVariantCreate": {
+                "productVariant": {"id": "V9", "product": {"id": "P9"}}, "errors": []}}}
+        raise AssertionError(f"query inesperada: {query[:40]}")
+    return router
+
+
+def test_corrige_slug_distinto(monkeypatch):
+    """Si el slug en Saleor no es el de origen, se corrige: la URL pública
+    importa para conservar SEO y enlaces al migrar."""
+    seen = []
+    monkeypatch.setattr(publisher, "gql", _slug_router("autogenerado-por-saleor", seen))
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=1, slug="clickbox_raton-optico_mayorista"))
+    assert res.ok
+    assert seen == ["clickbox_raton-optico_mayorista"]
+
+
+def test_no_reescribe_slug_igual(monkeypatch):
+    """Idempotente: si ya coincide, no se escribe."""
+    seen = []
+    monkeypatch.setattr(publisher, "gql", _slug_router("ya-correcto", seen))
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=1, slug="ya-correcto"))
+    assert res.ok
+    assert seen == []
+
+
+def test_slug_al_crear_producto(monkeypatch):
+    """Al crear, el slug de origen va en el productCreate (no se autogenera)."""
+    monkeypatch.setattr(config, "CREATE_MISSING", True)
+    monkeypatch.setattr(publisher.product_type, "default_product_type_id", lambda: "PT1")
+    monkeypatch.setattr(publisher.category, "default_category_id", lambda: "CAT1")
+    seen = []
+    monkeypatch.setattr(publisher, "gql", _slug_router("clickbox_x_mayorista", seen, existing=False))
+    res = publisher.publish_variant(
+        VariantInput(sku="NEW", available=2, slug="clickbox_x_mayorista"))
+    assert res.ok and res.created
+    assert seen[0] == "clickbox_x_mayorista"

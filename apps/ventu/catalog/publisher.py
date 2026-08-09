@@ -128,6 +128,7 @@ def _create(item: VariantInput) -> dict:
         # Sin categoría Saleor rechaza la publicación (PRODUCT_WITHOUT_CATEGORY).
         "category": category.default_category_id(),
         "externalReference": item.sku,
+        **({"slug": item.slug} if item.slug else {}),
         **({"description": item.description} if item.description else {}),
     }})
     if data_errors(prod):
@@ -198,6 +199,18 @@ mutation($product: ID!, $url: String!, $alt: String) {
 }
 """
 
+_PRODUCT_SLUG = """
+query($id: ID!) { product(id: $id) { slug } }
+"""
+
+_PRODUCT_SLUG_UPDATE = """
+mutation($id: ID!, $slug: String!) {
+  productUpdate(id: $id, input: {slug: $slug}) {
+    errors { field message code }
+  }
+}
+"""
+
 _MEDIA_TAG = """
 mutation($id: ID!, $input: [MetadataInput!]!) {
   updateMetadata(id: $id, input: $input) {
@@ -205,6 +218,25 @@ mutation($id: ID!, $input: [MetadataInput!]!) {
   }
 }
 """
+
+
+def _ensure_slug(product_id: str, slug: str) -> list:
+    """Fija el slug de la ficha si difiere del deseado.
+
+    Saleor lo autogenera desde el nombre al crear el producto, así que un
+    producto ya existente (o creado antes de conocer el slug de origen) conserva
+    uno distinto. Idempotente: solo escribe cuando hay diferencia.
+    """
+    body = gql(_PRODUCT_SLUG, {"id": product_id})
+    if data_errors(body):
+        raise RuntimeError(f"slug lookup: {data_errors(body)}")
+    actual = ((payload(body).get("product") or {}) or {}).get("slug")
+    if actual == slug:
+        return []
+    upd = gql(_PRODUCT_SLUG_UPDATE, {"id": product_id, "slug": slug})
+    if data_errors(upd):
+        raise RuntimeError(f"slug update: {data_errors(upd)}")
+    return (payload(upd).get("productUpdate") or {}).get("errors") or []
 
 
 def _warm_thumbnails(media_ids: list) -> None:
@@ -338,6 +370,14 @@ def publish_variant(item: VariantInput) -> PublishResult:
         errs = _set_price(variant_id, cid, price.amount)
         if errs:
             return PublishResult(item.sku, ok=False, detail=f"precio: {errs}")
+
+    # ── slug de la ficha ──
+    # Antes de las fotos: si falla, es un fallo real de publicación (la URL
+    # pública es parte del estado deseado, no un extra cosmético).
+    if item.slug and product_id:
+        errs = _ensure_slug(product_id, item.slug)
+        if errs:
+            return PublishResult(item.sku, ok=False, detail=f"slug: {errs}")
 
     # ── fotos (no bloqueantes) ──
     # Una foto que falle no debe impedir vender: el SKU ya quedó con stock,

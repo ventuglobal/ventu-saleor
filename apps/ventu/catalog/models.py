@@ -34,6 +34,10 @@ class VariantInput:
     # URLs de las fotos del producto. Saleor las descarga y las guarda en su
     # storage (S3/R2 en despliegue real); se publican de forma idempotente.
     images: List[str] = field(default_factory=list)
+    # Slug de la ficha pública. Se fija explícitamente para conservar la URL del
+    # sitio de origen: si Saleor lo autogenera desde el nombre, la URL cambia y
+    # se pierden el SEO y los enlaces existentes al migrar.
+    slug: Optional[str] = None
 
     @classmethod
     def from_dict(cls, d: dict) -> "VariantInput":
@@ -45,6 +49,7 @@ class VariantInput:
             prices=[ChannelPrice(channel_slug=p["channel_slug"], amount=float(p["amount"]))
                     for p in (d.get("prices") or [])],
             images=[str(u) for u in (d.get("images") or []) if u],
+            slug=d.get("slug") or None,
         )
 
 
