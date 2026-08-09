@@ -34,6 +34,10 @@ class SaleorTransportError(RuntimeError):
     """Error transitorio de transporte tras agotar reintentos."""
 
 
+class SaleorQueryError(RuntimeError):
+    """Error permanente de la petición (4xx salvo 429): no se reintenta."""
+
+
 def _backoff(attempt: int) -> float:
     return (BACKOFF_BASE * (2 ** (attempt - 1))) + (random.random() * BACKOFF_JITTER)
 
@@ -62,8 +66,16 @@ def gql(query: str, variables: Optional[dict] = None, *,
             if resp.status_code in (429, 500, 502, 503, 504):
                 raise SaleorTransportError(
                     f"transient {resp.status_code}: {resp.text[:200]}")
+            # 4xx (salvo 429) es permanente: documento inválido, permisos, etc.
+            # Reintentarlo no puede cambiar el resultado y bloquea al llamador
+            # durante todo el backoff, así que se falla de inmediato.
+            if 400 <= resp.status_code < 500:
+                raise SaleorQueryError(
+                    f"{resp.status_code}: {resp.text[:300]}")
             resp.raise_for_status()
             return resp.json()
+        except SaleorQueryError:
+            raise
         except Exception as exc:  # noqa: BLE001 — transporte: reintentar
             last_exc = exc
             wait = _backoff(attempt)
