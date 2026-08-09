@@ -150,14 +150,18 @@ def _media_router(existing_urls, seen_creates, fail=False):
         if "productVariantStocksUpdate" in query:
             return _mut_ok("productVariantStocksUpdate")
         if "product(id" in query and "media" in query:
+            # La URL de origen vive en la metadata de la foto (metafield),
+            # porque ProductMedia no expone la URL externa en la API.
             return {"data": {"product": {"media": [
-                {"id": "M0", "externalUrl": u} for u in existing_urls]}}}
+                {"id": "M0", "metafield": u} for u in existing_urls]}}}
         if "productMediaCreate" in query:
             seen_creates.append((variables or {}).get("url"))
             if fail:
                 return {"data": {"productMediaCreate": {
                     "media": None, "errors": [{"field": "mediaUrl", "message": "no accesible"}]}}}
             return {"data": {"productMediaCreate": {"media": {"id": "M1"}, "errors": []}}}
+        if "updateMetadata" in query:
+            return _mut_ok("updateMetadata")
         raise AssertionError(f"query inesperada: {query[:40]}")
     return router
 

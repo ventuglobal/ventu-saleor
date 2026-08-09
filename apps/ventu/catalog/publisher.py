@@ -175,9 +175,13 @@ def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
     return _mutation_errors(body, "productVariantChannelListingUpdate")
 
 
+# `ProductMedia` no expone la URL de origen en la API, así que la guardamos en
+# su metadata (modelo de extensión de Saleor) para poder ser idempotentes.
+MEDIA_SRC_KEY = "ventu.media.src"
+
 _PRODUCT_MEDIA = """
-query($id: ID!) {
-  product(id: $id) { media { id externalUrl } }
+query($id: ID!, $key: String!) {
+  product(id: $id) { media { id metafield(key: $key) } }
 }
 """
 
@@ -185,6 +189,14 @@ _MEDIA_CREATE = """
 mutation($product: ID!, $url: String!, $alt: String) {
   productMediaCreate(input: {product: $product, mediaUrl: $url, alt: $alt}) {
     media { id }
+    errors { field message code }
+  }
+}
+"""
+
+_MEDIA_TAG = """
+mutation($id: ID!, $input: [MetadataInput!]!) {
+  updateMetadata(id: $id, input: $input) {
     errors { field message code }
   }
 }
@@ -199,11 +211,12 @@ def _publish_images(product_id: str, urls: list, alt: str) -> list:
     de forma asíncrona (tarea Celery), por lo que api y worker necesitan
     compartir storage (S3/R2) para que la foto sea servible.
     """
-    body = gql(_PRODUCT_MEDIA, {"id": product_id})
+    body = gql(_PRODUCT_MEDIA, {"id": product_id, "key": MEDIA_SRC_KEY})
     if data_errors(body):
         raise RuntimeError(f"media lookup: {data_errors(body)}")
-    existing = {(m.get("externalUrl") or "")
-                for m in ((payload(body).get("product") or {}).get("media") or [])}
+    existing = {m.get("metafield")
+                for m in ((payload(body).get("product") or {}).get("media") or [])
+                if m.get("metafield")}
     errs: list = []
     for url in urls:
         if url in existing:
@@ -212,6 +225,15 @@ def _publish_images(product_id: str, urls: list, alt: str) -> list:
         if data_errors(created):
             raise RuntimeError(f"media create: {data_errors(created)}")
         errs += (payload(created).get("productMediaCreate") or {}).get("errors") or []
+        media_id = ((payload(created).get("productMediaCreate") or {})
+                    .get("media") or {}).get("id")
+        if media_id:
+            # Marca la foto con su URL de origen para no recrearla al republicar.
+            tagged = gql(_MEDIA_TAG, {"id": media_id,
+                                      "input": [{"key": MEDIA_SRC_KEY, "value": url}]})
+            if data_errors(tagged):
+                raise RuntimeError(f"media tag: {data_errors(tagged)}")
+            errs += (payload(tagged).get("updateMetadata") or {}).get("errors") or []
     return errs
 
 
