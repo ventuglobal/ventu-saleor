@@ -31,9 +31,18 @@ DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
 # entonces la sube al storage y puede devolver su URL directa. Sin calentarlas,
 # la primera visita de cada producto pasa por la API en vez de ir al CDN.
 # Vacío ("") desactiva el calentamiento.
+# Los tamaños por defecto cubren los que pide el storefront: 1024 en el listado
+# y 2048 en la ficha de producto (verificado sobre el HTML servido).
 THUMBNAIL_WARM_SIZES = [int(s) for s in
-                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024").split(",")
+                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024,2048").split(",")
                         if s.strip().isdigit()]
+
+# Cada (tamaño, formato) es una miniatura DISTINTA en el storage. El storefront
+# pide `url(size: 2048, format: WEBP)`, así que calentar solo el formato de
+# origen deja la variante webp sin generar y la ficha vuelve a pasar por la API.
+# "" = formato original; el resto son formatos de Saleor (webp, avif…).
+THUMBNAIL_WARM_FORMATS = [f.strip().lower() for f in
+                          os.getenv("THUMBNAIL_WARM_FORMATS", ",webp").split(",")]
 
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).

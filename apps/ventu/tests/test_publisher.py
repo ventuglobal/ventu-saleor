@@ -203,6 +203,7 @@ def test_calienta_miniaturas_de_fotos_nuevas(monkeypatch):
     monkeypatch.setattr(publisher, "gql", _media_router([], []))
     monkeypatch.setattr(publisher.config, "SALEOR_API_URL", "http://saleor/graphql/")
     monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256, 512])
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_FORMATS", [""])
 
     class _C:
         def __enter__(self): return self
@@ -221,6 +222,7 @@ def test_no_calienta_las_fotos_ya_existentes(monkeypatch):
     gets = []
     monkeypatch.setattr(publisher, "gql", _media_router(["https://x/a.jpg"], []))
     monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256])
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_FORMATS", [""])
 
     class _C:
         def __enter__(self): return self
@@ -238,6 +240,7 @@ def test_fallo_al_calentar_no_afecta_la_venta(monkeypatch):
     """El calentamiento es best-effort: si falla, el SKU sigue publicado."""
     monkeypatch.setattr(publisher, "gql", _media_router([], []))
     monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256])
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_FORMATS", [""])
 
     def _boom(**k): raise RuntimeError("sin red")
     monkeypatch.setattr(publisher.httpx, "Client", _boom)
@@ -247,3 +250,25 @@ def test_fallo_al_calentar_no_afecta_la_venta(monkeypatch):
     assert res.ok
     assert res.stock_set == 7
     assert "fotos" not in res.detail      # no se reporta: no es un fallo de foto
+
+
+def test_calienta_cada_formato(monkeypatch):
+    """El storefront pide `url(size:2048, format:WEBP)`: cada (tamaño, formato)
+    es una miniatura distinta, y la que no se calienta vuelve a pasar por la API."""
+    gets = []
+    monkeypatch.setattr(publisher, "gql", _media_router([], []))
+    monkeypatch.setattr(publisher.config, "SALEOR_API_URL", "http://saleor/graphql/")
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [2048])
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_FORMATS", ["", "webp"])
+
+    class _C:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def get(self, url): gets.append(url)
+    monkeypatch.setattr(publisher.httpx, "Client", lambda **k: _C())
+
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=1, images=["https://x/a.jpg"]))
+    assert res.ok
+    assert gets == ["http://saleor/thumbnail/M1/2048/",
+                    "http://saleor/thumbnail/M1/2048/webp/"]

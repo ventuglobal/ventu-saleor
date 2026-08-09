@@ -222,15 +222,19 @@ def _warm_thumbnails(media_ids: list) -> None:
     sizes = config.THUMBNAIL_WARM_SIZES
     if not sizes or not media_ids:
         return
+    formats = config.THUMBNAIL_WARM_FORMATS or [""]
     base = urljoin(config.SALEOR_API_URL, "/")
     try:
         with httpx.Client(timeout=30, follow_redirects=False) as client:
             for mid in media_ids:
                 for size in sizes:
-                    try:
-                        client.get(f"{base}thumbnail/{mid}/{size}/")
-                    except Exception as exc:  # noqa: BLE001
-                        logger.debug("warm thumbnail %s/%s: %s", mid, size, exc)
+                    for fmt in formats:
+                        suffix = f"{fmt}/" if fmt else ""
+                        try:
+                            client.get(f"{base}thumbnail/{mid}/{size}/{suffix}")
+                        except Exception as exc:  # noqa: BLE001
+                            logger.debug("warm thumbnail %s/%s/%s: %s",
+                                         mid, size, fmt or "orig", exc)
     except Exception as exc:  # noqa: BLE001
         logger.debug("warm thumbnails: %s", exc)
 
