@@ -3,7 +3,7 @@ import { DefaultChannelSlug } from "@/app/config";
 import { getStaticStorefrontChannelSlugs, isAllowedStorefrontChannel } from "@/config/channels";
 import { getDefaultLocaleSlug, isLocaleSlug, isStorefrontLocaleSlug } from "@/config/locale";
 import { BROWSE_LOCALE_COOKIE, getBrowseLocaleCookieOptions } from "@/lib/browse-locale";
-import { buildStorefrontPath } from "@/lib/storefront-path";
+import { buildStorefrontPath, isDefaultMarket } from "@/lib/storefront-path";
 
 const RESERVED_ROOT_SEGMENTS = new Set([
 	"api",
@@ -55,9 +55,11 @@ export function middleware(request: NextRequest) {
 		if (!defaultChannel) {
 			return NextResponse.next();
 		}
+		// La home del mercado por defecto vive en "/": se reescribe (interno) al
+		// enrutado real, sin redirigir, para no exponer el prefijo.
 		const url = request.nextUrl.clone();
-		url.pathname = buildStorefrontPath(defaultLocale, defaultChannel);
-		return withBrowseLocaleCookie(request, NextResponse.redirect(url, 308), defaultLocale);
+		url.pathname = `/${defaultLocale}/${defaultChannel}`;
+		return withBrowseLocaleCookie(request, NextResponse.rewrite(url), defaultLocale);
 	}
 
 	const [first, second, ...rest] = segments;
@@ -80,6 +82,14 @@ export function middleware(request: NextRequest) {
 	// Canonical format: /{locale}/{channel}/…
 	if (isStorefrontLocaleSlug(first)) {
 		if (second && isChannelSlug(second)) {
+			// El mercado por defecto es canónico en la raíz: se redirige la forma
+			// prefijada para no tener dos URLs indexables del mismo contenido.
+			if (isDefaultMarket(first, second)) {
+				const url = request.nextUrl.clone();
+				const suffix = rest.length > 0 ? `/${rest.join("/")}` : "";
+				url.pathname = suffix === "" ? "/" : suffix;
+				return withBrowseLocaleCookie(request, NextResponse.redirect(url, 308), first);
+			}
 			return withBrowseLocaleCookie(request, NextResponse.next(), first);
 		}
 
@@ -99,6 +109,15 @@ export function middleware(request: NextRequest) {
 		const suffix = [second, ...rest].filter(Boolean).join("/");
 		url.pathname = buildStorefrontPath(defaultLocale, first, suffix ? `/${suffix}` : "");
 		return withBrowseLocaleCookie(request, NextResponse.redirect(url, 308), defaultLocale);
+	}
+
+	// Forma corta del mercado por defecto (`/products/foo`, `/collections/x`):
+	// se reescribe al enrutado interno `[locale]/[channel]`. Va al final para no
+	// competir con locales, channels ni segmentos reservados.
+	if (defaultChannel) {
+		const url = request.nextUrl.clone();
+		url.pathname = `/${defaultLocale}/${defaultChannel}${pathname}`;
+		return withBrowseLocaleCookie(request, NextResponse.rewrite(url), defaultLocale);
 	}
 
 	return NextResponse.next();
