@@ -24,8 +24,8 @@ services:
       - "9000:80"
     restart: unless-stopped
 
-  ventu-sync:
-    build: ./apps/ventu-sync
+  ventu:
+    build: ./apps/ventu
     ports:
       - "8080:8080"
     depends_on:

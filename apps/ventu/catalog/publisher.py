@@ -1,0 +1,263 @@
+"""Publicador de catálogo → Saleor.
+
+Empuja el estado deseado de una variante (identificada por SKU) a Saleor:
+  1. Stock en el warehouse VENTU: quantity = available_deseado + allocated_actual
+     (absoluto e idempotente; evita el "efecto serrucho" con órdenes en curso).
+  2. Precio por channel (el precio final ya calculado por Pricing).
+  3. Publicación del producto en el channel (idempotente; MVP: siempre publicado).
+
+Identidad: la variante se resuelve por SKU; al crear, se fija además el
+`externalReference` = SKU (la clave estable que la App Ventu controla) tanto en
+el producto como en la variante.
+
+Si el SKU no existe y `SALEOR_CREATE_MISSING` está activo, se **crea** un
+producto simple (ProductType por defecto "Ventu Default") con una variante, y
+luego se publica stock/precio como en el caso de actualización. Atributos ricos
+del catálogo normalizado (marca, categoría) se agregan en un incremento
+posterior.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Iterable, List, Optional
+
+from ..saleor_client import data_errors, gql, payload
+from . import category, product_type, warehouse
+from .models import PublishResult, VariantInput
+
+logger = logging.getLogger("ventu.catalog")
+
+_VARIANT_BY_SKU = """
+query($sku: String!) {
+  productVariant(sku: $sku) {
+    id
+    product { id }
+    stocks { quantity quantityAllocated warehouse { id } }
+  }
+}
+"""
+
+_STOCKS_UPDATE = """
+mutation($variantId: ID!, $stocks: [StockInput!]!) {
+  productVariantStocksUpdate(variantId: $variantId, stocks: $stocks) {
+    errors { field message code }
+  }
+}
+"""
+
+_STOCKS_CREATE = """
+mutation($variantId: ID!, $stocks: [StockInput!]!) {
+  productVariantStocksCreate(variantId: $variantId, stocks: $stocks) {
+    errors { field message code }
+  }
+}
+"""
+
+_VARIANT_CHANNEL_LISTING = """
+mutation($id: ID!, $input: [ProductVariantChannelListingAddInput!]!) {
+  productVariantChannelListingUpdate(id: $id, input: $input) {
+    errors { field message code }
+  }
+}
+"""
+
+_PRODUCT_CHANNEL_LISTING = """
+mutation($id: ID!, $channelId: ID!, $isPublished: Boolean!) {
+  productChannelListingUpdate(
+    id: $id
+    input: {updateChannels: [{channelId: $channelId, isPublished: $isPublished, isAvailableForPurchase: $isPublished}]}
+  ) {
+    errors { field message code }
+  }
+}
+"""
+
+_PRODUCT_CREATE = """
+mutation($input: ProductCreateInput!) {
+  productCreate(input: $input) {
+    product { id }
+    errors { field message code }
+  }
+}
+"""
+
+_VARIANT_CREATE = """
+mutation($input: ProductVariantCreateInput!) {
+  productVariantCreate(input: $input) {
+    productVariant { id product { id } }
+    errors { field message code }
+  }
+}
+"""
+
+
+def _mutation_errors(body: dict, name: str) -> list:
+    return (payload(body).get(name) or {}).get("errors") or []
+
+
+def _resolve(sku: str) -> Optional[dict]:
+    body = gql(_VARIANT_BY_SKU, {"sku": sku})
+    if data_errors(body):
+        raise RuntimeError(f"lookup errors: {data_errors(body)}")
+    return payload(body).get("productVariant")
+
+
+def _create(item: VariantInput) -> dict:
+    """Crea un producto simple + su variante para un SKU que no existe en Saleor.
+
+    Devuelve un nodo con la misma forma que `_resolve` (id, product{id},
+    stocks:[]) para que el flujo posterior (stock/precio/publicación) sea
+    uniforme. La variante recién creada no tiene stock aún → ruta create.
+    """
+    pt_id = product_type.default_product_type_id()
+    name = item.name or item.sku
+
+    prod = gql(_PRODUCT_CREATE, {"input": {
+        "name": name,
+        "productType": pt_id,
+        # Sin categoría Saleor rechaza la publicación (PRODUCT_WITHOUT_CATEGORY).
+        "category": category.default_category_id(),
+        "externalReference": item.sku,
+        **({"description": item.description} if item.description else {}),
+    }})
+    if data_errors(prod):
+        raise RuntimeError(f"product create: {data_errors(prod)}")
+    perrs = (payload(prod).get("productCreate") or {}).get("errors") or []
+    if perrs:
+        raise RuntimeError(f"product create errors: {perrs}")
+    product_id = ((payload(prod).get("productCreate") or {}).get("product") or {}).get("id")
+    if not product_id:
+        raise RuntimeError("product create: sin id")
+
+    var = gql(_VARIANT_CREATE, {"input": {
+        "product": product_id,
+        "sku": item.sku,
+        "name": name,
+        "externalReference": item.sku,
+        "trackInventory": True,
+        "attributes": [],
+    }})
+    if data_errors(var):
+        raise RuntimeError(f"variant create: {data_errors(var)}")
+    verrs = (payload(var).get("productVariantCreate") or {}).get("errors") or []
+    if verrs:
+        raise RuntimeError(f"variant create errors: {verrs}")
+    node = (payload(var).get("productVariantCreate") or {}).get("productVariant")
+    if not node or not node.get("id"):
+        raise RuntimeError("variant create: sin id")
+    node.setdefault("stocks", [])
+    return node
+
+
+def _set_stock(variant_id: str, wh_id: str, target: int, *, exists: bool) -> list:
+    query = _STOCKS_UPDATE if exists else _STOCKS_CREATE
+    name = "productVariantStocksUpdate" if exists else "productVariantStocksCreate"
+    body = gql(query, {"variantId": variant_id,
+                       "stocks": [{"warehouse": wh_id, "quantity": int(target)}]})
+    if data_errors(body):
+        raise RuntimeError(f"stock errors: {data_errors(body)}")
+    return _mutation_errors(body, name)
+
+
+def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
+    body = gql(_VARIANT_CHANNEL_LISTING, {
+        "id": variant_id,
+        "input": [{"channelId": channel_id, "price": amount}],
+    })
+    if data_errors(body):
+        raise RuntimeError(f"price errors: {data_errors(body)}")
+    return _mutation_errors(body, "productVariantChannelListingUpdate")
+
+
+def _ensure_published(product_id: str, channel_id: str, *, published: bool = True) -> list:
+    """Asigna el producto al channel. `published` controla la visibilidad; la
+    asignación se hace igual porque es prerequisito del precio de la variante."""
+    body = gql(_PRODUCT_CHANNEL_LISTING, {
+        "id": product_id, "channelId": channel_id, "isPublished": published,
+    })
+    if data_errors(body):
+        raise RuntimeError(f"publish errors: {data_errors(body)}")
+    return _mutation_errors(body, "productChannelListingUpdate")
+
+
+def publish_variant(item: VariantInput) -> PublishResult:
+    """Publica una variante a Saleor: la crea si no existe, luego fija stock +
+    precios + visibilidad. Idempotente (resuelve por SKU antes de crear)."""
+    from .. import config
+
+    created = False
+    node = _resolve(item.sku)
+    if not node or not node.get("id"):
+        if not config.CREATE_MISSING:
+            return PublishResult(item.sku, ok=False, detail="variante no encontrada en Saleor")
+        node = _create(item)
+        created = True
+    variant_id = node["id"]
+    product_id = (node.get("product") or {}).get("id")
+
+    # ── stock: quantity = available_deseado + allocated_actual ──
+    wh_id = warehouse.warehouse_id()
+    current = next((s for s in (node.get("stocks") or [])
+                    if (s.get("warehouse") or {}).get("id") == wh_id), None)
+    allocated = int((current or {}).get("quantityAllocated") or 0)
+    target = item.available + allocated
+    errs = _set_stock(variant_id, wh_id, target, exists=current is not None)
+    if errs:
+        return PublishResult(item.sku, ok=False, detail=f"stock: {errs}")
+
+    # ── channel listing del producto ANTES del precio: Saleor rechaza el precio
+    # de una variante cuyo producto no está asignado al channel
+    # (PRODUCT_NOT_ASSIGNED_TO_CHANNEL). La asignación es prerequisito; la
+    # visibilidad la sigue gobernando ENSURE_PUBLISHED.
+    if product_id:
+        for price in item.prices:
+            cid = warehouse.channel_id(price.channel_slug)
+            if cid:
+                errs = _ensure_published(product_id, cid,
+                                         published=config.ENSURE_PUBLISHED)
+                if errs:
+                    return PublishResult(item.sku, ok=False, detail=f"publish: {errs}")
+
+    # ── precios por channel ──
+    for price in item.prices:
+        cid = warehouse.channel_id(price.channel_slug)
+        if not cid:
+            return PublishResult(item.sku, ok=False,
+                                 detail=f"channel '{price.channel_slug}' no existe")
+        errs = _set_price(variant_id, cid, price.amount)
+        if errs:
+            return PublishResult(item.sku, ok=False, detail=f"precio: {errs}")
+
+    return PublishResult(item.sku, ok=True, detail="created" if created else "updated",
+                         stock_set=target, created=created)
+
+
+def publish_prices(sku: str, prices) -> PublishResult:
+    """Escribe SOLO precios por channel de una variante existente (sin stock ni
+    creación). Es el writer que usa el módulo Pricing tras computar el precio.
+    `prices` es un iterable de objetos con `.channel_slug` y `.amount`."""
+    node = _resolve(sku)
+    if not node or not node.get("id"):
+        return PublishResult(sku, ok=False, detail="variante no encontrada en Saleor")
+    variant_id = node["id"]
+
+    for price in prices:
+        cid = warehouse.channel_id(price.channel_slug)
+        if not cid:
+            return PublishResult(sku, ok=False, detail=f"channel '{price.channel_slug}' no existe")
+        errs = _set_price(variant_id, cid, price.amount)
+        if errs:
+            return PublishResult(sku, ok=False, detail=f"precio: {errs}")
+    return PublishResult(sku, ok=True, detail="prices")
+
+
+def publish_batch(items: Iterable[VariantInput]) -> List[PublishResult]:
+    results: List[PublishResult] = []
+    for item in items:
+        try:
+            results.append(publish_variant(item))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("(catalog) publish sku=%s error: %s", item.sku, exc)
+            results.append(PublishResult(item.sku, ok=False, detail=f"error: {exc}"))
+    return results
