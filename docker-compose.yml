@@ -33,6 +33,15 @@ services:
     env_file: .env
     restart: unless-stopped
 
+  # App de pagos (Webpay/Transbank) — Saleor App aparte por HANDLE_PAYMENTS.
+  ventu-pagos:
+    build: ./apps/ventu-pagos
+    ports:
+      - "8090:8090"
+    depends_on:
+      - api
+    env_file: .env
+
   # Storefront oficial de Saleor (vendido por git subtree en ./storefront).
   # Actualizar: `make storefront-pull`. Las NEXT_PUBLIC_* son build-time en
   # producción (Railway las inyecta como build env); acá van como runtime para dev.
