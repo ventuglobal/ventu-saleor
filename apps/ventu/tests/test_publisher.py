@@ -141,3 +141,52 @@ def test_channel_listing_sets_visible_in_listings(monkeypatch):
     assert res.ok
     assert "visibleInListings" in listing["query"]
     assert listing["vars"].get("isPublished") is True
+
+
+def _media_router(existing_urls, seen_creates, fail=False):
+    def router(query, variables=None, **kw):
+        if "productVariant(sku" in query:
+            return _variant(allocated=0)
+        if "productVariantStocksUpdate" in query:
+            return _mut_ok("productVariantStocksUpdate")
+        if "product(id" in query and "media" in query:
+            return {"data": {"product": {"media": [
+                {"id": "M0", "externalUrl": u} for u in existing_urls]}}}
+        if "productMediaCreate" in query:
+            seen_creates.append((variables or {}).get("url"))
+            if fail:
+                return {"data": {"productMediaCreate": {
+                    "media": None, "errors": [{"field": "mediaUrl", "message": "no accesible"}]}}}
+            return {"data": {"productMediaCreate": {"media": {"id": "M1"}, "errors": []}}}
+        raise AssertionError(f"query inesperada: {query[:40]}")
+    return router
+
+
+def test_publishes_images(monkeypatch):
+    creates = []
+    monkeypatch.setattr(publisher, "gql", _media_router([], creates))
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=3, images=["https://x/a.jpg", "https://x/b.jpg"]))
+    assert res.ok
+    assert creates == ["https://x/a.jpg", "https://x/b.jpg"]
+
+
+def test_images_are_idempotent(monkeypatch):
+    """Republicar no debe duplicar fotos ya adjuntas (match por externalUrl)."""
+    creates = []
+    monkeypatch.setattr(publisher, "gql", _media_router(["https://x/a.jpg"], creates))
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=3, images=["https://x/a.jpg", "https://x/b.jpg"]))
+    assert res.ok
+    assert creates == ["https://x/b.jpg"]        # solo la nueva
+
+
+def test_image_failure_does_not_block_sale(monkeypatch):
+    """Una foto que falla no impide que el SKU quede vendible."""
+    creates = []
+    monkeypatch.setattr(publisher, "gql", _media_router([], creates, fail=True))
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=3, images=["https://x/rota.jpg"]))
+    assert res.ok                                 # sigue vendible
+    assert res.stock_set == 3
+    assert "fotos" in res.detail                  # pero la falla queda reportada

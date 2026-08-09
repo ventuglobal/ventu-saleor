@@ -175,6 +175,46 @@ def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
     return _mutation_errors(body, "productVariantChannelListingUpdate")
 
 
+_PRODUCT_MEDIA = """
+query($id: ID!) {
+  product(id: $id) { media { id externalUrl } }
+}
+"""
+
+_MEDIA_CREATE = """
+mutation($product: ID!, $url: String!, $alt: String) {
+  productMediaCreate(input: {product: $product, mediaUrl: $url, alt: $alt}) {
+    media { id }
+    errors { field message code }
+  }
+}
+"""
+
+
+def _publish_images(product_id: str, urls: list, alt: str) -> list:
+    """Adjunta las fotos al producto, sin duplicar las que ya están.
+
+    Idempotente por `externalUrl`: Saleor guarda la URL de origen, así que al
+    republicar un SKU solo se crean las fotos nuevas. Saleor descarga la imagen
+    de forma asíncrona (tarea Celery), por lo que api y worker necesitan
+    compartir storage (S3/R2) para que la foto sea servible.
+    """
+    body = gql(_PRODUCT_MEDIA, {"id": product_id})
+    if data_errors(body):
+        raise RuntimeError(f"media lookup: {data_errors(body)}")
+    existing = {(m.get("externalUrl") or "")
+                for m in ((payload(body).get("product") or {}).get("media") or [])}
+    errs: list = []
+    for url in urls:
+        if url in existing:
+            continue
+        created = gql(_MEDIA_CREATE, {"product": product_id, "url": url, "alt": alt})
+        if data_errors(created):
+            raise RuntimeError(f"media create: {data_errors(created)}")
+        errs += (payload(created).get("productMediaCreate") or {}).get("errors") or []
+    return errs
+
+
 def _ensure_published(product_id: str, channel_id: str, *, published: bool = True) -> list:
     """Asigna el producto al channel. `published` controla la visibilidad; la
     asignación se hace igual porque es prerequisito del precio de la variante.
@@ -239,7 +279,21 @@ def publish_variant(item: VariantInput) -> PublishResult:
         if errs:
             return PublishResult(item.sku, ok=False, detail=f"precio: {errs}")
 
-    return PublishResult(item.sku, ok=True, detail="created" if created else "updated",
+    # ── fotos (no bloqueantes) ──
+    # Una foto que falle no debe impedir vender: el SKU ya quedó con stock,
+    # precio y visibilidad. Se reporta en el detalle para no perder la señal.
+    img_note = ""
+    if item.images and product_id:
+        try:
+            ierrs = _publish_images(product_id, item.images, item.name or item.sku)
+            if ierrs:
+                img_note = f" (fotos: {ierrs})"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("fotos de %s: %s", item.sku, exc)
+            img_note = f" (fotos: {exc})"
+
+    return PublishResult(item.sku, ok=True,
+                         detail=("created" if created else "updated") + img_note,
                          stock_set=target, created=created)
 
 
