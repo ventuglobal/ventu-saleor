@@ -41,6 +41,21 @@ services:
     depends_on:
       - api
     env_file: .env
+
+  # Storefront oficial de Saleor (vendido por git subtree en ./storefront).
+  # Actualizar: `make storefront-pull`. Las NEXT_PUBLIC_* son build-time en
+  # producción (Railway las inyecta como build env); acá van como runtime para dev.
+  storefront:
+    build:
+      context: ./storefront
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL:-http://localhost:8000/graphql/}
+      - NEXT_PUBLIC_DEFAULT_CHANNEL=${NEXT_PUBLIC_DEFAULT_CHANNEL:-retail-cl}
+      - NEXT_PUBLIC_STOREFRONT_URL=${NEXT_PUBLIC_STOREFRONT_URL:-http://localhost:3000}
     restart: unless-stopped
 
   db:

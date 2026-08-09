@@ -1,0 +1,71 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Generated GraphQL types (regenerate with `pnpm generate` and `pnpm generate:checkout`)
+gql/
+src/checkout/graphql/generated/
+
+.env
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# Local catalog translation work (real slugs — never commit)
+config/saleor/fixtures/catalog-translations/locales/*
+!config/saleor/fixtures/catalog-translations/locales/.gitkeep
+
+# Local-only dev scripts (see scripts/local/README.md)
+scripts/local/*
+!scripts/local/README.md
+
+# misc
+.DS_Store
+*.pem
+.agents/
+
+# Saleor Configurator deploy reports (generated per deploy, env-specific)
+.configurator/reports/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env.local.*
+# Demo credential dumps (e.g. .env.local.demo) — never commit
+.env*.demo
+
+# vercel
+.vercel
+
+# cloudflare / open-next (legacy local deploy — not used)
+/.open-next/
+/.wrangler/
+/vendor/
+/patches/
+cloudflare-env.d.ts
+.cf.env
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+/test-results/
+
+.idea/
+.pnpm-store
+
+# Internal/marketing docs — keep local, never commit (strategy lives in the brain)
+docs/marketing/

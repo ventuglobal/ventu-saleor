@@ -95,5 +95,5 @@ Railway → merge → producción, sin depender de ninguna máquina local.
 - [x] Sincronización saliente Ventu → Saleor (en el backend Ventu, PR #19).
 - [ ] `docker-compose` + servicios base (este scaffold).
 - [ ] Ventu Sync App: webhooks de órdenes → Ventu (skeleton en `apps/ventu-sync/`).
-- [ ] Storefront (subtree del oficial).
+- [x] Storefront oficial de Saleor vendido por subtree en `./storefront` + servicio en compose (`make storefront-pull` para actualizar).
 - [ ] Payment App Webpay (fase posterior).

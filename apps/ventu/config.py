@@ -21,6 +21,19 @@ CREATE_MISSING = os.getenv("SALEOR_CREATE_MISSING", "1") not in ("0", "false", "
 # una variante. Se resuelve/crea por slug (una vez, cacheado).
 DEFAULT_PRODUCT_TYPE_SLUG = os.getenv("SALEOR_DEFAULT_PRODUCT_TYPE_SLUG", "ventu-default")
 DEFAULT_PRODUCT_TYPE_NAME = os.getenv("SALEOR_DEFAULT_PRODUCT_TYPE_NAME", "Ventu Default")
+# Saleor exige categoría para publicar un producto (PRODUCT_WITHOUT_CATEGORY),
+# así que los SKUs creados por el publisher caen en una categoría por defecto.
+DEFAULT_CATEGORY_SLUG = os.getenv("SALEOR_DEFAULT_CATEGORY_SLUG", "ventu")
+DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
+
+# ── miniaturas ──
+# Saleor genera cada miniatura en la PRIMERA petición a /thumbnail/, y solo
+# entonces la sube al storage y puede devolver su URL directa. Sin calentarlas,
+# la primera visita de cada producto pasa por la API en vez de ir al CDN.
+# Vacío ("") desactiva el calentamiento.
+THUMBNAIL_WARM_SIZES = [int(s) for s in
+                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024").split(",")
+                        if s.strip().isdigit()]
 
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).

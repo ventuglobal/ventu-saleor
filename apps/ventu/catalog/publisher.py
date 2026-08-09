@@ -21,9 +21,13 @@ from __future__ import annotations
 
 import logging
 from typing import Iterable, List, Optional
+from urllib.parse import urljoin
 
+import httpx
+
+from .. import config
 from ..saleor_client import data_errors, gql, payload
-from . import product_type, warehouse
+from . import category, product_type, warehouse
 from .models import PublishResult, VariantInput
 
 logger = logging.getLogger("ventu.catalog")
@@ -66,7 +70,12 @@ _PRODUCT_CHANNEL_LISTING = """
 mutation($id: ID!, $channelId: ID!, $isPublished: Boolean!) {
   productChannelListingUpdate(
     id: $id
-    input: {updateChannels: [{channelId: $channelId, isPublished: $isPublished, isAvailableForPurchase: $isPublished}]}
+    input: {updateChannels: [{
+      channelId: $channelId
+      isPublished: $isPublished
+      isAvailableForPurchase: $isPublished
+      visibleInListings: $isPublished
+    }]}
   ) {
     errors { field message code }
   }
@@ -116,6 +125,8 @@ def _create(item: VariantInput) -> dict:
     prod = gql(_PRODUCT_CREATE, {"input": {
         "name": name,
         "productType": pt_id,
+        # Sin categoría Saleor rechaza la publicación (PRODUCT_WITHOUT_CATEGORY).
+        "category": category.default_category_id(),
         "externalReference": item.sku,
         **({"description": item.description} if item.description else {}),
     }})
@@ -168,9 +179,107 @@ def _set_price(variant_id: str, channel_id: str, amount: float) -> list:
     return _mutation_errors(body, "productVariantChannelListingUpdate")
 
 
+# `ProductMedia` no expone la URL de origen en la API, así que la guardamos en
+# su metadata (modelo de extensión de Saleor) para poder ser idempotentes.
+MEDIA_SRC_KEY = "ventu.media.src"
+
+_PRODUCT_MEDIA = """
+query($id: ID!, $key: String!) {
+  product(id: $id) { media { id metafield(key: $key) } }
+}
+"""
+
+_MEDIA_CREATE = """
+mutation($product: ID!, $url: String!, $alt: String) {
+  productMediaCreate(input: {product: $product, mediaUrl: $url, alt: $alt}) {
+    media { id }
+    errors { field message code }
+  }
+}
+"""
+
+_MEDIA_TAG = """
+mutation($id: ID!, $input: [MetadataInput!]!) {
+  updateMetadata(id: $id, input: $input) {
+    errors { field message code }
+  }
+}
+"""
+
+
+def _warm_thumbnails(media_ids: list) -> None:
+    """Fuerza la generación de las miniaturas recién creadas.
+
+    Saleor las genera de forma perezosa: hasta la primera petición a
+    `/thumbnail/<id>/<size>/` no existen en el storage, y mientras tanto la API
+    devuelve su propia URL en vez de la del CDN. Calentarlas al publicar hace
+    que la primera visita del comprador ya se sirva directo desde el object
+    storage, sin pasar por la API.
+
+    Best-effort: cualquier fallo aquí es irrelevante para la venta (la miniatura
+    se generará igual en la primera visita), así que nunca propaga excepciones.
+    """
+    sizes = config.THUMBNAIL_WARM_SIZES
+    if not sizes or not media_ids:
+        return
+    base = urljoin(config.SALEOR_API_URL, "/")
+    try:
+        with httpx.Client(timeout=30, follow_redirects=False) as client:
+            for mid in media_ids:
+                for size in sizes:
+                    try:
+                        client.get(f"{base}thumbnail/{mid}/{size}/")
+                    except Exception as exc:  # noqa: BLE001
+                        logger.debug("warm thumbnail %s/%s: %s", mid, size, exc)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("warm thumbnails: %s", exc)
+
+
+def _publish_images(product_id: str, urls: list, alt: str) -> list:
+    """Adjunta las fotos al producto, sin duplicar las que ya están.
+
+    Idempotente por `externalUrl`: Saleor guarda la URL de origen, así que al
+    republicar un SKU solo se crean las fotos nuevas. Saleor descarga la imagen
+    de forma asíncrona (tarea Celery), por lo que api y worker necesitan
+    compartir storage (S3/R2) para que la foto sea servible.
+    """
+    body = gql(_PRODUCT_MEDIA, {"id": product_id, "key": MEDIA_SRC_KEY})
+    if data_errors(body):
+        raise RuntimeError(f"media lookup: {data_errors(body)}")
+    existing = {m.get("metafield")
+                for m in ((payload(body).get("product") or {}).get("media") or [])
+                if m.get("metafield")}
+    errs: list = []
+    nuevas: list = []
+    for url in urls:
+        if url in existing:
+            continue
+        created = gql(_MEDIA_CREATE, {"product": product_id, "url": url, "alt": alt})
+        if data_errors(created):
+            raise RuntimeError(f"media create: {data_errors(created)}")
+        errs += (payload(created).get("productMediaCreate") or {}).get("errors") or []
+        media_id = ((payload(created).get("productMediaCreate") or {})
+                    .get("media") or {}).get("id")
+        if media_id:
+            nuevas.append(media_id)
+            # Marca la foto con su URL de origen para no recrearla al republicar.
+            tagged = gql(_MEDIA_TAG, {"id": media_id,
+                                      "input": [{"key": MEDIA_SRC_KEY, "value": url}]})
+            if data_errors(tagged):
+                raise RuntimeError(f"media tag: {data_errors(tagged)}")
+            errs += (payload(tagged).get("updateMetadata") or {}).get("errors") or []
+    _warm_thumbnails(nuevas)
+    return errs
+
+
 def _ensure_published(product_id: str, channel_id: str, *, published: bool = True) -> list:
     """Asigna el producto al channel. `published` controla la visibilidad; la
-    asignación se hace igual porque es prerequisito del precio de la variante."""
+    asignación se hace igual porque es prerequisito del precio de la variante.
+
+    `visibleInListings` es un flag **aparte** de `isPublished` y por defecto es
+    False: sin él el producto es comprable por link directo pero no aparece en
+    listados ni búsqueda del storefront (vitrina vacía).
+    """
     body = gql(_PRODUCT_CHANNEL_LISTING, {
         "id": product_id, "channelId": channel_id, "isPublished": published,
     })
@@ -182,7 +291,6 @@ def _ensure_published(product_id: str, channel_id: str, *, published: bool = Tru
 def publish_variant(item: VariantInput) -> PublishResult:
     """Publica una variante a Saleor: la crea si no existe, luego fija stock +
     precios + visibilidad. Idempotente (resuelve por SKU antes de crear)."""
-    from .. import config
 
     created = False
     node = _resolve(item.sku)
@@ -227,7 +335,21 @@ def publish_variant(item: VariantInput) -> PublishResult:
         if errs:
             return PublishResult(item.sku, ok=False, detail=f"precio: {errs}")
 
-    return PublishResult(item.sku, ok=True, detail="created" if created else "updated",
+    # ── fotos (no bloqueantes) ──
+    # Una foto que falle no debe impedir vender: el SKU ya quedó con stock,
+    # precio y visibilidad. Se reporta en el detalle para no perder la señal.
+    img_note = ""
+    if item.images and product_id:
+        try:
+            ierrs = _publish_images(product_id, item.images, item.name or item.sku)
+            if ierrs:
+                img_note = f" (fotos: {ierrs})"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("fotos de %s: %s", item.sku, exc)
+            img_note = f" (fotos: {exc})"
+
+    return PublishResult(item.sku, ok=True,
+                         detail=("created" if created else "updated") + img_note,
                          stock_set=target, created=created)
 
 

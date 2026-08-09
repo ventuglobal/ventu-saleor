@@ -22,6 +22,7 @@ import hmac
 import logging
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 
 from . import config
 from .catalog.models import VariantInput
@@ -99,7 +100,9 @@ async def catalog_publish(request: Request, _: None = Depends(_require_admin)) -
     if not isinstance(raw_items, list):
         raise HTTPException(status_code=400, detail="'items' debe ser una lista")
     items = [VariantInput.from_dict(d) for d in raw_items]
-    results = publish_batch(items)
+    # publish_batch hace I/O bloqueante (httpx sync). Fuera del event loop, si
+    # no un lote lento deja sin responder al resto de la app (incluido /health).
+    results = await run_in_threadpool(publish_batch, items)
     ok = sum(1 for r in results if r.ok)
     return {
         "published": ok,
@@ -122,7 +125,7 @@ async def pricing_publish(request: Request, _: None = Depends(_require_admin)) -
     if not isinstance(raw_items, list):
         raise HTTPException(status_code=400, detail="'items' debe ser una lista")
     items = [CostInput.from_dict(d) for d in raw_items]
-    results = publish_prices_for(items)
+    results = await run_in_threadpool(publish_prices_for, items)
     ok = sum(1 for r in results if r.ok)
     return {
         "published": ok,
