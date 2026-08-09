@@ -44,3 +44,41 @@ def test_handled_events_cover_payment_flow():
     for e in ("transaction_initialize_session", "transaction_refund_requested",
               "payment_gateway_initialize_session"):
         assert e in handlers.HANDLED_EVENTS
+
+
+# ─────────────────── errores de Transbank legibles ───────────────────
+
+class _Resp:
+    def __init__(self, code, body, text=""):
+        self.status_code = code
+        self._body = body
+        self.text = text
+
+    def json(self):
+        if self._body is None:
+            raise ValueError("no json")
+        return self._body
+
+
+def test_error_de_transbank_conserva_el_motivo():
+    """Un 422 debe decir POR QUE lo rechaza Transbank, no solo el codigo."""
+    from ventu_pagos import webpay_client
+    import pytest
+    with pytest.raises(webpay_client.WebpayError) as e:
+        webpay_client._check(_Resp(422, {"error_message": "Invalid value for parameter: amount"}), "create")
+    assert "422" in str(e.value)
+    assert "Invalid value for parameter: amount" in str(e.value)
+
+
+def test_error_no_json_no_rompe():
+    """Si Transbank responde algo que no es JSON, igual se reporta."""
+    from ventu_pagos import webpay_client
+    import pytest
+    with pytest.raises(webpay_client.WebpayError) as e:
+        webpay_client._check(_Resp(503, None, text="<html>Service Unavailable</html>"), "commit")
+    assert "503" in str(e.value)
+
+
+def test_respuesta_ok_devuelve_json():
+    from ventu_pagos import webpay_client
+    assert webpay_client._check(_Resp(200, {"token": "t", "url": "u"}), "create") == {"token": "t", "url": "u"}

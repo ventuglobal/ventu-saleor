@@ -37,6 +37,26 @@ def _url(suffix: str = "") -> str:
     return f"{config.webpay_base_url()}{_PATH}{suffix}"
 
 
+class WebpayError(RuntimeError):
+    """Error devuelto por Transbank, con su mensaje incluido."""
+
+
+def _check(resp: httpx.Response, op: str) -> Any:
+    """Valida la respuesta conservando el motivo que da Transbank.
+
+    `raise_for_status()` descarta el cuerpo, y Transbank explica ahí la causa
+    real (p. ej. 422 "Invalid value for parameter: amount"). Sin ese detalle,
+    diagnosticar un rechazo obliga a reproducir la llamada a mano.
+    """
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json().get("error_message") or resp.text[:300]
+        except Exception:  # noqa: BLE001 — cuerpo no-JSON
+            detail = resp.text[:300]
+        raise WebpayError(f"{op}: {resp.status_code} {detail}")
+    return resp.json()
+
+
 def create(*, buy_order: str, session_id: str, amount: int, return_url: str) -> dict[str, Any]:
     """Crea una transacción. Devuelve {token, url} para redirigir al tarjetahabiente."""
     payload = {
@@ -46,22 +66,19 @@ def create(*, buy_order: str, session_id: str, amount: int, return_url: str) -> 
         "return_url": return_url,
     }
     resp = httpx.post(_url(), headers=_headers(), json=payload, timeout=DEFAULT_TIMEOUT)
-    resp.raise_for_status()
-    return resp.json()  # {"token": "...", "url": "..."}
+    return _check(resp, "create")  # {"token": "...", "url": "..."}
 
 
 def commit(token: str) -> dict[str, Any]:
     """Confirma la transacción tras el retorno de Webpay. Devuelve estado final
     (status AUTHORIZED/FAILED, response_code, authorization_code, amount, …)."""
     resp = httpx.put(_url(f"/{token}"), headers=_headers(), timeout=DEFAULT_TIMEOUT)
-    resp.raise_for_status()
-    return resp.json()
+    return _check(resp, "commit")
 
 
 def status(token: str) -> dict[str, Any]:
     resp = httpx.get(_url(f"/{token}"), headers=_headers(), timeout=DEFAULT_TIMEOUT)
-    resp.raise_for_status()
-    return resp.json()
+    return _check(resp, "status")
 
 
 def refund(token: str, amount: int) -> dict[str, Any]:
@@ -72,5 +89,4 @@ def refund(token: str, amount: int) -> dict[str, Any]:
         json={"amount": int(amount)},
         timeout=DEFAULT_TIMEOUT,
     )
-    resp.raise_for_status()
-    return resp.json()
+    return _check(resp, "refund")
