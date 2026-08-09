@@ -194,3 +194,56 @@ def test_image_failure_does_not_block_sale(monkeypatch):
     assert res.ok                                 # sigue vendible
     assert res.stock_set == 3
     assert "fotos" in res.detail                  # pero la falla queda reportada
+
+
+def test_calienta_miniaturas_de_fotos_nuevas(monkeypatch):
+    """Publicar una foto debe generar sus miniaturas, para que la primera visita
+    del comprador ya se sirva desde el CDN y no desde la API."""
+    gets = []
+    monkeypatch.setattr(publisher, "gql", _media_router([], []))
+    monkeypatch.setattr(publisher.config, "SALEOR_API_URL", "http://saleor/graphql/")
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256, 512])
+
+    class _C:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def get(self, url): gets.append(url)
+    monkeypatch.setattr(publisher.httpx, "Client", lambda **k: _C())
+
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=1, images=["https://x/a.jpg"]))
+    assert res.ok
+    assert gets == ["http://saleor/thumbnail/M1/256/", "http://saleor/thumbnail/M1/512/"]
+
+
+def test_no_calienta_las_fotos_ya_existentes(monkeypatch):
+    """Republicar no debe re-generar miniaturas ya materializadas."""
+    gets = []
+    monkeypatch.setattr(publisher, "gql", _media_router(["https://x/a.jpg"], []))
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256])
+
+    class _C:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def get(self, url): gets.append(url)
+    monkeypatch.setattr(publisher.httpx, "Client", lambda **k: _C())
+
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=1, images=["https://x/a.jpg"]))
+    assert res.ok
+    assert gets == []
+
+
+def test_fallo_al_calentar_no_afecta_la_venta(monkeypatch):
+    """El calentamiento es best-effort: si falla, el SKU sigue publicado."""
+    monkeypatch.setattr(publisher, "gql", _media_router([], []))
+    monkeypatch.setattr(publisher.config, "THUMBNAIL_WARM_SIZES", [256])
+
+    def _boom(**k): raise RuntimeError("sin red")
+    monkeypatch.setattr(publisher.httpx, "Client", _boom)
+
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=7, images=["https://x/a.jpg"]))
+    assert res.ok
+    assert res.stock_set == 7
+    assert "fotos" not in res.detail      # no se reporta: no es un fallo de foto
