@@ -109,3 +109,35 @@ def test_create_disabled_reports_not_found(monkeypatch):
     monkeypatch.setattr(publisher, "gql", _router({"lookup": _variant(vid=None)}))
     res = publisher.publish_variant(VariantInput(sku="NOPE", available=1))
     assert not res.ok and not res.created
+
+
+def test_channel_listing_sets_visible_in_listings(monkeypatch):
+    """Publicar debe marcar visibleInListings, no solo isPublished.
+
+    Son flags independientes en Saleor: sin visibleInListings el producto es
+    comprable por link directo pero no aparece en listados ni búsqueda, así que
+    el storefront muestra la vitrina vacía.
+    """
+    monkeypatch.setattr(config, "ENSURE_PUBLISHED", True)
+    monkeypatch.setattr(publisher.warehouse, "channel_id", lambda slug: "CH1")
+    listing = {}
+
+    def router(query, variables=None, **kw):
+        if "productVariant(sku" in query:
+            return _variant(allocated=0)
+        if "productVariantStocksUpdate" in query:
+            return _mut_ok("productVariantStocksUpdate")
+        if "productChannelListingUpdate" in query:
+            listing["query"] = query
+            listing["vars"] = variables or {}
+            return _mut_ok("productChannelListingUpdate")
+        if "productVariantChannelListingUpdate" in query:
+            return _mut_ok("productVariantChannelListingUpdate")
+        raise AssertionError(f"query inesperada: {query[:40]}")
+
+    monkeypatch.setattr(publisher, "gql", router)
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=5, prices=[ChannelPrice("retail-cl", 1000)]))
+    assert res.ok
+    assert "visibleInListings" in listing["query"]
+    assert listing["vars"].get("isPublished") is True
