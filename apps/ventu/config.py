@@ -37,6 +37,13 @@ THUMBNAIL_WARM_SIZES = [int(s) for s in
                         os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024,2048").split(",")
                         if s.strip().isdigit()]
 
+# Cada (tamaño, formato) es una miniatura DISTINTA en el storage. El storefront
+# pide `url(size: 2048, format: WEBP)`, así que calentar solo el formato de
+# origen deja la variante webp sin generar y la ficha vuelve a pasar por la API.
+# "" = formato original; el resto son formatos de Saleor (webp, avif…).
+THUMBNAIL_WARM_FORMATS = [f.strip().lower() for f in
+                          os.getenv("THUMBNAIL_WARM_FORMATS", ",webp").split(",")]
+
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).
 PRICING_CHANNELS = [c.strip() for c in os.getenv("PRICING_CHANNELS", "retail-cl,b2b-cl").split(",") if c.strip()]
