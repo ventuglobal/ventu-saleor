@@ -31,8 +31,10 @@ DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
 # entonces la sube al storage y puede devolver su URL directa. Sin calentarlas,
 # la primera visita de cada producto pasa por la API en vez de ir al CDN.
 # Vacío ("") desactiva el calentamiento.
+# Los tamaños por defecto cubren los que pide el storefront: 1024 en el listado
+# y 2048 en la ficha de producto (verificado sobre el HTML servido).
 THUMBNAIL_WARM_SIZES = [int(s) for s in
-                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024").split(",")
+                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024,2048").split(",")
                         if s.strip().isdigit()]
 
 # ── Pricing ──
