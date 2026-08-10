@@ -107,3 +107,55 @@ def siguiente_tramo(cantidad: int, tramos: Sequence[Tramo]) -> Optional[Tramo]:
         if t.desde > cantidad:
             return t
     return None
+
+
+# ─────────────── escalera por channel (factores) ───────────────
+
+def parsear_escalera(crudo: str) -> List[tuple]:
+    """`"1:1.0,10:0.9,50:0.8"` → [(1, 1.0), (10, 0.9), (50, 0.8)].
+
+    La escalera se define por **factores** sobre el precio del channel, no por
+    montos: así una misma regla («desde 10 unidades, 10% menos») sirve para todo
+    el catálogo sin repetir precios producto por producto.
+
+    Cadena vacía significa "este channel no tiene tramos" y devuelve lista vacía,
+    que es distinto de una escalera inválida: lo primero es una configuración
+    legítima, lo segundo un error que debe ser ruidoso.
+    """
+    if not crudo or not crudo.strip():
+        return []
+
+    pares: List[tuple] = []
+    for trozo in crudo.split(","):
+        trozo = trozo.strip()
+        if not trozo:
+            continue
+        if ":" not in trozo:
+            raise TramoInvalido(f"tramo sin ':' → {trozo!r}")
+        izq, der = trozo.split(":", 1)
+        try:
+            desde, factor = int(izq.strip()), float(der.strip())
+        except ValueError as exc:
+            raise TramoInvalido(f"tramo no numérico → {trozo!r}") from exc
+        if desde < 1:
+            raise TramoInvalido(f"'desde' debe ser >= 1 → {trozo!r}")
+        if factor <= 0:
+            raise TramoInvalido(f"factor debe ser > 0 → {trozo!r}")
+        pares.append((desde, factor))
+
+    vistos = [d for d, _ in pares]
+    if len(set(vistos)) != len(vistos):
+        raise TramoInvalido(f"cantidades duplicadas en la escalera: {crudo!r}")
+    return sorted(pares)
+
+
+def escalera_a_tramos(precio_base: float, crudo: str) -> List[Tramo]:
+    """Convierte la escalera de factores en tramos con precio del producto.
+
+    `precio_base` es el precio unitario del channel; cada factor lo escala.
+    """
+    pares = parsear_escalera(crudo)
+    if not pares:
+        return []
+    tramos = [Tramo(desde=d, precio_unitario=round(precio_base * f, 2)) for d, f in pares]
+    return normalizar_tramos(tramos)

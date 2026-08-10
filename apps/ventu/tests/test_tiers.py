@@ -7,7 +7,9 @@ import pytest
 from ventu.pricing.tiers import (
     Tramo,
     TramoInvalido,
+    escalera_a_tramos,
     normalizar_tramos,
+    parsear_escalera,
     precio_para,
     siguiente_tramo,
     total_para,
@@ -108,3 +110,50 @@ def test_siguiente_tramo_para_incentivar():
 def test_en_el_mejor_tramo_no_hay_siguiente():
     assert siguiente_tramo(50, ESCALERA) is None
     assert siguiente_tramo(999, ESCALERA) is None
+
+
+# ─────────────── escalera por channel ───────────────
+
+def _esc(s):
+    return parsear_escalera(s)
+
+
+def test_parsea_escalera_ordenada():
+    assert _esc("1:1.0,10:0.9,50:0.8") == [(1, 1.0), (10, 0.9), (50, 0.8)]
+
+
+def test_parsea_escalera_desordenada_queda_ordenada():
+    assert _esc("50:0.8,1:1.0,10:0.9") == [(1, 1.0), (10, 0.9), (50, 0.8)]
+
+
+def test_channel_sin_tramos_no_es_error():
+    """Cadena vacía es configuración legítima, no escalera inválida."""
+    assert _esc("") == []
+    assert _esc("   ") == []
+
+
+@pytest.mark.parametrize("malo", ["10", "10:", "a:1.0", "10:x", "0:1.0", "10:0", "10:-1"])
+def test_escalera_invalida_es_ruidosa(malo):
+    with pytest.raises(TramoInvalido):
+        _esc(malo)
+
+
+def test_rechaza_cantidades_duplicadas():
+    with pytest.raises(TramoInvalido, match="duplicadas"):
+        _esc("10:0.9,10:0.8")
+
+
+def test_escalera_a_tramos_aplica_factores_al_precio():
+    t = escalera_a_tramos(1000.0, "1:1.0,10:0.9,50:0.8")
+    assert [(x.desde, x.precio_unitario) for x in t] == [(1, 1000.0), (10, 900.0), (50, 800.0)]
+
+
+def test_escalera_a_tramos_respeta_los_cortes():
+    t = escalera_a_tramos(1000.0, "1:1.0,10:0.9,50:0.8")
+    assert precio_para(9, t) == 1000.0
+    assert precio_para(10, t) == 900.0
+    assert precio_para(50, t) == 800.0
+
+
+def test_sin_escalera_no_hay_tramos():
+    assert escalera_a_tramos(1000.0, "") == []

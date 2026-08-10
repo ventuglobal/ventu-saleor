@@ -192,9 +192,19 @@ deliberada: 9 unidades cuestan lo mismo que 10.
 
 `siguiente_tramo()` permite incentivar la compra («lleva 3 más y pagas $90 c/u»).
 
-> **Decisión abierta:** de dónde sale la escalera. Si es igual para todo el canal
-> B2B, vive en configuración; si varía por cliente, vive en la Company y adelanta
-> parte de la 1.2.
+**La escalera es por canal**, no por empresa (decidido). Vive en configuración
+(`PRICING_TIERS_<SLUG>`) y se expresa en **factores**, no en montos:
+
+```
+PRICING_TIERS_B2B_CL="1:1.0,10:0.9,50:0.8"
+```
+
+Se usan factores para que una misma regla —«desde 10 unidades, 10% menos»— sirva
+para todo el catálogo sin repetir precios producto por producto. Un canal sin
+escalera definida simplemente no tiene tramos, lo que es configuración válida y
+no un error.
+
+El precio por empresa queda para la fase 1.2.
 
 ## Dónde vive el código
 
