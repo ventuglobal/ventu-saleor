@@ -61,6 +61,41 @@ def markup_for(channel_slug: str) -> float:
     return float(val) if val is not None else PRICING_MARKUP
 
 
+def gross_for(channel_slug: str) -> bool:
+    """¿Los precios de este channel se publican con IVA incluido?
+
+    Override por channel (`PRICING_GROSS_<SLUG>`), igual que el markup. Existe
+    porque retail y B2B difieren: al consumidor se le muestra el precio final con
+    IVA, mientras que una empresa compra sobre el neto y el IVA se detalla en la
+    factura. Sin esto, ambos channels heredarían el mismo tratamiento global y el
+    canal mayorista publicaría precios con IVA incluido.
+    """
+    key = "PRICING_GROSS_" + channel_slug.upper().replace("-", "_")
+    val = os.getenv(key)
+    if val is None:
+        return PRICING_GROSS
+    return val not in ("0", "false", "False", "")
+
+
+# Escalera de tramos por channel: PRICING_TIERS_B2B_CL="1:1.0,10:0.9,50:0.8"
+# Cada par es `cantidad_minima:factor`, donde el factor multiplica el precio
+# unitario del channel. Se expresa como factor y no como monto para que la
+# escalera no dependa del precio de cada producto: un mismo "10+ paga 10% menos"
+# sirve para todo el catálogo.
+PRICING_TIERS_DEFAULT = os.getenv("PRICING_TIERS", "")
+
+
+def tiers_for(channel_slug: str) -> str:
+    """Definición cruda de tramos del channel, o cadena vacía si no tiene.
+
+    Los tramos son **por channel**, no por empresa: la escalera es la misma para
+    todo el canal mayorista. El precio por empresa queda para la fase 1.2.
+    """
+    key = "PRICING_TIERS_" + channel_slug.upper().replace("-", "_")
+    val = os.getenv(key)
+    return val if val is not None else PRICING_TIERS_DEFAULT
+
+
 # ── Auth de la propia app ──
 # Token de servicio para los endpoints de administración (POST /catalog/publish).
 VENTU_ADMIN_TOKEN = os.getenv("VENTU_ADMIN_TOKEN", "")

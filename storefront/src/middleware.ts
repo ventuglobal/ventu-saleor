@@ -8,6 +8,10 @@ import { buildStorefrontPath, isDefaultMarket } from "@/lib/storefront-path";
 const RESERVED_ROOT_SEGMENTS = new Set([
 	"api",
 	"checkout",
+	// `/c/{linkId}` resuelve un carrito de WhatsApp: no pertenece al árbol de
+	// navegación porque el propio enlace determina el canal, y el route handler
+	// redirige al carrito ya con la cookie puesta.
+	"c",
 	"_next",
 	"favicon.ico",
 	"robots.txt",
