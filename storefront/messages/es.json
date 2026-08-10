@@ -19,7 +19,10 @@
 			"variant": "Variante: {name}",
 			"yourTotal": "Tu total",
 			"shippingNote": "El despacho se calcula en el paso siguiente",
-			"checkout": "Ir a pagar"
+			"checkout": "Ir a pagar",
+			"remove": "Quitar",
+			"removing": "Quitando",
+			"srLineFromCart": "producto del carro"
 		}
 	},
 	"productsListing": {

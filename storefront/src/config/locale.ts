@@ -144,7 +144,10 @@ export const localeConfig = {
 	htmlLang: LOCALE_DEFINITIONS.en.htmlLang,
 	ogLocale: LOCALE_DEFINITIONS.en.ogLocale,
 	available: getLocaleBcp47List(),
-	fallbackCurrency: "USD",
+	// Solo se usa cuando no se puede leer la moneda del canal (falta
+	// SALEOR_APP_TOKEN). En una tienda que vende en Chile, caer a USD muestra
+	// importes en dólares en el banner y en el copy de políticas.
+	fallbackCurrency: "CLP",
 } as const;
 
 export function resolveLocaleFromSlug(slug: string): LocaleDefinition {
