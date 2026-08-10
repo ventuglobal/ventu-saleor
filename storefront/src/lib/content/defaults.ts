@@ -5,7 +5,7 @@ import { STOREFRONT_CONTENT_VERSION, type StorefrontContent } from "@/lib/conten
  * Code fallback for all storefront marketing copy.
  * Saleor PageType overrides merge on top when CONTENT_PROVIDER=saleor.
  *
- * English SoT for editorial copy — export to Configurator seed: pnpm content:export-seed
+ * Copy editorial en español de Chile (es-CL) — export a Configurator: pnpm content:export-seed
  */
 export const defaultStorefrontContent = {
 	version: STOREFRONT_CONTENT_VERSION,
@@ -23,103 +23,103 @@ export const defaultStorefrontContent = {
 	chrome: {
 		announcementBar: {
 			id: "",
-			message: "Free shipping on orders over {freeShippingThreshold}",
+			message: "Despacho gratis en compras sobre {freeShippingThreshold}",
 			href: null,
 			linkLabel: null,
 			dismissible: true,
 		},
 		nav: {
-			allProductsLabel: "All",
-			viewAllLabel: "View all {label}",
+			allProductsLabel: "Todos",
+			viewAllLabel: "Ver todo en {label}",
 		},
 	},
 	surfaces: {
 		homepage: {
 			hero: {
-				heading: "Discover our collection",
+				heading: "Tecnología y suministros para tu empresa",
 				subheading: brandConfig.tagline,
-				primaryCtaLabel: "Shop all",
+				primaryCtaLabel: "Ver catálogo",
 			},
 			featuredCollection: {
-				heading: "Featured products",
+				heading: "Productos destacados",
 				collectionSlug: "featured-products",
 				limit: 8,
 			},
 			categories: {
-				heading: "Shop by category",
+				heading: "Compra por categoría",
 			},
 			photoCredits: [],
 			brandStory: {
-				heading: "Built for real commerce",
+				heading: "Abastecemos a empresas de todo Chile",
 				paragraphs: [
-					"Paper is a minimal, production-ready storefront for Saleor — clean as a blank page, built to ship.",
-					"Customize sections in code, connect your catalog, and keep checkout, cart, and product pages battle-tested out of the box.",
+					"Ventu conecta a empresas con un catálogo mayorista de tecnología, redes y suministros, con precios claros y despacho a todo el país.",
+					"Compra en línea o cotiza con un ejecutivo: en ambos casos el pedido queda registrado, facturado y con seguimiento.",
 				],
 			},
 			values: {
-				heading: "Why shop with us",
+				heading: "Por qué comprar en Ventu",
 				columns: [
 					{
-						title: "Curated quality",
-						text: "Every product is selected for craftsmanship and longevity — not trend-chasing.",
+						title: "Stock real",
+						text: "Publicamos lo que tenemos disponible, con la cantidad a la vista antes de comprar.",
 					},
 					{
-						title: "Fast fulfillment",
-						text: "Orders ship from regional warehouses with tracking from checkout to delivery.",
+						title: "Despacho a todo Chile",
+						text: "Despachamos a regiones con seguimiento desde que confirmas el pedido hasta la entrega.",
 					},
 					{
-						title: "Easy returns",
-						text: "Hassle-free returns within {returnsWindowDays} days. We stand behind what we sell.",
+						title: "Factura y crédito",
+						text: "Emitimos factura a tu RUT y puedes solicitar condiciones de pago a plazo.",
 					},
 				],
 				columnsDesktop: 3,
 			},
 			editorial: {
-				heading: "Designed to last",
+				heading: "Pensado para quien compra por volumen",
 				paragraphs: [
-					"Thoughtful materials and timeless silhouettes — pieces you'll reach for season after season.",
+					"Precios por tramo de cantidad: mientras más llevas, menor es el precio unitario.",
 				],
 				imagePosition: "right",
-				ctaLabel: "Explore collections",
+				ctaLabel: "Ver categorías",
 				image: null,
 				imageAlt: "",
 			},
 		},
 		products: {
-			title: "All Products",
-			description: "Discover our full collection of premium products.",
+			title: "Todos los productos",
+			description: "Recorre todo el catálogo de Ventu: tecnología, redes y suministros.",
 		},
 		cart: {
 			empty: {
-				title: "Your bag is empty",
-				body: "Looks like you haven't added anything to your bag yet.",
-				ctaLabel: "Start Shopping",
+				title: "Tu carro está vacío",
+				body: "Todavía no has agregado ningún producto.",
+				ctaLabel: "Comenzar a comprar",
 			},
 			trust: {
-				freeShippingPrefix: "Free delivery over",
-				returnsLabel: "{returnsWindowDays}-day returns",
+				freeShippingPrefix: "Despacho gratis sobre",
+				returnsLabel: "Devoluciones en {returnsWindowDays} días",
 			},
 			drawer: {
-				title: "Your Bag",
-				addForFreeShipping: "Add {amount} more for free shipping",
-				freeShippingQualified: "You qualify for free shipping!",
+				title: "Tu carro",
+				addForFreeShipping: "Agrega {amount} más y el despacho es gratis",
+				freeShippingQualified: "¡Tu despacho es gratis!",
 			},
 		},
 		checkout: {
 			emptyCart: {
-				title: "Your cart is empty",
-				body: "Looks like you haven't added anything to your cart yet.",
-				startShoppingLabel: "Start Shopping",
-				goBackLabel: "Go back",
+				title: "Tu carro está vacío",
+				body: "Todavía no has agregado ningún producto.",
+				startShoppingLabel: "Comenzar a comprar",
+				goBackLabel: "Volver",
 			},
 			emptySession: {
 				title: "Your cart is empty",
-				message: "Add items from the store, then return here to complete your purchase.",
+				message: "Agrega productos desde la tienda y vuelve aquí para completar tu compra.",
 			},
-			marketingOptInLabel: "Email me with news and offers",
+			marketingOptInLabel: "Quiero recibir novedades y ofertas por correo",
 			trust: {
-				secureCheckout: "Secure checkout",
-				stripeProcessor: "Payments processed by Stripe",
+				secureCheckout: "Compra segura",
+				stripeProcessor: "Pagos procesados por Stripe",
 			},
 		},
 	},
