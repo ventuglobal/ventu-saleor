@@ -61,6 +61,22 @@ def markup_for(channel_slug: str) -> float:
     return float(val) if val is not None else PRICING_MARKUP
 
 
+def gross_for(channel_slug: str) -> bool:
+    """¿Los precios de este channel se publican con IVA incluido?
+
+    Override por channel (`PRICING_GROSS_<SLUG>`), igual que el markup. Existe
+    porque retail y B2B difieren: al consumidor se le muestra el precio final con
+    IVA, mientras que una empresa compra sobre el neto y el IVA se detalla en la
+    factura. Sin esto, ambos channels heredarían el mismo tratamiento global y el
+    canal mayorista publicaría precios con IVA incluido.
+    """
+    key = "PRICING_GROSS_" + channel_slug.upper().replace("-", "_")
+    val = os.getenv(key)
+    if val is None:
+        return PRICING_GROSS
+    return val not in ("0", "false", "False", "")
+
+
 # ── Auth de la propia app ──
 # Token de servicio para los endpoints de administración (POST /catalog/publish).
 VENTU_ADMIN_TOKEN = os.getenv("VENTU_ADMIN_TOKEN", "")

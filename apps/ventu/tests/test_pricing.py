@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from ventu import config
 from ventu.pricing import policies, service
 from ventu.pricing.engine import compute_price
@@ -57,3 +59,34 @@ def test_publish_prices_for_calls_writer(monkeypatch):
     assert seen["sku"] == "ABC"
     assert seen["prices"][0].channel_slug == "retail-cl"
     assert seen["prices"][0].amount > 0
+
+
+# ───────────── IVA por channel: retail bruto, B2B neto ─────────────
+
+def test_gross_por_channel(monkeypatch):
+    """Retail publica con IVA incluido; B2B publica neto.
+
+    Al consumidor se le muestra el precio final; una empresa compra sobre el neto
+    y el IVA se detalla en la factura. Antes `gross` era global y el canal
+    mayorista heredaba el tratamiento de retail.
+    """
+    monkeypatch.setenv("PRICING_GROSS_B2B_CL", "0")
+    assert config.gross_for("retail-cl") is True
+    assert config.gross_for("b2b-cl") is False
+
+
+def test_gross_sin_override_usa_el_global(monkeypatch):
+    monkeypatch.delenv("PRICING_GROSS_B2B_CL", raising=False)
+    assert config.gross_for("b2b-cl") is config.PRICING_GROSS
+
+
+def test_precio_b2b_es_neto_y_retail_bruto(monkeypatch):
+    """El mismo costo produce precios distintos segun el channel."""
+    monkeypatch.setenv("PRICING_GROSS_B2B_CL", "0")
+    monkeypatch.setattr(config, "PRICING_CHANNELS", ["retail-cl", "b2b-cl"])
+    precios = {p.channel_slug: p.amount for p in service.compute_channel_prices(10000.0)}
+    assert precios["b2b-cl"] < precios["retail-cl"], (
+        f"B2B deberia ser neto y menor que retail con IVA: {precios}")
+    # la diferencia debe corresponder al IVA, no a otra cosa
+    assert precios["retail-cl"] == pytest.approx(
+        precios["b2b-cl"] * (1 + config.PRICING_IVA_RATE), rel=0.02)
