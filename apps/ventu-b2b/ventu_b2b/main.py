@@ -24,6 +24,8 @@ from .cart import link as link_mod
 from .cart import service as cart
 from .company import rut as rut_mod
 from .company import service as company_svc
+from .credito import estados as credito_st
+from .credito import service as credito_svc
 from .company.models import Company, CompanyInvalida
 
 logging.basicConfig(level=logging.INFO)
@@ -115,6 +117,51 @@ async def buscar_empresa(rut_libre: str) -> dict:
     user_id, company = encontrado
     return {"registrada": True, "user_id": user_id,
             "razon_social": company.razon_social}
+
+
+# ─────────────────────────── crédito ───────────────────────────
+
+class CreditoIn(BaseModel):
+    user_id: str
+    # La hora la fija quien llama para que el registro de auditoría no dependa
+    # del reloj del proceso y sea reproducible.
+    ahora: str
+
+
+@app.post("/credito/solicitar")
+async def solicitar_credito(entrada: CreditoIn) -> dict:
+    """Abre una solicitud. Paso voluntario: no bloquea la compra al contado."""
+    company = company_svc.obtener_de_usuario(entrada.user_id)
+    if not company:
+        raise HTTPException(404, "el usuario no tiene empresa asociada")
+    try:
+        s = credito_svc.solicitar(entrada.user_id, company, ahora=entrada.ahora)
+    except credito_st.TransicionInvalida as exc:
+        # 409: el conflicto es con el estado actual (p. ej. ya hay una solicitud
+        # en curso), no con la petición.
+        raise HTTPException(409, str(exc)) from exc
+    return {"estado": s.estado, "rut": s.company_rut}
+
+
+class VeredictoIn(BaseModel):
+    user_id: str
+    veredicto: str
+    referencia: str = ""
+    ahora: str
+
+
+@app.post("/credito/resolver")
+async def resolver_credito(entrada: VeredictoIn) -> dict:
+    """Registra el resultado devuelto por Maxxa."""
+    company = company_svc.obtener_de_usuario(entrada.user_id)
+    if not company:
+        raise HTTPException(404, "el usuario no tiene empresa asociada")
+    try:
+        s = credito_svc.resolver(entrada.user_id, company, entrada.veredicto,
+                                 ahora=entrada.ahora, referencia=entrada.referencia)
+    except credito_st.TransicionInvalida as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {"estado": s.estado, "referencia": s.referencia}
 
 
 # ─────────────────────────── carritos ───────────────────────────
