@@ -600,5 +600,9 @@
 			"paymentWebhookFailed": "Falló el webhook de la app de pagos. En el panel de Saleor → Apps → Dummy Payment App, revisa que las entregas de webhooks se estén completando.",
 			"paymentInitFailed": "No se pudo inicializar el pago. Revisa que la app de pagos esté funcionando en Saleor."
 		}
+	},
+	"footer": {
+		"privacyPolicy": "Política de privacidad",
+		"termsOfService": "Términos del servicio"
 	}
 }
