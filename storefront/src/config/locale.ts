@@ -30,6 +30,13 @@ export const LOCALE_DEFINITIONS = {
 		htmlLang: "en",
 		ogLocale: "en_US",
 	},
+	/** Español de Chile — mercado principal de Ventu. */
+	es: {
+		bcp47: "es-CL",
+		graphqlLanguageCode: "ES",
+		htmlLang: "es-CL",
+		ogLocale: "es_CL",
+	},
 	pl: {
 		bcp47: "pl-PL",
 		graphqlLanguageCode: "PL",
