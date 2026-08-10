@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { StorefrontRegionPicker } from "./storefront-region-picker";
 import {
 	getStaticStorefrontChannelSlugs,
@@ -13,7 +14,6 @@ import { getStorefrontContent } from "@/lib/content/server";
 import { getStorefrontLocaleOptions } from "@/lib/locale-display";
 import { FooterMenuColumns } from "./footer-menu-columns";
 import { CopyrightText } from "./copyright-text";
-import { FooterAttribution } from "./footer-attribution";
 import { FooterPhotoCredits } from "./footer-photo-credits";
 import { brandConfig } from "@/config/brand";
 import { Logo } from "./shared/logo";
@@ -25,10 +25,11 @@ export async function Footer({ locale, channel }: { locale: string; channel: str
 		? await getStorefrontChannelSlugs()
 		: getStaticStorefrontChannelSlugs();
 
-	const [menuItems, channels, content] = await Promise.all([
+	const [menuItems, channels, content, tFooter] = await Promise.all([
 		getFooterMenuItems(channel, locale),
 		shouldFetchChannelMetadata(resolvedSlugs) ? getCachedChannelsList() : Promise.resolve(null),
 		getStorefrontContent(channel, locale),
+		getTranslations({ locale, namespace: "footer" }),
 	]);
 
 	const footerMenuItems = menuItems ?? [];
@@ -67,7 +68,6 @@ export async function Footer({ locale, channel }: { locale: string; channel: str
 						<p className="text-xs text-inverse-muted">
 							<CopyrightText />
 						</p>
-						<FooterAttribution />
 						<FooterPhotoCredits credits={content.surfaces.homepage.photoCredits} />
 					</div>
 					<div className="flex items-center gap-6">
@@ -76,14 +76,14 @@ export async function Footer({ locale, channel }: { locale: string; channel: str
 							prefetch={false}
 							className="text-xs text-inverse-muted transition-colors hover:text-inverse-subtle"
 						>
-							Privacy Policy
+							{tFooter("privacyPolicy")}
 						</Link>
 						<Link
 							href="/terms"
 							prefetch={false}
 							className="text-xs text-inverse-muted transition-colors hover:text-inverse-subtle"
 						>
-							Terms of Service
+							{tFooter("termsOfService")}
 						</Link>
 					</div>
 				</div>
