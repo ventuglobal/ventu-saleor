@@ -14,12 +14,12 @@ export const defaultStorefrontContent = {
 	// numbers into strings, so the cart math, announcement, and trust labels never drift.
 	policies: {
 		shipping: {
-			// PROVISIONAL — pendiente de confirmar con el negocio.
+			// Umbral confirmado con el negocio: $50.000 CLP.
 			// El valor heredado del storefront de ejemplo era 75, pensado en dólares.
 			// En una tienda que factura en CLP eso son 75 pesos: cualquier pedido
 			// calificaría y Ventu quedaría prometiendo despacho gratis en todo.
-			// Se deja un monto plausible en pesos; `null` no sirve como valor por
-			// defecto porque el exportador del seed exige un número.
+			// `null` desactivaría el mensaje, pero no sirve como valor por defecto: el
+			// exportador del seed exige un número (ver configurator-seed.test.ts).
 			freeShippingThreshold: 50000,
 		},
 		returns: {
