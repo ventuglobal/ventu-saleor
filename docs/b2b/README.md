@@ -31,11 +31,15 @@ pasar de conocer Ventu a comprar casi de inmediato.
 
 ## Responsabilidades
 
-La App B2B hace tres cosas y ninguna más:
+La App B2B hace cuatro cosas y ninguna más:
 
 1. **Identificar** una empresa por su RUT
 2. **Asociarla** al usuario y a sus órdenes
-3. **Canalizar** su solicitud de crédito hacia Maxxa
+3. **Canalizar** su solicitud de crédito
+4. **Convertir** una conversación de WhatsApp en un carrito recuperable
+
+> **WhatsApp inicia la relación. El carrito mantiene la intención. Ventu cierra
+> la transacción.**
 
 Lo demás permanece donde está: Saleor administra productos, checkout y órdenes;
 Pricing calcula precios; Facturación emite documentos tributarios.
@@ -101,20 +105,34 @@ es frecuente (el colega de la misma empresa). El 1.0 debe responder con un
 mensaje digno —«esta empresa ya está registrada, contáctanos»— y no un error
 genérico. Es el caso que empujará la versión 1.1.
 
-### 2. Cotización
+### 2. Cotización — el carrito es la cotización
 
-Se implementa sobre **draft orders de Saleor**. No requiere entidad nueva:
+No se construye un sistema de cotizaciones separado. **El carrito de Saleor
+cumple esa función**: es simultáneamente la propuesta comercial editable y el
+inicio de la transacción.
 
-| Necesidad | Mecanismo Saleor |
-|---|---|
-| Crear cotización | `draftOrderCreate` (con `metadata`, `user`, `channelId`) |
-| Ajustar precio negociado | `orderLineDiscountUpdate`, `orderDiscountAdd` |
-| Observaciones | `customerNote`, `orderNoteAdd` |
-| Convertir en pedido | `draftOrderComplete` |
+Verificado que Saleor lo soporta de forma nativa:
 
-Flujo: la empresa arma el carro → solicita cotización → se crea la draft order
-con la metadata de la empresa → Ventu ajusta y la envía → la empresa la acepta y
-se convierte en orden.
+| Necesidad | Mecanismo | Verificado |
+|---|---|---|
+| Armar el carrito | `checkoutCreate` con `lines` y `metadata` | ✅ |
+| **Precio negociado por línea** | `price` + `priceOverrideReason` en `CheckoutLineInput` | ✅ |
+| Modificar cantidades | `checkoutLinesUpdate` / `checkoutLinesAdd` | ✅ |
+| Asociarlo al cliente después | `checkoutCustomerAttach` | ✅ |
+| Convertirlo en orden | `checkoutComplete` | ✅ |
+
+El poder fijar precio por línea es lo que hace viable este enfoque: sin eso, un
+carrito no podría expresar una condición negociada y haría falta una cotización
+aparte.
+
+Esto elimina el circuito de cotización en PDF → pedido → reingreso de productos
+en el checkout. El cliente recibe siempre un enlace actualizado hacia la misma
+intención de compra.
+
+**Vigencia.** Un precio negociado no puede quedar vigente indefinidamente.
+Persistir el carrito no significa congelar precio ni stock: ambos se revalidan
+antes de cerrar. Toda cotización con precio negociado debe llevar vigencia
+explícita.
 
 ### 3. Solicitud de crédito
 
@@ -123,22 +141,22 @@ comprar al contado.
 
 ```
 "Solicitar crédito" → Ventu registra estado = pendiente
-                    → deriva al cliente a Maxxa
-                    → Maxxa recibe la Carpeta Tributaria y evalúa
-                    → Ventu recibe solo el resultado
+                    → Ventu recibe la Carpeta Tributaria
+                    → la reenvía a Maxxa y borra su copia
+                    → Maxxa evalúa; Ventu registra el resultado
 ```
 
-**Regla de diseño crítica: la Carpeta Tributaria la recibe Maxxa, no Ventu.**
+**Ventu queda en la ruta del dato**, así que asume obligaciones de custodia sobre
+el historial tributario del cliente. El diseño minimiza la ventana de exposición:
 
-La derivación debe ser una **redirección** hacia Maxxa, no una carga de archivo
-en Ventu que luego se reenvíe. La diferencia es sustantiva: si el documento pasa
-por la infraestructura de Ventu —aunque sea de forma transitoria— Ventu queda en
-la ruta del dato y hereda las obligaciones de custodia, retención y control de
-acceso sobre el historial tributario completo del cliente.
+- Bucket **privado**, separado del de medios (que es público)
+- **Borrado tras confirmar la entrega a Maxxa.** Recibir y reenviar no obliga a
+  conservar: la retención por defecto es la mínima que permita reintentar el envío
+- Acceso restringido a un rol acotado, con registro de cada acceso
+- Retención máxima explícita en configuración, nunca implícita
 
-Derivando, Ventu solo almacena `credito_estado` y `maxxa_ref`. Esto elimina el
-mayor riesgo de cumplimiento del MVP, en particular frente a la Ley 21.719 de
-protección de datos personales.
+Ventu almacena `credito_estado` y `credito_ref`; nunca el documento de forma
+permanente. Esto acota la exposición frente a la Ley 21.719.
 
 ### 4. Compra
 
@@ -147,13 +165,36 @@ checkout y el canal correspondiente a su `nivel_precio`.
 
 ## Precios en 1.0
 
-**Precio plano por canal.** Un único nivel mayorista, sin tramos por cantidad.
+**Precio plano por canal, más tramos por cantidad.**
 
-Pricing ya opera así: `compute_channel_prices(cost_net)` calcula un precio por
-canal y lo escribe en Saleor. La empresa compra en el canal indicado por su
-`nivel_precio`.
+Pricing calcula un precio por canal (`compute_channel_prices`) y la empresa compra
+en el canal indicado por su `nivel_precio`.
 
-El precio por empresa y los tramos por cantidad quedan registrados en el roadmap.
+**IVA por canal.** `config.gross_for(channel)` decide si el canal publica con IVA
+incluido: retail muestra el precio final al consumidor; B2B publica neto y el IVA
+se detalla en la factura. Antes era un flag global y el canal mayorista habría
+heredado el tratamiento de retail.
+
+**Tramos por cantidad** (`pricing/tiers.py`). Saleor no tiene precios escalonados
+—un channel-listing guarda un precio único por variante— pero sí admite fijar el
+precio de una línea del carrito mediante `price` de `CheckoutLineInput`. El tramo
+se resuelve en Pricing y se aplica a la línea.
+
+```
+1-9   → $100 c/u
+10-49 →  $90 c/u
+50+   →  $80 c/u
+```
+
+El tramo aplica a **todas** las unidades de la línea, no solo a las que exceden el
+mínimo: es el modelo de la distribución mayorista. Consecuencia conocida y
+deliberada: 9 unidades cuestan lo mismo que 10.
+
+`siguiente_tramo()` permite incentivar la compra («lleva 3 más y pagas $90 c/u»).
+
+> **Decisión abierta:** de dónde sale la escalera. Si es igual para todo el canal
+> B2B, vive en configuración; si varía por cliente, vive en la Company y adelanta
+> parte de la 1.2.
 
 ## Dónde vive el código
 
@@ -181,14 +222,14 @@ Explícitamente excluido, para que el alcance no se erosione:
 - Centros de costo y flujos de aprobación interna
 - Sucursales de empresa
 - Motor propio de scoring crediticio
-- Tramos de precio por cantidad
 - Precio negociado por empresa
 
 ## Dependencias
 
 | Dependencia | Estado |
 |---|---|
-| Canal B2B en Saleor | ❌ No existe. Figura en `scripts/provision.py` pero nunca se creó |
+| Canal B2B en Saleor | ✅ Creado (`b2b-cl`, CLP, warehouse Ventu) |
+| `pricesEnteredWithTax=false` en `b2b-cl` | ⏳ Pendiente: el token de la app carece de `MANAGE_TAXES` |
 | Integración Maxxa | Pendiente. Misma forma que `ventu-pagos` (Transaction API) |
 | Facturación electrónica (DTE) | Pendiente. Requisito legal para vender a empresas |
 
@@ -213,13 +254,14 @@ debe surgir de la evidencia de uso, no de la anticipación.
 *Etapa siguiente acordada tras el precio plano por canal.*
 
 - Precio negociado por empresa, más fino que el canal
-- Tramos por cantidad (*volume pricing*): 1-9 / 10-49 / 50+
+- Escalera de tramos **por empresa** (el motor de tramos ya existe en 1.0;
+  lo que falta es que la escalera varíe por cliente)
 - Reglas de cantidad: mínimos de compra, múltiplos, venta por caja
 - Vigencia de precios acordados
 
-> Saleor no soporta precios escalonados por cantidad de forma nativa. Requiere
-> diseño específico. La decisión pendiente es si los tramos son por cantidad de
-> línea o por monto total del pedido: determina por completo la solución.
+> Resuelto en 1.0: los tramos se calculan en `pricing/tiers.py` y se aplican a la
+> línea del carrito vía `price` de `CheckoutLineInput`. Lo que queda para 1.2 es
+> que la escalera dependa de la empresa y no del canal.
 
 ## 1.3 — Operación de compra
 
