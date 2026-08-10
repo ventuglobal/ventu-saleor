@@ -44,12 +44,24 @@ class Tramo:
             raise TramoInvalido(f"precio negativo: {self.precio_unitario}")
 
 
-def normalizar_tramos(tramos: Iterable[Tramo]) -> List[Tramo]:
+def normalizar_tramos(tramos: Iterable[Tramo], *,
+                      costo_unitario: Optional[float] = None) -> List[Tramo]:
     """Ordena por cantidad y valida la escalera.
 
-    Rechaza dos tramos con el mismo `desde` (ambigüedad: no habría forma de saber
-    cuál aplica) y exige que exista un tramo base que cubra la cantidad 1, para
-    que ninguna cantidad quede sin precio.
+    Las dos últimas reglas vienen del modelo `PriceTier` de Ventu 1.0, donde se
+    aplicaban al guardar desde el admin:
+
+    1. Sin `desde` duplicados: no habría forma de saber cuál tramo aplica.
+    2. Debe existir un tramo base en 1, para que ninguna cantidad quede sin precio.
+    3. **Monotonía**: a mayor cantidad, menor precio unitario. Una escalera que
+       encarece al comprar más no es un descuento por volumen; suele ser un dedo
+       cambiado en la configuración y el cliente lo vería como un castigo.
+    4. **Piso de costo**: ningún tramo por debajo del costo. Es la regla que
+       impide que un descuento por volumen termine vendiendo a pérdida — el error
+       no se nota hasta que alguien revisa el margen del mes.
+
+    `costo_unitario` es opcional porque no todos los llamadores lo conocen: la
+    escalera se valida igual, solo que sin el piso.
     """
     ordenados = sorted(tramos, key=lambda t: t.desde)
     if not ordenados:
@@ -65,6 +77,23 @@ def normalizar_tramos(tramos: Iterable[Tramo]) -> List[Tramo]:
         raise TramoInvalido(
             f"falta el tramo base: el primero empieza en {ordenados[0].desde}, debería ser 1"
         )
+
+    for anterior, siguiente in zip(ordenados, ordenados[1:]):
+        if siguiente.precio_unitario >= anterior.precio_unitario:
+            raise TramoInvalido(
+                f"el tramo desde {siguiente.desde} ({siguiente.precio_unitario}) no es "
+                f"más barato que el de {anterior.desde} ({anterior.precio_unitario}): "
+                "comprar más nunca debe costar más por unidad"
+            )
+
+    if costo_unitario is not None:
+        for t in ordenados:
+            if t.precio_unitario < costo_unitario:
+                raise TramoInvalido(
+                    f"el tramo desde {t.desde} ({t.precio_unitario}) queda bajo el "
+                    f"costo unitario ({costo_unitario}): sería vender a pérdida"
+                )
+
     return ordenados
 
 
@@ -149,7 +178,8 @@ def parsear_escalera(crudo: str) -> List[tuple]:
     return sorted(pares)
 
 
-def escalera_a_tramos(precio_base: float, crudo: str) -> List[Tramo]:
+def escalera_a_tramos(precio_base: float, crudo: str, *,
+                      costo_unitario: Optional[float] = None) -> List[Tramo]:
     """Convierte la escalera de factores en tramos con precio del producto.
 
     `precio_base` es el precio unitario del channel; cada factor lo escala.
@@ -158,4 +188,31 @@ def escalera_a_tramos(precio_base: float, crudo: str) -> List[Tramo]:
     if not pares:
         return []
     tramos = [Tramo(desde=d, precio_unitario=round(precio_base * f, 2)) for d, f in pares]
-    return normalizar_tramos(tramos)
+    return normalizar_tramos(tramos, costo_unitario=costo_unitario)
+
+
+# ─────────── escalera por producto (modelo de Ventu 1.0) ───────────
+
+def escalera_para(precio_base: float, *, del_producto: str = "",
+                  del_channel: str = "",
+                  costo_unitario: Optional[float] = None) -> List[Tramo]:
+    """Tramos aplicables a un producto: los suyos, o los del channel.
+
+    Ventu 1.0 define los tramos **por producto** (`PriceTier`, con una fila por
+    cantidad), mientras que aquí el channel trae una escalera por defecto. Ambas
+    cosas conviven: la del producto gana cuando existe.
+
+    El motivo de conservar la del channel es que definirla producto por producto
+    no escala a 22.765 artículos; la del producto existe porque hay casos —un
+    proveedor con su propia política, un artículo de margen ajustado— donde la
+    regla general no sirve.
+
+    Una cadena vacía en ambos lados significa "sin tramos", que es configuración
+    válida y distinta de una escalera mal escrita.
+    """
+    crudo = del_producto.strip() if del_producto else ""
+    if not crudo:
+        crudo = del_channel.strip() if del_channel else ""
+    if not crudo:
+        return []
+    return escalera_a_tramos(precio_base, crudo, costo_unitario=costo_unitario)
