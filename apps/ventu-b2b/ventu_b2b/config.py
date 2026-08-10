@@ -17,3 +17,7 @@ CANAL_CARRITO = os.getenv("B2B_CANAL_CARRITO", "b2b-cl")
 
 # Base pública para los enlaces de carrito enviados por WhatsApp.
 STOREFRONT_URL = os.getenv("STOREFRONT_URL", "").rstrip("/")
+
+# Tamaño máximo de la Carpeta Tributaria. Existe para acotar lo que el proceso
+# llega a tener en memoria: el documento no se persiste, se reenvía.
+CARPETA_MAX_BYTES = int(os.getenv("B2B_CARPETA_MAX_BYTES", str(15 * 1024 * 1024)))

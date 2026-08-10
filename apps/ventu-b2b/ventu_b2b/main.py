@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 
 from . import config
@@ -30,6 +30,10 @@ from .company.models import Company, CompanyInvalida
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ventu-b2b")
+
+# Cliente de Maxxa. `None` mientras no esté configurado: el endpoint de carpeta
+# responde 503 en vez de aceptar documentos que no puede entregar.
+maxxa = None
 
 app = FastAPI(title="Ventu B2B", version="0.1.0")
 
@@ -162,6 +166,52 @@ async def resolver_credito(entrada: VeredictoIn) -> dict:
     except credito_st.TransicionInvalida as exc:
         raise HTTPException(409, str(exc)) from exc
     return {"estado": s.estado, "referencia": s.referencia}
+
+
+@app.post("/credito/carpeta")
+async def recibir_carpeta(
+    user_id: str = Form(...),
+    ahora: str = Form(...),
+    archivo: UploadFile = File(...),
+) -> dict:
+    """Recibe la Carpeta Tributaria y la reenvía a Maxxa.
+
+    Ventu queda en la ruta del dato, así que la ventana de exposición se acota
+    al máximo: el documento no se persiste en este proceso —se entrega y se
+    descarta— y solo se guardan el estado y la referencia.
+
+    Mientras no exista el cliente real de Maxxa, el endpoint responde 503 en vez
+    de aceptar el documento: recibir un historial tributario que no se puede
+    entregar sería custodiarlo sin propósito.
+    """
+    company = company_svc.obtener_de_usuario(user_id)
+    if not company:
+        raise HTTPException(404, "el usuario no tiene empresa asociada")
+
+    if company.credito_estado != credito_st.PENDIENTE:
+        # Sin solicitud abierta no hay nada que evaluar, y aceptar el documento
+        # significaría custodiarlo sin motivo.
+        raise HTTPException(409, "no hay una solicitud de crédito en curso")
+
+    if maxxa is None:
+        raise HTTPException(503, "la integración con Maxxa no está configurada")
+
+    contenido = await archivo.read()
+    if len(contenido) > config.CARPETA_MAX_BYTES:
+        raise HTTPException(413, "la carpeta excede el tamaño permitido")
+
+    try:
+        referencia = credito_svc.entregar_carpeta(
+            company, contenido, enviar_a_maxxa=maxxa.enviar_carpeta)
+    except credito_svc.EntregaFallida as exc:
+        # 502: el fallo es del tercero, no de quien subió el documento. Se
+        # distingue para que el cliente sepa que puede reintentar sin cambiar
+        # nada.
+        raise HTTPException(502, str(exc)) from exc
+    except credito_svc.CreditoError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    return {"estado": credito_st.PENDIENTE, "referencia": referencia}
 
 
 # ─────────────────────────── carritos ───────────────────────────
