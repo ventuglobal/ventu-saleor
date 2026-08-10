@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useTransition } from "react";
 import { ariaDisabledClassName } from "@/ui/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +12,7 @@ type Props = {
 
 export const DeleteLineButton = ({ deleteLine }: Props) => {
 	const [isPending, startTransition] = useTransition();
+	const t = useTranslations("cart.page");
 
 	return (
 		<button
@@ -27,8 +30,8 @@ export const DeleteLineButton = ({ deleteLine }: Props) => {
 			}}
 			aria-disabled={isPending}
 		>
-			{isPending ? "Removing" : "Remove"}
-			<span className="sr-only">line from cart</span>
+			{isPending ? t("removing") : t("remove")}
+			<span className="sr-only">{t("srLineFromCart")}</span>
 		</button>
 	);
 };

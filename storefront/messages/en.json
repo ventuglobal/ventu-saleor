@@ -19,7 +19,10 @@
 			"variant": "Variant: {name}",
 			"yourTotal": "Your Total",
 			"shippingNote": "Shipping will be calculated in the next step",
-			"checkout": "Checkout"
+			"checkout": "Checkout",
+			"remove": "Remove",
+			"removing": "Removing",
+			"srLineFromCart": "line from cart"
 		}
 	},
 	"productsListing": {

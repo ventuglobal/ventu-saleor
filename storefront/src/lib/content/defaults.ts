@@ -14,7 +14,13 @@ export const defaultStorefrontContent = {
 	// numbers into strings, so the cart math, announcement, and trust labels never drift.
 	policies: {
 		shipping: {
-			freeShippingThreshold: 75,
+			// PROVISIONAL — pendiente de confirmar con el negocio.
+			// El valor heredado del storefront de ejemplo era 75, pensado en dólares.
+			// En una tienda que factura en CLP eso son 75 pesos: cualquier pedido
+			// calificaría y Ventu quedaría prometiendo despacho gratis en todo.
+			// Se deja un monto plausible en pesos; `null` no sirve como valor por
+			// defecto porque el exportador del seed exige un número.
+			freeShippingThreshold: 50000,
 		},
 		returns: {
 			windowDays: 30,
