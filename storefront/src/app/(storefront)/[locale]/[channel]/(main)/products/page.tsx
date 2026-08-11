@@ -13,7 +13,6 @@ import { buildSortVariables, buildProductListingConstraints } from "@/ui/compone
 import { resolveCategorySlugsToIds } from "@/ui/components/plp/filter-utils.server";
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { ProductsPageClient } from "./products-client";
-import { exigirEmpresa } from "@/lib/b2b/gate";
 
 export async function generateMetadata(props: {
 	params: Promise<{ locale: string; channel: string }>;
@@ -49,9 +48,6 @@ type PageProps = {
  */
 export default async function Page(props: PageProps) {
 	const params = await props.params;
-	// Catálogo mayorista: solo para empresas registradas. En un canal que no
-	// es B2B no hace nada.
-	await exigirEmpresa(params.channel, params.locale);
 	const [{ surfaces }, tListing, tNav] = await Promise.all([
 		getStorefrontContent(params.channel, params.locale),
 		getTranslations({ locale: params.locale, namespace: "productsListing" }),

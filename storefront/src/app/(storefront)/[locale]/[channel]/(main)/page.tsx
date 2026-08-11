@@ -14,7 +14,6 @@ import { ImageWithText } from "@/ui/sections/image-with-text/image-with-text";
 import { MediaHero } from "@/ui/sections/media-hero/media-hero";
 import { MulticolumnSection } from "@/ui/sections/multicolumn-section/multicolumn-section";
 import { RichTextBlock } from "@/ui/sections/rich-text-block/rich-text-block";
-import { exigirEmpresa } from "@/lib/b2b/gate";
 
 export const metadata = {
 	description: brandConfig.description,
@@ -70,9 +69,6 @@ function buildCategoryTiles(products: readonly FeaturedProduct[], max = 3): Cate
  */
 export default async function Page({ params }: { params: Promise<{ locale: string; channel: string }> }) {
 	const { locale, channel } = await params;
-	// Catálogo mayorista: solo para empresas registradas. En un canal que no
-	// es B2B no hace nada.
-	await exigirEmpresa(channel, locale);
 	const content = await getStorefrontContent(channel, locale);
 	const { hero, featuredCollection, categories, brandStory, values, editorial } = content.surfaces.homepage;
 

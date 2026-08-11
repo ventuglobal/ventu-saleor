@@ -4,6 +4,7 @@ import { getStaticStorefrontChannelSlugs, isAllowedStorefrontChannel } from "@/c
 import { getDefaultLocaleSlug, isLocaleSlug, isStorefrontLocaleSlug } from "@/config/locale";
 import { BROWSE_LOCALE_COOKIE, getBrowseLocaleCookieOptions } from "@/lib/browse-locale";
 import { buildStorefrontPath, isDefaultMarket } from "@/lib/storefront-path";
+import { nombresDeCookieDeSesion, requiereSesion } from "@/lib/b2b/puerta";
 
 const RESERVED_ROOT_SEGMENTS = new Set([
 	"api",
@@ -21,6 +22,14 @@ const RESERVED_ROOT_SEGMENTS = new Set([
 function isChannelSlug(segment: string): boolean {
 	const allowed = getStaticStorefrontChannelSlugs();
 	return isAllowedStorefrontChannel(segment, allowed);
+}
+
+/** ¿Trae la petición una sesión de Saleor? Basta con que exista la cookie: quien
+ * decide si es válida es la API, aquí solo se separa «anónimo» de «identificado». */
+function haySesion(request: NextRequest): boolean {
+	const api = process.env.NEXT_PUBLIC_SALEOR_API_URL;
+	if (!api) return true; // Sin API configurada no se cierra nada.
+	return nombresDeCookieDeSesion(api).some((nombre) => Boolean(request.cookies.get(nombre)?.value));
 }
 
 function withBrowseLocaleCookie(request: NextRequest, response: NextResponse, locale: string): NextResponse {
@@ -94,6 +103,14 @@ export function middleware(request: NextRequest) {
 				url.pathname = suffix === "" ? "/" : suffix;
 				return withBrowseLocaleCookie(request, NextResponse.redirect(url, 308), first);
 			}
+			// Catálogo mayorista: sin sesión no se entra.
+			if (requiereSesion(second, rest) && !haySesion(request)) {
+				const url = request.nextUrl.clone();
+				url.pathname = buildStorefrontPath(first, second, "/login");
+				url.search = "";
+				return withBrowseLocaleCookie(request, NextResponse.redirect(url), first);
+			}
+
 			return withBrowseLocaleCookie(request, NextResponse.next(), first);
 		}
 
