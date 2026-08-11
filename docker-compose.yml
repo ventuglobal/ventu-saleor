@@ -16,6 +16,43 @@ services:
     environment:
       - DATABASE_URL=postgres://saleor:saleor@db:5432/saleor
       - REDIS_URL=redis://redis:6379/0
+      # Sin broker, Celery cae a task_always_eager y TODA tarea "asíncrona"
+      # (descarga de imágenes de producto, entrega de webhooks, reindexado de
+      # búsqueda) corre dentro del worker web que atendió el request.
+      # Ver README § "Memoria". db 1: la 0 es el caché.
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    # El CMD de la imagen 3.20 es `gunicorn --workers 4` SIN --max-requests: los
+    # workers nunca reciclan, así que el pico de memoria de cualquier request se
+    # vuelve el piso permanente del proceso. Reciclarlos devuelve esa memoria.
+    command: >
+      gunicorn --bind :8000
+      --workers ${SALEOR_WEB_CONCURRENCY:-2}
+      --max-requests 1000 --max-requests-jitter 100
+      --worker-class saleor.asgi.gunicorn_worker.UvicornWorker
+      saleor.asgi:application
+    restart: unless-stopped
+
+  # Ejecuta las tareas asíncronas de Saleor fuera del camino del request.
+  # -B corre además el scheduler (tareas periódicas de limpieza de Saleor).
+  # --max-tasks-per-child recicla el proceso por la misma razón que
+  # --max-requests en api: descargar y validar una imagen deja el pico de
+  # memoria retenido en el proceso que la procesó.
+  worker:
+    image: ghcr.io/saleor/saleor:3.20
+    command: >
+      celery -A saleor --app=saleor.celeryconf:app worker
+      --loglevel=info
+      --concurrency=${CELERY_CONCURRENCY:-2}
+      --max-tasks-per-child=100
+      -B
+    depends_on:
+      - db
+      - redis
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgres://saleor:saleor@db:5432/saleor
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
     restart: unless-stopped
 
   dashboard:
@@ -41,6 +78,16 @@ services:
     depends_on:
       - api
     env_file: .env
+
+  # App B2B — Saleor App aparte por MANAGE_USERS (escribe metadata del cliente).
+  ventu-b2b:
+    build: ./apps/ventu-b2b
+    ports:
+      - "8100:8100"
+    depends_on:
+      - api
+    env_file: .env
+    restart: unless-stopped
 
   # Storefront oficial de Saleor (vendido por git subtree en ./storefront).
   # Actualizar: `make storefront-pull`. Las NEXT_PUBLIC_* son build-time en
