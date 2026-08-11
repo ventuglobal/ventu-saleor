@@ -17,16 +17,20 @@ VAR = "UHJvZHVjdFZhcmlhbnQ6MQ=="
 TABLA = "1=13240,4=8900,6=8400"
 
 
-def _router(*, tramos_variante="", tramos_producto="", base=13240.0, existe=True):
+def _router(*, tramos_variante="", tramos_producto="", base=13240.0, existe=True,
+            disponible=9999):
+    """Saleor falso. La escalera vive en `privateMetadata`: en `metadata` sería
+    legible sin autenticación."""
     def gql(query, variables=None, **kw):
         if not existe:
             return {"data": {"productVariant": None}}
         meta = lambda v: ([{"key": precios.K_TRAMOS, "value": v}] if v else [])
         return {"data": {"productVariant": {
             "id": VAR,
+            "quantityAvailable": disponible,
             "pricing": {"price": {"gross": {"amount": base}}},
-            "metadata": meta(tramos_variante),
-            "product": {"metadata": meta(tramos_producto)},
+            "privateMetadata": meta(tramos_variante),
+            "product": {"privateMetadata": meta(tramos_producto)},
         }}}
     return gql
 
@@ -121,9 +125,10 @@ def _router_costo(costo="10000", tramos=""):
             meta.append({"key": precios.K_TRAMOS, "value": tramos})
         return {"data": {"productVariant": {
             "id": VAR,
+            "quantityAvailable": 9999,
             "pricing": {"price": {"gross": {"amount": 13000.0}}},
-            "metadata": [],
-            "product": {"metadata": meta},
+            "privateMetadata": [],
+            "product": {"privateMetadata": meta},
         }}}
     return gql
 
@@ -173,3 +178,44 @@ def test_sin_piso_configurado_no_se_revisa(monkeypatch):
     monkeypatch.setattr(precios, "gql", _router_costo())
     assert precios.revisar_negociado(VAR, 1, canal="b2b-cl",
                                      markup_minimo=0) is None
+
+
+# ───────────────── el stock condiciona los tramos ─────────────────
+
+def test_no_se_ofrecen_tramos_que_el_stock_no_cumple(monkeypatch):
+    """Ofrecer «50 a $8.400» con 12 en bodega es una promesa que el checkout va
+    a rechazar: el cliente arma el pedido y recién ahí descubre que no hay."""
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=5))
+    # x6 no es alcanzable con 5 disponibles: cae al tramo de 4.
+    assert precios.resolver_precio(VAR, 5, canal="b2b-cl") == 8900.0
+
+
+def test_con_stock_suficiente_se_ofrece_el_mejor_tramo(monkeypatch):
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=100))
+    assert precios.resolver_precio(VAR, 6, canal="b2b-cl") == 8400.0
+
+
+def test_bajo_el_minimo_no_hay_tabla(monkeypatch):
+    """Con poco stock no tiene sentido publicar precios por volumen."""
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=2))
+    assert precios.resolver_precio(VAR, 1, canal="b2b-cl", stock_minimo=5) is None
+
+
+def test_sin_stock_no_hay_tramos(monkeypatch):
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=0))
+    assert precios.resolver_precio(VAR, 1, canal="b2b-cl") is None
+
+
+def test_sin_dato_de_stock_no_se_filtra(monkeypatch):
+    """Preferible mostrar la tabla que ocultarla por una consulta incompleta."""
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=None))
+    assert precios.resolver_precio(VAR, 6, canal="b2b-cl") == 8400.0
+
+
+def test_el_incentivo_no_promete_lo_que_no_hay(monkeypatch):
+    """No sugerir «lleva 3 más» si esas unidades no existen."""
+    monkeypatch.setattr(precios, "gql", _router(tramos_producto=TABLA, disponible=5))
+    assert precios.incentivo(VAR, 3, canal="b2b-cl") == {
+        "faltan": 1, "desde": 4, "precio_unitario": 8900.0}
+    # el tramo de 6 quedó fuera por stock, así que en 4 ya no hay siguiente
+    assert precios.incentivo(VAR, 4, canal="b2b-cl") is None

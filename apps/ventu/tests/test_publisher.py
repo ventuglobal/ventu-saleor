@@ -331,3 +331,52 @@ def test_slug_al_crear_producto(monkeypatch):
         VariantInput(sku="NEW", available=2, slug="clickbox_x_mayorista"))
     assert res.ok and res.created
     assert seen[0] == "clickbox_x_mayorista"
+
+
+# ───────────── costo y tramos van a metadata PRIVADA ─────────────
+
+def test_costo_y_tramos_van_a_privatemetadata(monkeypatch):
+    """`metadata` se lee sin autenticación: publicar ahí el costo lo dejaría a la
+    vista de cualquiera, junto con el margen."""
+    visto = {}
+
+    def router(query, variables=None, **kw):
+        if "productVariant(sku" in query:
+            return _variant(allocated=0)
+        if "productVariantStocksUpdate" in query:
+            return _mut_ok("productVariantStocksUpdate")
+        if "updatePrivateMetadata" in query:
+            visto["input"] = (variables or {}).get("input")
+            return _mut_ok("updatePrivateMetadata")
+        if "updateMetadata" in query:
+            visto["publica"] = True
+            return _mut_ok("updateMetadata")
+        raise AssertionError(f"query inesperada: {query[:40]}")
+
+    monkeypatch.setattr(publisher, "gql", router)
+    res = publisher.publish_variant(
+        VariantInput(sku="ABC", available=5, costo=7788.0,
+                     tramos="1=13240,4=8900"))
+    assert res.ok
+    claves = {p["key"]: p["value"] for p in visto["input"]}
+    assert claves["ventu.pricing.costo"] == "7788.0"
+    assert claves["ventu.pricing.tramos"] == "1=13240,4=8900"
+    assert "publica" not in visto, "nada de esto debe ir a metadata pública"
+
+
+def test_sin_costo_ni_tramos_no_escribe_metadata_privada(monkeypatch):
+    llamadas = []
+
+    def router(query, variables=None, **kw):
+        if "productVariant(sku" in query:
+            return _variant(allocated=0)
+        if "productVariantStocksUpdate" in query:
+            return _mut_ok("productVariantStocksUpdate")
+        if "updatePrivateMetadata" in query:
+            llamadas.append(True)
+            return _mut_ok("updatePrivateMetadata")
+        raise AssertionError(f"query inesperada: {query[:40]}")
+
+    monkeypatch.setattr(publisher, "gql", router)
+    assert publisher.publish_variant(VariantInput(sku="ABC", available=5)).ok
+    assert llamadas == []

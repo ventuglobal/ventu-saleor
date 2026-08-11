@@ -211,6 +211,14 @@ mutation($id: ID!, $slug: String!) {
 }
 """
 
+_PRIVADA = """
+mutation($id: ID!, $input: [MetadataInput!]!) {
+  updatePrivateMetadata(id: $id, input: $input) {
+    errors { field message code }
+  }
+}
+"""
+
 _MEDIA_TAG = """
 mutation($id: ID!, $input: [MetadataInput!]!) {
   updateMetadata(id: $id, input: $input) {
@@ -237,6 +245,28 @@ def _ensure_slug(product_id: str, slug: str) -> list:
     if data_errors(upd):
         raise RuntimeError(f"slug update: {data_errors(upd)}")
     return (payload(upd).get("productUpdate") or {}).get("errors") or []
+
+
+def _publicar_datos_reservados(product_id: str, costo, tramos) -> list:
+    """Escribe costo y tabla de tramos en la metadata PRIVADA del producto.
+
+    Privada y no pública: `metadata` se lee sin autenticación, de modo que el
+    costo quedaría expuesto —y con él el margen de Ventu— y la tabla de tramos
+    sería visible para clientes retail y competidores. La App B2B los lee con su
+    token y decide a quién mostrarlos.
+    """
+    entrada = []
+    if costo is not None:
+        entrada.append({"key": "ventu.pricing.costo", "value": str(costo)})
+    if tramos:
+        entrada.append({"key": "ventu.pricing.tramos", "value": tramos})
+    if not entrada:
+        return []
+
+    res = gql(_PRIVADA, {"id": product_id, "input": entrada})
+    if data_errors(res):
+        raise RuntimeError(f"metadata privada: {data_errors(res)}")
+    return (payload(res).get("updatePrivateMetadata") or {}).get("errors") or []
 
 
 def _warm_thumbnails(media_ids: list) -> None:
@@ -378,6 +408,12 @@ def publish_variant(item: VariantInput) -> PublishResult:
         errs = _ensure_slug(product_id, item.slug)
         if errs:
             return PublishResult(item.sku, ok=False, detail=f"slug: {errs}")
+
+    # ── costo y tramos (reservados) ──
+    if product_id and (item.costo is not None or item.tramos):
+        errs = _publicar_datos_reservados(product_id, item.costo, item.tramos)
+        if errs:
+            return PublishResult(item.sku, ok=False, detail=f"privada: {errs}")
 
     # ── fotos (no bloqueantes) ──
     # Una foto que falle no debe impedir vender: el SKU ya quedó con stock,
