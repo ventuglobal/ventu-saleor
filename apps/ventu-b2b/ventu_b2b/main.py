@@ -249,6 +249,9 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
     # producto y la cantidad elegida determina el precio unitario.
     canal = entrada.canal or config.CANAL_CARRITO
     lineas: List[cart.Linea] = []
+    # Líneas cuyo precio negociado queda bajo el margen mínimo. Viajan en la
+    # respuesta para que la herramienta del ejecutivo pueda mostrarlas.
+    avisos: List[dict] = []
     for l in entrada.lineas:
         precio = l.precio_unitario
         if precio is None:
@@ -261,6 +264,23 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
                 # precio de catálogo y queda el registro para corregirla.
                 logger.warning("(b2b) tramos ilegibles para %s: %s", l.variant_id, exc)
                 precio = None
+        else:
+            # Precio fijado a mano por el ejecutivo: se revisa contra el margen
+            # mínimo. No se bloquea —cerrar una venta ajustada puede ser una
+            # decisión comercial legítima— pero no debe ocurrir sin que nadie lo
+            # sepa, que es como se pierde margen sin notarlo.
+            try:
+                bajo = precios_mod.revisar_negociado(
+                    l.variant_id, precio, canal=canal,
+                    markup_minimo=config.MARKUP_MINIMO,
+                    comision_pct=config.COMISION_PASARELA)
+                if bajo:
+                    avisos.append({"variant_id": l.variant_id, **bajo})
+                    logger.warning("(b2b) precio bajo el margen mínimo: %s", bajo)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("(b2b) no se pudo revisar el margen de %s: %s",
+                               l.variant_id, exc)
+
         lineas.append(cart.Linea(l.variant_id, l.cantidad, precio))
 
     try:
@@ -277,7 +297,8 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
         cart.adjuntar_cliente(carrito.checkout_id, entrada.user_id)
 
     return {"link_id": carrito.link_id, "url": carrito.url(),
-            "checkout_id": carrito.checkout_id}
+            "checkout_id": carrito.checkout_id,
+            **({"avisos_margen": avisos} if avisos else {})}
 
 
 @app.get("/cart/{link_id}")

@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..saleor_client import data_errors, gql, payload
+from ..margen import markup_real_a
 from ..tiers import TramoInvalido, escalera_a_tramos, precio_para, siguiente_tramo
 
 # Clave donde el producto guarda su escalera. Formato: "1=13240,4=8900,6=8400"
@@ -98,3 +99,57 @@ def incentivo(variant_id: str, cantidad: int, *, canal: str,
         return None
     return {"faltan": prox.desde - cantidad, "desde": prox.desde,
             "precio_unitario": prox.precio_unitario}
+
+
+# ─────────── revisión de precios negociados ───────────
+
+# Clave donde el producto publica su costo. La escribe Pricing; sin ella no hay
+# forma de saber si un precio negociado deja margen.
+K_COSTO = "ventu.pricing.costo"
+
+
+def costo_de(variant_id: str, *, canal: str) -> Optional[float]:
+    """Costo unitario publicado del producto, o `None` si no lo tiene."""
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal})
+    if data_errors(body):
+        raise RuntimeError(f"lectura de variante: {data_errors(body)}")
+    v = payload(body).get("productVariant")
+    if not v:
+        return None
+    crudo = (_pares(v.get("metadata")).get(K_COSTO)
+             or _pares((v.get("product") or {}).get("metadata")).get(K_COSTO))
+    if not crudo:
+        return None
+    try:
+        return float(crudo)
+    except ValueError:
+        return None
+
+
+def revisar_negociado(variant_id: str, precio: float, *, canal: str,
+                      markup_minimo: float, comision_pct: float = 0.0) -> Optional[dict]:
+    """¿Este precio negociado deja el margen mínimo?
+
+    Devuelve `None` cuando no hay nada que objetar —o cuando falta el costo y no
+    se puede juzgar—. Si el precio queda bajo el piso, devuelve el detalle para
+    que quien decide vea la cifra en vez de un rechazo a secas.
+
+    No bloquea por sí sola: cerrar una venta ajustada puede ser una decisión
+    comercial legítima. Lo que no debe pasar es que ocurra sin que nadie lo sepa.
+    """
+    if markup_minimo <= 0:
+        return None
+    costo = costo_de(variant_id, canal=canal)
+    if costo is None or costo <= 0:
+        return None
+
+    real = markup_real_a(int(precio), int(costo), comision_pct=comision_pct)
+    if real is None or real >= markup_minimo:
+        return None
+    return {
+        "costo": costo,
+        "precio": precio,
+        "markup_real": round(real, 4),
+        "markup_minimo": markup_minimo,
+        "comision_pct": comision_pct,
+    }

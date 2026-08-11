@@ -31,3 +31,14 @@ def tramos_del_canal(channel_slug: str) -> str:
     """
     key = "PRICING_TIERS_" + channel_slug.upper().replace("-", "_")
     return os.getenv(key, os.getenv("PRICING_TIERS", ""))
+
+
+# ── margen mínimo en precios negociados ──
+# Utilidad neta sobre el costo por debajo de la cual un precio negociado se
+# rechaza. Vacío desactiva la revisión: sin costo publicado no hay nada que
+# comparar, y bloquear ventas por un dato ausente sería peor que no revisar.
+MARKUP_MINIMO = float(os.getenv("B2B_MARKUP_MINIMO", "0") or 0)
+
+# Comisión de la pasarela de pago, que se descuenta de cada venta. Sin esto un
+# markup del 30% con una pasarela del 3% deja 26,1% real.
+COMISION_PASARELA = float(os.getenv("B2B_COMISION_PASARELA", "0") or 0)

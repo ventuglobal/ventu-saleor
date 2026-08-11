@@ -108,3 +108,68 @@ def test_en_el_mejor_tramo_no_hay_incentivo(monkeypatch):
 def test_sin_tramos_no_hay_incentivo(monkeypatch):
     monkeypatch.setattr(precios, "gql", _router())
     assert precios.incentivo(VAR, 3, canal="b2b-cl") is None
+
+
+# ───────────────── revisión de precios negociados ─────────────────
+
+def _router_costo(costo="10000", tramos=""):
+    def gql(query, variables=None, **kw):
+        meta = []
+        if costo:
+            meta.append({"key": precios.K_COSTO, "value": costo})
+        if tramos:
+            meta.append({"key": precios.K_TRAMOS, "value": tramos})
+        return {"data": {"productVariant": {
+            "id": VAR,
+            "pricing": {"price": {"gross": {"amount": 13000.0}}},
+            "metadata": [],
+            "product": {"metadata": meta},
+        }}}
+    return gql
+
+
+def test_precio_negociado_sano_no_genera_aviso(monkeypatch):
+    monkeypatch.setattr(precios, "gql", _router_costo())
+    assert precios.revisar_negociado(VAR, 13000, canal="b2b-cl",
+                                     markup_minimo=0.25) is None
+
+
+def test_precio_negociado_bajo_el_piso_devuelve_el_detalle(monkeypatch):
+    """Devuelve la cifra para que quien decide la vea, en vez de un rechazo
+    a secas."""
+    monkeypatch.setattr(precios, "gql", _router_costo())
+    aviso = precios.revisar_negociado(VAR, 11000, canal="b2b-cl",
+                                      markup_minimo=0.25)
+    assert aviso is not None
+    assert aviso["costo"] == 10000.0
+    assert aviso["markup_real"] == 0.1
+    assert aviso["markup_minimo"] == 0.25
+
+
+def test_la_comision_de_pasarela_cuenta_en_la_revision(monkeypatch):
+    """Un precio que parece alcanzar el piso puede no hacerlo una vez que la
+    pasarela cobra lo suyo."""
+    monkeypatch.setattr(precios, "gql", _router_costo())
+    assert precios.revisar_negociado(VAR, 12600, canal="b2b-cl",
+                                     markup_minimo=0.25) is None
+    assert precios.revisar_negociado(VAR, 12600, canal="b2b-cl",
+                                     markup_minimo=0.25, comision_pct=0.03) is not None
+
+
+def test_sin_costo_publicado_no_se_juzga(monkeypatch):
+    """Bloquear una venta por un dato ausente sería peor que no revisar."""
+    monkeypatch.setattr(precios, "gql", _router_costo(costo=""))
+    assert precios.revisar_negociado(VAR, 1, canal="b2b-cl",
+                                     markup_minimo=0.25) is None
+
+
+def test_costo_ilegible_no_revienta(monkeypatch):
+    monkeypatch.setattr(precios, "gql", _router_costo(costo="mil pesos"))
+    assert precios.costo_de(VAR, canal="b2b-cl") is None
+
+
+def test_sin_piso_configurado_no_se_revisa(monkeypatch):
+    """`MARKUP_MINIMO=0` desactiva la revisión."""
+    monkeypatch.setattr(precios, "gql", _router_costo())
+    assert precios.revisar_negociado(VAR, 1, canal="b2b-cl",
+                                     markup_minimo=0) is None
