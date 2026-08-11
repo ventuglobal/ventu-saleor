@@ -13,7 +13,10 @@ import * as Checkout from "@/lib/checkout";
 import { getTranslations } from "next-intl/server";
 import { resolvePdpVariants } from "@/lib/catalog/get-product-data";
 import { pickTranslatedSlug } from "@/lib/saleor-translations";
+import { getHeaderAuthState } from "@/lib/auth/get-header-user";
+import { getTramos } from "@/lib/b2b/tramos";
 
+import { TramosTable } from "./tramos-table";
 import { AddToCart } from "./add-to-cart";
 import { NonMatrixBuyBox } from "./non-matrix-buy-box";
 import { VariantSelectionSection } from "./variant-selection";
@@ -80,6 +83,16 @@ export async function VariantSectionDynamic({
 		: !selectedVariant.quantityAvailable
 			? ("out-of-stock" as const)
 			: undefined;
+
+	// Precios por volumen. Quién puede verlos lo decide la App B2B a partir de la
+	// sesión: el storefront pregunta y pinta, nunca lee la escalera de Saleor.
+	// Sin empresa detrás la respuesta no trae cifras, así que la tabla no llega
+	// siquiera al HTML.
+	const auth = await getHeaderAuthState();
+	const tramos =
+		selectedVariantID && auth.status === "authenticated"
+			? await getTramos(decodeURIComponent(selectedVariantID), auth.user.id)
+			: null;
 
 	const price = selectedVariant?.pricing?.price?.gross
 		? selectedVariant.pricing.price.gross.amount === 0
@@ -193,6 +206,24 @@ export async function VariantSectionDynamic({
 
 			<form action={addToCart} className="order-3 mt-4 space-y-6">
 				{buyBox}
+
+				{tramos?.visible && (
+					<TramosTable
+						tramos={tramos.tramos}
+						rut={tramos.rut}
+						currency={currency}
+						locale={intlLocale}
+						labels={{
+							title: t("tramos.title"),
+							caption: t("tramos.caption"),
+							from: t("tramos.from"),
+							unitPrice: t("tramos.unitPrice"),
+							discount: t("tramos.discount"),
+							unit: t("tramos.unit"),
+							units: t("tramos.units"),
+						}}
+					/>
+				)}
 
 				<AddToCart
 					price={price}

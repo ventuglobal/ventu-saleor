@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rejectIfRateLimited } from "@/lib/auth/auth-rate-limit";
 import { isAllowedRedirectUrl } from "@/lib/auth/validate-redirect-url";
 import { executeRawGraphQL, asValidationError, getUserMessage } from "@/lib/graphql";
+import { registrarEmpresa } from "@/lib/b2b/company";
 
 const REGISTER_MUTATION = `
   mutation AccountRegister($input: AccountRegisterInput!) {
@@ -26,6 +27,11 @@ interface RegisterRequest {
 	lastName?: string;
 	channel: string;
 	redirectUrl: string;
+	/** Alta de empresa en el mismo paso: quien compra al por mayor compra con RUT. */
+	rut?: string;
+	razonSocial?: string;
+	giro?: string;
+	telefono?: string;
 }
 
 interface AccountRegisterResult {
@@ -51,7 +57,7 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	const { email, password, firstName, lastName, channel, redirectUrl } = body;
+	const { email, password, firstName, lastName, channel, redirectUrl, rut, razonSocial } = body;
 
 	if (!email || !password) {
 		return NextResponse.json(
@@ -107,9 +113,30 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ errors: validationResult.error.validationErrors }, { status: 400 });
 	}
 
+	const user = accountRegister?.user;
+
+	// Alta de la empresa. El id sale de la respuesta de Saleor, no del cuerpo de
+	// la petición: aceptarlo del cliente permitiría asociar una empresa a la
+	// cuenta de otra persona.
+	//
+	// Si el alta falla, la cuenta igual quedó creada — deshacerla sería peor: el
+	// correo ya está tomado y el cliente no podría reintentar. Se informa y el
+	// alta se completa después en /empresa.
+	let empresa: { ok: boolean; mensaje?: string } | undefined;
+	if (user?.id && rut && razonSocial) {
+		const alta = await registrarEmpresa(user.id, {
+			rut,
+			razonSocial,
+			giro: body.giro,
+			telefono: body.telefono,
+		});
+		empresa = alta.ok ? { ok: true } : { ok: false, mensaje: alta.mensaje };
+	}
+
 	// Success
 	return NextResponse.json({
-		user: accountRegister?.user,
+		user,
+		empresa,
 		message: "Account created successfully. Please check your email to verify your account.",
 	});
 }

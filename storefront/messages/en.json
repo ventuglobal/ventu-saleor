@@ -80,6 +80,15 @@
 			"previous": "Previous image",
 			"next": "Next image",
 			"counter": "{current} / {total}"
+		},
+		"tramos": {
+			"title": "Volume pricing",
+			"caption": "The tier price applies to every unit on the line. It is calculated in the cart from the quantity.",
+			"from": "From",
+			"unitPrice": "Unit price",
+			"discount": "Discount",
+			"unit": "unit",
+			"units": "units"
 		}
 	},
 	"plp": {
@@ -193,7 +202,11 @@
 				"postal": "Postal code",
 				"postTown": "Post town",
 				"prefecture": "Prefecture"
-			}
+			},
+			"razonSocial": "Company name",
+			"rut": "Company tax ID (RUT)",
+			"giro": "Line of business (optional)",
+			"telefono": "Phone (optional)"
 		},
 		"placeholders": {
 			"email": "you@example.com",
@@ -203,7 +216,11 @@
 			"newPasswordMin": "At least 8 characters…",
 			"confirmPassword": "Confirm your password",
 			"reenterPassword": "Re-enter your password",
-			"countryCode": "US"
+			"countryCode": "US",
+			"razonSocial": "Comercial Santa Teresa SpA",
+			"rut": "76.543.210-3",
+			"giro": "Wholesale of electrical goods",
+			"telefono": "+56 9 1234 5678"
 		},
 		"common": {
 			"cancel": "Cancel",
@@ -249,7 +266,9 @@
 			"updateAddressFailed": "Failed to update address",
 			"deleteAddressFailed": "Failed to delete address",
 			"setDefaultAddressFailed": "Failed to set default address",
-			"deleteAccountFailed": "Failed to request account deletion"
+			"deleteAccountFailed": "Failed to request account deletion",
+			"empresaRequerida": "Enter your company name and tax ID.",
+			"empresaFallida": "The company could not be registered. Check the tax ID and try again."
 		},
 		"login": {
 			"title": "Welcome Back",
@@ -272,7 +291,8 @@
 			"goToSignIn": "Go to Sign In",
 			"terms": "By creating an account, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
 			"termsLink": "Terms of Service",
-			"privacyLink": "Privacy Policy"
+			"privacyLink": "Privacy Policy",
+			"rutHint": "With or without dots, hyphen before the check digit."
 		},
 		"setPassword": {
 			"title": "Set New Password",
@@ -400,6 +420,12 @@
 		"unavailable": {
 			"title": "Unable to load your account",
 			"body": "The store is temporarily unavailable. Refresh the page or try again in a moment."
+		},
+		"empresa": {
+			"title": "Register your company",
+			"subtitle": "The wholesale catalog is for customers with a company tax ID.",
+			"submit": "Register company",
+			"saving": "Registering…"
 		}
 	},
 	"checkout": {

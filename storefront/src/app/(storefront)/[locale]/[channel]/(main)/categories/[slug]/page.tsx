@@ -17,6 +17,7 @@ import { buildSortVariables, buildProductListingConstraints } from "@/ui/compone
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { pickTranslatedSlug } from "@/lib/saleor-translations";
 import { CategoryPageClient } from "./client";
+import { exigirEmpresa } from "@/lib/b2b/gate";
 
 type PageProps = {
 	params: Promise<{ locale: string; slug: string; channel: string }>;
@@ -59,6 +60,9 @@ export const generateMetadata = async (props: PageProps): Promise<Metadata> => {
  */
 export default async function Page(props: PageProps) {
 	const resolvedParams = await props.params;
+	// Catálogo mayorista: solo para empresas registradas. En un canal que no
+	// es B2B no hace nada.
+	await exigirEmpresa(resolvedParams.channel, resolvedParams.locale);
 	const [category, tListing, tNav] = await Promise.all([
 		getCategoryData(resolvedParams.slug, resolvedParams.channel, resolvedParams.locale),
 		getTranslations({ locale: resolvedParams.locale, namespace: "productsListing" }),

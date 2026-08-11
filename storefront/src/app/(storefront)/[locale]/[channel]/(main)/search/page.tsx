@@ -11,6 +11,7 @@ import { SearchIcon } from "lucide-react";
 import { buttonClassName } from "@/ui/components/ui/button";
 import { LinkWithChannel } from "@/ui/atoms/link-with-channel";
 import { buildStorefrontPath } from "@/lib/storefront-path";
+import { exigirEmpresa } from "@/lib/b2b/gate";
 
 /**
  * Search results are query-dependent and thin — keep them out of the index.
@@ -64,6 +65,9 @@ async function SearchContent({
 	params: Promise<{ locale: string; channel: string }>;
 }) {
 	const [searchParams, params] = await Promise.all([searchParamsPromise, paramsPromise]);
+	// Catálogo mayorista: solo para empresas registradas. En un canal que no
+	// es B2B no hace nada.
+	await exigirEmpresa(params.channel, params.locale);
 	const t = await getTranslations({ locale: params.locale, namespace: "search" });
 
 	// Extract and validate query

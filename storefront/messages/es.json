@@ -80,6 +80,15 @@
 			"previous": "Imagen anterior",
 			"next": "Imagen siguiente",
 			"counter": "{current} / {total}"
+		},
+		"tramos": {
+			"title": "Precio por volumen",
+			"caption": "El precio del tramo aplica a todas las unidades de la línea. Se calcula en el carrito según la cantidad.",
+			"from": "Desde",
+			"unitPrice": "Precio unitario",
+			"discount": "Descuento",
+			"unit": "unidad",
+			"units": "unidades"
 		}
 	},
 	"plp": {
@@ -193,7 +202,11 @@
 				"postal": "Código postal",
 				"postTown": "Localidad postal",
 				"prefecture": "Prefectura"
-			}
+			},
+			"razonSocial": "Razón social",
+			"rut": "RUT de la empresa",
+			"giro": "Giro (opcional)",
+			"telefono": "Teléfono (opcional)"
 		},
 		"placeholders": {
 			"email": "tu@ejemplo.cl",
@@ -203,7 +216,11 @@
 			"newPasswordMin": "Al menos 8 caracteres…",
 			"confirmPassword": "Confirma tu contraseña",
 			"reenterPassword": "Vuelve a ingresar tu contraseña",
-			"countryCode": "CL"
+			"countryCode": "CL",
+			"razonSocial": "Comercial Santa Teresa SpA",
+			"rut": "76.543.210-3",
+			"giro": "Venta al por mayor de artículos eléctricos",
+			"telefono": "+56 9 1234 5678"
 		},
 		"common": {
 			"cancel": "Cancelar",
@@ -249,7 +266,9 @@
 			"updateAddressFailed": "No se pudo actualizar la dirección",
 			"deleteAddressFailed": "No se pudo eliminar la dirección",
 			"setDefaultAddressFailed": "No se pudo establecer la dirección predeterminada",
-			"deleteAccountFailed": "No se pudo solicitar la eliminación de la cuenta"
+			"deleteAccountFailed": "No se pudo solicitar la eliminación de la cuenta",
+			"empresaRequerida": "Indica la razón social y el RUT de tu empresa.",
+			"empresaFallida": "No se pudo registrar la empresa. Revisa el RUT e inténtalo de nuevo."
 		},
 		"login": {
 			"title": "Te damos la bienvenida",
@@ -272,7 +291,8 @@
 			"goToSignIn": "Ir a iniciar sesión",
 			"terms": "Al crear una cuenta, aceptas nuestros <terms>Términos del servicio</terms> y nuestra <privacy>Política de privacidad</privacy>.",
 			"termsLink": "Términos del servicio",
-			"privacyLink": "Política de privacidad"
+			"privacyLink": "Política de privacidad",
+			"rutHint": "Con o sin puntos, con guion antes del dígito verificador."
 		},
 		"setPassword": {
 			"title": "Establecer contraseña nueva",
@@ -400,6 +420,12 @@
 		"unavailable": {
 			"title": "No se pudo cargar tu cuenta",
 			"body": "La tienda no está disponible por ahora. Recarga la página o inténtalo de nuevo en un momento."
+		},
+		"empresa": {
+			"title": "Registra tu empresa",
+			"subtitle": "El catálogo mayorista es para clientes con RUT de empresa.",
+			"submit": "Registrar empresa",
+			"saving": "Registrando…"
 		}
 	},
 	"checkout": {

@@ -43,18 +43,26 @@ def _backoff(attempt: int) -> float:
 
 
 def gql(query: str, variables: Optional[dict] = None, *,
-        timeout: int = DEFAULT_TIMEOUT) -> dict[str, Any]:
+        timeout: int = DEFAULT_TIMEOUT,
+        token: Optional[str] = None) -> dict[str, Any]:
     """Ejecuta una operación GraphQL. Devuelve el cuerpo JSON completo
     (`{"data": {...}, "errors": [...]}`). Lanza SaleorTransportError si el
-    transporte falla tras los reintentos."""
+    transporte falla tras los reintentos.
+
+    `token` firma la consulta con una credencial distinta a la de la app. Lo usa
+    la lectura de la escalera de tramos: vive en la metadata privada del
+    producto, que exige `MANAGE_PRODUCTS` —permiso de escritura sobre todo el
+    catálogo que esta app no necesita para ninguna otra cosa—.
+    """
     if not config.SALEOR_API_URL:
         raise SaleorConfigError("SALEOR_API_URL no configurada")
-    if not config.SALEOR_AUTH_TOKEN:
+    auth = token or config.SALEOR_AUTH_TOKEN
+    if not auth:
         raise SaleorConfigError("SALEOR_AUTH_TOKEN no configurado")
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.SALEOR_AUTH_TOKEN}",
+        "Authorization": f"Bearer {auth}",
     }
     payload = {"query": query, "variables": variables or {}}
 

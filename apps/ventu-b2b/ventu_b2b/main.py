@@ -21,11 +21,15 @@ from pydantic import BaseModel, Field
 
 from . import config
 from .cart import link as link_mod
+from .cart import precios as precios_mod
 from .cart import service as cart
 from .company import rut as rut_mod
 from .company import service as company_svc
 from .credito import estados as credito_st
 from .credito import service as credito_svc
+from .pedido import medios as medios_mod
+from .pedido import service as pedido_svc
+from .company import models as company_models
 from .company.models import Company, CompanyInvalida
 
 logging.basicConfig(level=logging.INFO)
@@ -106,6 +110,30 @@ async def registrar_empresa(entrada: CompanyIn) -> dict:
 
     return {"status": "ok", "rut": company.rut,
             "nivel_precio": company.nivel_precio}
+
+
+@app.get("/company/de-usuario/{user_id}")
+async def empresa_de_usuario(user_id: str) -> dict:
+    """¿Este usuario compra como empresa?
+
+    Es la pregunta que hace el storefront en cada carga del catálogo B2B, así
+    que responde 200 siempre: un usuario sin empresa no es un error, es el
+    estado normal de quien recién se registró.
+    """
+    company = company_svc.obtener_de_usuario(user_id)
+    if not company:
+        return {"registrada": False}
+
+    return {
+        "registrada": True,
+        "rut": company.rut,
+        "razon_social": company.razon_social,
+        "nivel_precio": company.nivel_precio,
+        "condicion_pago": company.condicion_pago,
+        "credito_estado": company.credito_estado,
+        "medios_pago": medios_mod.disponibles(
+            tiene_credito=company_models.tiene_credito(company)),
+    }
 
 
 @app.get("/company/por-rut/{rut_libre}")
@@ -214,6 +242,51 @@ async def recibir_carpeta(
     return {"estado": credito_st.PENDIENTE, "referencia": referencia}
 
 
+# ─────────────────────────── tramos visibles ───────────────────────────
+
+@app.get("/tramos/{variant_id}")
+async def tramos_visibles(variant_id: str, user_id: str = "",
+                          canal: str = "") -> dict:
+    """Tabla de tramos que corresponde mostrar a **este** usuario.
+
+    La tabla es información comercial reservada: revela la política de descuentos
+    por volumen y, con ella, el margen. Solo se entrega a un usuario con empresa
+    registrada.
+
+    Por eso vive en `privateMetadata` y no en `metadata`: la metadata de producto
+    se lee sin autenticación, así que publicarla ahí la habría dejado a la vista
+    de cualquiera —cliente retail o competidor— por mucho que el storefront no la
+    dibujara. Ocultarla en la interfaz no es ocultarla.
+
+    Un usuario sin empresa recibe `visible: false` y ninguna cifra. No se
+    responde 403 a propósito: que un retail sepa que *existe* una tabla que no
+    puede ver no aporta nada y sí invita a buscarla.
+    """
+    if not user_id:
+        return {"visible": False, "motivo": "sin_identificar"}
+
+    company = company_svc.obtener_de_usuario(user_id)
+    if not company:
+        return {"visible": False, "motivo": "sin_empresa"}
+
+    destino = canal or company.nivel_precio or config.CANAL_CARRITO
+    try:
+        tabla = precios_mod.tabla_visible(
+            variant_id, canal=destino,
+            escalera_channel=config.tramos_del_canal(destino),
+            stock_minimo=config.STOCK_MINIMO_TRAMOS)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("(b2b) no se pudo leer la tabla de %s: %s", variant_id, exc)
+        return {"visible": False, "motivo": "no_disponible"}
+
+    if not tabla:
+        # Sin tramos aplicables —el producto no tiene, o el stock no alcanza—.
+        return {"visible": False, "motivo": "sin_tramos"}
+
+    return {"visible": True, "rut": company.rut, "canal": destino,
+            "tramos": tabla}
+
+
 # ─────────────────────────── carritos ───────────────────────────
 
 class LineaIn(BaseModel):
@@ -243,10 +316,48 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
             # orden: es lo que después permite facturar.
             extra = company.para_orden(company_id=entrada.user_id)
 
+    # Si el llamador no fija precio, se resuelve por la cantidad: es el
+    # comportamiento del sitio actual, donde la tabla de tramos vive en el
+    # producto y la cantidad elegida determina el precio unitario.
+    canal = entrada.canal or config.CANAL_CARRITO
+    lineas: List[cart.Linea] = []
+    # Líneas cuyo precio negociado queda bajo el margen mínimo. Viajan en la
+    # respuesta para que la herramienta del ejecutivo pueda mostrarlas.
+    avisos: List[dict] = []
+    for l in entrada.lineas:
+        precio = l.precio_unitario
+        if precio is None:
+            try:
+                precio = precios_mod.resolver_precio(
+                    l.variant_id, l.cantidad, canal=canal,
+                    escalera_channel=config.tramos_del_canal(canal))
+            except Exception as exc:  # noqa: BLE001
+                # Una escalera mal escrita no debe impedir vender: se cae al
+                # precio de catálogo y queda el registro para corregirla.
+                logger.warning("(b2b) tramos ilegibles para %s: %s", l.variant_id, exc)
+                precio = None
+        else:
+            # Precio fijado a mano por el ejecutivo: se revisa contra el margen
+            # mínimo. No se bloquea —cerrar una venta ajustada puede ser una
+            # decisión comercial legítima— pero no debe ocurrir sin que nadie lo
+            # sepa, que es como se pierde margen sin notarlo.
+            try:
+                bajo = precios_mod.revisar_negociado(
+                    l.variant_id, precio, canal=canal,
+                    markup_minimo=config.MARKUP_MINIMO,
+                    comision_pct=config.COMISION_PASARELA)
+                if bajo:
+                    avisos.append({"variant_id": l.variant_id, **bajo})
+                    logger.warning("(b2b) precio bajo el margen mínimo: %s", bajo)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("(b2b) no se pudo revisar el margen de %s: %s",
+                               l.variant_id, exc)
+
+        lineas.append(cart.Linea(l.variant_id, l.cantidad, precio))
+
     try:
         carrito = cart.crear(
-            [cart.Linea(l.variant_id, l.cantidad, l.precio_unitario)
-             for l in entrada.lineas],
+            lineas,
             canal=entrada.canal or "",
             origen=entrada.origen,
             extra_metadata=extra,
@@ -258,7 +369,8 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
         cart.adjuntar_cliente(carrito.checkout_id, entrada.user_id)
 
     return {"link_id": carrito.link_id, "url": carrito.url(),
-            "checkout_id": carrito.checkout_id}
+            "checkout_id": carrito.checkout_id,
+            **({"avisos_margen": avisos} if avisos else {})}
 
 
 @app.get("/cart/{link_id}")
@@ -275,3 +387,51 @@ async def resolver_carrito(link_id: str) -> dict:
 
     return {"checkout_id": nodo["id"], "token": nodo.get("token"),
             "canal": (nodo.get("channel") or {}).get("slug")}
+
+
+# ─────────────────────────── pedido ───────────────────────────
+
+class PedidoIn(BaseModel):
+    checkout_id: str
+    user_id: str
+    metodo_pago: str
+
+
+@app.post("/pedido")
+async def crear_pedido(entrada: PedidoIn) -> dict:
+    """Cierra el carrito como orden con el medio de pago elegido.
+
+    El pedido nace **por pagar**: en distribución mayorista la orden se despacha
+    contra una promesa de pago, así que no se exige que el total esté cubierto.
+    La identidad tributaria viaja en la metadata de la orden, que es lo que
+    después permite facturar.
+    """
+    company = company_svc.obtener_de_usuario(entrada.user_id)
+    if not company:
+        # 403 y no 404: aquí sí corresponde ser explícito. Comprar como empresa
+        # es exactamente lo que este endpoint hace, y quien llama necesita saber
+        # que le falta el alta para poder completarla.
+        raise HTTPException(403, "el usuario no tiene empresa asociada")
+
+    try:
+        pedido = pedido_svc.crear(
+            entrada.checkout_id,
+            entrada.metodo_pago,
+            tiene_credito=company_models.tiene_credito(company),
+            extra_metadata=company.para_orden(company_id=entrada.user_id),
+        )
+    except medios_mod.MedioNoDisponible as exc:
+        # 409: el medio existe, es el estado de esta empresa el que no lo admite.
+        raise HTTPException(409, str(exc)) from exc
+    except pedido_svc.PedidoError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    return {
+        "order_id": pedido.order_id,
+        "numero": pedido.numero,
+        "estado": pedido.estado,
+        "total": pedido.total,
+        "moneda": pedido.moneda,
+        "metodo_pago": pedido.metodo_pago,
+        "estado_pago": medios_mod.PENDIENTE,
+    }

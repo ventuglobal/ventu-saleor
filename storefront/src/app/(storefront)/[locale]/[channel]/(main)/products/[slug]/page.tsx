@@ -39,6 +39,7 @@ import {
 	PDP_LAYOUT_CLASSES,
 	type Product,
 } from "@/ui/components/pdp";
+import { exigirEmpresa } from "@/lib/b2b/gate";
 
 // ============================================================================
 // Metadata
@@ -116,6 +117,9 @@ async function ProductShell({
 	searchParams: Promise<{ variant?: string; sku?: string }>;
 }) {
 	const params = await paramsPromise;
+	// Catálogo mayorista: solo para empresas registradas. En un canal que no
+	// es B2B no hace nada.
+	await exigirEmpresa(params.channel, params.locale);
 	const browse = (suffix: string) => buildStorefrontPath(params.locale, params.channel, suffix);
 	const [product, tPdp, tNav, content, currency] = await Promise.all([
 		getProductData(params.slug, params.channel, params.locale),

@@ -90,6 +90,9 @@ def tiers_for(channel_slug: str) -> str:
 
     Los tramos son **por channel**, no por empresa: la escalera es la misma para
     todo el canal mayorista. El precio por empresa queda para la fase 1.2.
+
+    Es el valor por defecto: un producto puede traer su propia escalera y en ese
+    caso manda la suya (ver `pricing.tiers.escalera_para`).
     """
     key = "PRICING_TIERS_" + channel_slug.upper().replace("-", "_")
     val = os.getenv(key)

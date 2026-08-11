@@ -38,6 +38,11 @@ class VariantInput:
     # sitio de origen: si Saleor lo autogenera desde el nombre, la URL cambia y
     # se pierden el SEO y los enlaces existentes al migrar.
     slug: Optional[str] = None
+    # Costo unitario neto y tabla de tramos. Van a `privateMetadata` del producto,
+    # nunca a `metadata`: esta última se lee sin autenticación, así que publicar
+    # ahí el costo lo dejaría a la vista de cualquiera junto con el margen.
+    costo: Optional[float] = None
+    tramos: Optional[str] = None
 
     @classmethod
     def from_dict(cls, d: dict) -> "VariantInput":
@@ -50,6 +55,8 @@ class VariantInput:
                     for p in (d.get("prices") or [])],
             images=[str(u) for u in (d.get("images") or []) if u],
             slug=d.get("slug") or None,
+            costo=float(d["costo"]) if d.get("costo") is not None else None,
+            tramos=d.get("tramos") or None,
         )
 
 

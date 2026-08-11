@@ -1,5 +1,9 @@
 """Precios por tramo de cantidad (volume pricing).
 
+Copia literal de `apps/ventu/pricing/tiers.py`: es un módulo puro y sin
+dependencias, y la app B2B necesita resolver el mismo precio que Pricing publica.
+Si divergen, el carrito cobraría distinto de lo publicado.
+
 Saleor no tiene precios escalonados por cantidad: un channel-listing guarda un
 precio único por variante. El precio del tramo se resuelve aquí y se aplica a la
 línea del carrito mediante `price` de `CheckoutLineInput`, que Saleor sí admite.

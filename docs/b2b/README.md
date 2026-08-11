@@ -204,7 +204,137 @@ para todo el catálogo sin repetir precios producto por producto. Un canal sin
 escalera definida simplemente no tiene tramos, lo que es configuración válida y
 no un error.
 
+**Manda la tabla del producto.** Ventu 1.0 define los tramos como montos
+absolutos por producto —«este artículo, a 4 unidades, vale $8.900»— porque cada
+monto es una decisión comercial y no siempre corresponde a un porcentaje redondo.
+Ese es el caso principal; la escalera del canal es el último recurso. La
+precedencia es: variante → producto → canal.
+
 El precio por empresa queda para la fase 1.2.
+
+### Dónde se guarda la escalera
+
+En `privateMetadata` del producto (`ventu.pricing.tramos`), junto con el costo
+(`ventu.pricing.costo`). **No en `metadata`**: la metadata de producto de Saleor
+se lee sin autenticación, así que publicar ahí la escalera la dejaría a la vista
+de cualquiera —un cliente retail, un competidor— y el costo quedaría directamente
+expuesto.
+
+La contrapartida es de permisos: leer metadata privada exige `MANAGE_PRODUCTS`,
+que es escritura sobre todo el catálogo. Para no ampliar los permisos de la App
+B2B entera, la lectura se firma con `SALEOR_PRODUCTS_TOKEN`; vacío usa el token
+propio de la app.
+
+### Quién ve la tabla
+
+`GET /tramos/{variant_id}?user_id=…` es el único camino por el que la escalera
+sale de la App B2B, y responde con cifras **solo** si detrás de la sesión hay una
+empresa registrada:
+
+| Sesión | Respuesta |
+|---|---|
+| Anónima | `{"visible": false, "motivo": "sin_identificar"}` |
+| Cliente retail | `{"visible": false, "motivo": "sin_empresa"}` |
+| Empresa registrada | `{"visible": true, "rut", "canal", "tramos": [...]}` |
+
+Siempre **200**, nunca 403: que un cliente retail sepa que existe una tabla que
+no puede ver no le aporta nada y sí invita a buscarla.
+
+La respuesta lleva `desde` y `precio_unitario`, nada más. El costo y el margen no
+salen de la app **ni siquiera para la empresa registrada** — hay una prueba que
+busca esas palabras en el cuerpo crudo de la respuesta.
+
+### El stock condiciona la tabla
+
+Ofrecer «50 unidades a $8.400» con 12 en bodega es una promesa que el checkout va
+a rechazar: el cliente arma el pedido y recién ahí descubre que no hay. Peor en
+B2B, donde la cantidad es el motivo de la compra.
+
+- Los tramos por sobre el stock disponible se descartan.
+- Bajo `B2B_STOCK_MINIMO_TRAMOS` no se publica tabla alguna.
+- Si la consulta no trae dato de stock, **no se filtra**: es preferible mostrar
+  la tabla que ocultarla por una respuesta incompleta.
+
+### Dónde se muestra
+
+En la ficha de producto del storefront, dentro de la caja de compra. El
+storefront no lee la escalera de Saleor: pregunta a la App B2B con el id de
+sesión resuelto en el servidor y pinta lo que reciba. Para cualquier otra sesión
+el componente no llega a renderizarse, así que la tabla tampoco viaja en el HTML.
+
+Requiere `B2B_APP_URL` en el storefront. Sin esa variable la tienda funciona
+igual, solo que sin tabla. La consulta tiene un presupuesto de 2,5 s y cualquier
+fallo se trata como «sin tabla»: la ficha nunca muestra un error por esto.
+
+La tabla es informativa. El precio de compra lo resuelve la cantidad del
+carrito, como en el sitio actual.
+
+## El recorrido completo en 1.0
+
+Registrarse → ver el catálogo → precio por volumen → elegir medio de pago →
+comprar. Cada paso, y lo que lo condiciona:
+
+**1. Registro con RUT.** `/signup` pide razón social y RUT junto con la cuenta.
+El alta de la empresa la hace el servidor con el id que devuelve
+`accountRegister`, nunca con uno que venga del navegador: aceptarlo del cliente
+permitiría asociar una empresa a la cuenta de otra persona. Si el alta falla, la
+cuenta igual quedó creada —deshacerla dejaría el correo tomado sin poder
+reintentar— y se completa después en `/empresa`.
+
+El dígito verificador lo valida la App B2B (módulo 11): una sola implementación,
+y del lado que no se puede saltar.
+
+**2. Catálogo reservado.** Los canales listados en `B2B_CHANNELS` redirigen a
+`/login` a quien no tiene sesión y a `/empresa` a quien tiene cuenta pero no
+empresa.
+
+> Es una **puerta comercial, no un límite de seguridad**: los canales de Saleor
+> son consultables por la API sin autenticación, así que quien conozca el slug
+> puede leer los precios por su cuenta. Lo que sí queda protegido es la escalera
+> de tramos y el costo, que viven en metadata privada. La distinción importa
+> para no confundir «no se llega sin identificarse» con «es secreto».
+
+Si Saleor no responde, la puerta **deja pasar**: cerrarle el catálogo a un
+cliente registrado por una caída ajena sería peor, y los precios del canal ya son
+públicos.
+
+**3. Precio por volumen.** La tabla en la ficha de producto (§ Precios en 1.0).
+
+**4. Medios de pago.** Cuando quien compra es una empresa, el paso de pago
+reemplaza la caja de pasarelas por los medios de Ventu:
+
+| Medio | Estado | Condición |
+|---|---|---|
+| Tarjeta de crédito | Se ofrece, no conectada | — |
+| Tarjeta de débito | Se ofrece, no conectada | — |
+| Transferencia bancaria | Operativa | — |
+| Cheke Maxxa 30 días | Operativa | Crédito aprobado |
+
+Los medios que no están conectados **se muestran igual**, deshabilitados y con el
+motivo. Una vitrina que solo lista lo que funciona no le dice a la empresa qué va
+a poder usar, ni por qué le conviene pedir crédito. Y el medio se valida en el
+servidor antes de tocar Saleor: si no corresponde, el carrito queda intacto para
+que elija otro.
+
+**5. Compra.** `POST /pedido` usa `orderCreateFromCheckout` y no
+`checkoutComplete`. `checkoutComplete` exige que el total esté cubierto —regla
+correcta para una venta al consumidor, equivocada para una venta a 30 días—.
+El pedido nace **por pagar** (`ventu.pago.estado = pendiente`) y eso es su
+condición normal, no una anomalía: en distribución mayorista la orden se despacha
+contra una promesa de pago.
+
+El id del checkout se toma de la cookie del canal y el del usuario de la sesión;
+ninguno del cuerpo de la petición.
+
+### Lo que falta para operar de verdad
+
+- **Confirmación de cuenta por correo.** Saleor tiene
+  `enableAccountConfirmationByEmail` activo: sin envío de correos configurado,
+  una cuenta recién creada no puede iniciar sesión. Decisión pendiente: conectar
+  el correo o desactivar la confirmación.
+- **Pasarela de tarjetas** (Webpay). Hasta entonces los dos medios de tarjeta se
+  muestran deshabilitados.
+- **Cobro y conciliación** de la transferencia, y el envío del pedido a Maxxa.
 
 ## Dónde vive el código
 
