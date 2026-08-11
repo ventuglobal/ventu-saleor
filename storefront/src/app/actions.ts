@@ -9,6 +9,7 @@ import { revalidateStorefrontChrome } from "@/lib/auth/revalidate-storefront-chr
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { executeAuthenticatedGraphQL } from "@/lib/graphql";
 import { CheckoutDeleteLinesDocument, CheckoutLinesUpdateDocument } from "@/gql/graphql";
+import { reprecificar } from "@/lib/b2b/carrito";
 import * as Checkout from "@/lib/checkout";
 
 function revalidateCart(channel: string) {
@@ -116,6 +117,9 @@ export async function updateCartLineQuantity(
 		},
 		cache: "no-cache",
 	});
+
+	// El precio depende de la cantidad, así que se recalcula después de fijarla.
+	await reprecificar(checkoutId, channel);
 
 	revalidateCart(channel);
 }

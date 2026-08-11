@@ -15,6 +15,7 @@ import { resolvePdpVariants } from "@/lib/catalog/get-product-data";
 import { pickTranslatedSlug } from "@/lib/saleor-translations";
 import { getHeaderAuthState } from "@/lib/auth/get-header-user";
 import { getTramos } from "@/lib/b2b/tramos";
+import { reprecificar } from "@/lib/b2b/carrito";
 
 import { TramosTable } from "./tramos-table";
 import { AddToCart } from "./add-to-cart";
@@ -167,6 +168,10 @@ export async function VariantSectionDynamic({
 				console.error("Add to cart failed:", addResult.error.message);
 				return;
 			}
+
+			// La línea nace con el precio de catálogo; el tramo se aplica una vez
+			// que la cantidad está en el carrito.
+			await reprecificar(checkout.id, channel);
 
 			revalidateStorefrontBrowsePath(channel, "/cart");
 			revalidateStorefrontChrome(channel);
