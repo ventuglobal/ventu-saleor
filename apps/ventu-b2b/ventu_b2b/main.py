@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 from . import config
 from .cart import link as link_mod
 from .cart import precios as precios_mod
+from .cart import reprecio as reprecio_mod
 from .cart import service as cart
 from .company import rut as rut_mod
 from .company import service as company_svc
@@ -387,6 +388,33 @@ async def resolver_carrito(link_id: str) -> dict:
 
     return {"checkout_id": nodo["id"], "token": nodo.get("token"),
             "canal": (nodo.get("channel") or {}).get("slug")}
+
+
+class ReprecioIn(BaseModel):
+    checkout_id: str
+    user_id: str
+
+
+@app.post("/cart/reprecio")
+async def reprecificar(entrada: ReprecioIn) -> dict:
+    """Aplica al carrito el precio por volumen que corresponde a cada cantidad.
+
+    Solo para empresas registradas: los tramos son su precio, no el de cualquiera
+    que tenga el enlace del canal. Un usuario sin empresa recibe `aplicado:
+    false` y el carrito queda con el precio de catálogo, que es lo correcto.
+    """
+    company = company_svc.obtener_de_usuario(entrada.user_id)
+    if not company:
+        return {"aplicado": False, "motivo": "sin_empresa"}
+
+    try:
+        return reprecio_mod.aplicar(entrada.checkout_id, canal=company.nivel_precio)
+    except Exception as exc:  # noqa: BLE001
+        # Cualquier fallo, no solo los previstos: un error de transporte contra
+        # Saleor dejaría el carrito inutilizable. Sin reprecio se cobra el de
+        # catálogo, que es más caro pero no es un cobro indebido.
+        logger.warning("(b2b) no se pudo reprecificar %s: %s", entrada.checkout_id, exc)
+        return {"aplicado": False, "motivo": "no_disponible"}
 
 
 # ─────────────────────────── pedido ───────────────────────────

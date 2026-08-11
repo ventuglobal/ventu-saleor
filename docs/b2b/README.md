@@ -326,6 +326,20 @@ contra una promesa de pago.
 El id del checkout se toma de la cookie del canal y el del usuario de la sesión;
 ninguno del cuerpo de la petición.
 
+### Valores de maqueta
+
+En esta etapa el recorrido está completo pero hay cifras y conexiones que son
+**placeholders explícitos**, no decisiones comerciales. Quedan listadas aquí para
+que nadie las tome por definitivas:
+
+| Qué | Valor de maqueta | Qué falta |
+|---|---|---|
+| Escalera de tramos | 1 / 6 / 12 / 24 con −10%, −18%, −25% | la escalera real por producto |
+| Costo publicado | precio neto ÷ 1,55 | el costo real de compra |
+| Envío mayorista | $3.990 plano, igual que retail | la tarifa mayorista |
+| Webpay | ambiente de integración, credenciales públicas de prueba | contrato y credenciales productivas |
+| IVA | no configurado; en B2B el total es neto | clase y tasa del 19% para la factura |
+
 ### Lo que falta para operar de verdad
 
 - **Confirmación de cuenta por correo.** Saleor tiene
