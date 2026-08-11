@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import {
 	PaymentGatewayAlerts,
 	PaymentMethodArea,
+	MediosPagoVentu,
 	PaymentError,
 	PaymentTrustSignals,
 	BillingAddressSection,
@@ -54,6 +55,10 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 	const paymentStep = useCheckoutStepNumber("PAYMENT", isShippingRequired);
 	const hasShippingAddress = !!checkout.shippingAddress;
 	const shippingAddress = checkout.shippingAddress;
+
+	// Compra como empresa: la App B2B responde con sus propios medios de pago y
+	// entonces la caja de pasarelas y el botón de pagar sobran.
+	const [comoEmpresa, setComoEmpresa] = useState(false);
 
 	const [isPaymentBusy, setIsPaymentBusy] = useState(false);
 	const [sameAsBilling, setSameAsBilling] = useState(isShippingRequired && hasShippingAddress);
@@ -235,7 +240,9 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 
 			<PaymentError message={errors.payment || returnError || undefined} />
 
-			{shouldShowPaymentMethodArea(checkout) ? (
+			<MediosPagoVentu canal={checkout.channel.slug} onDisponible={setComoEmpresa} />
+
+			{!comoEmpresa && shouldShowPaymentMethodArea(checkout) ? (
 				<PaymentMethodArea
 					provider={provider}
 					checkout={checkout}
@@ -279,7 +286,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 					<ChevronLeft className="h-4 w-4" />
 					{isShippingRequired ? tActions("returnToShipping") : tActions("returnToInformation")}
 				</button>
-				{!usesClientSubmit ? (
+				{!usesClientSubmit && !comoEmpresa ? (
 					<div className="hidden flex-col items-end gap-3 md:flex">
 						<PaymentTrustSignals />
 						<Button type="submit" disabled={isDisabled} className="h-12 min-w-[200px] px-8">
@@ -296,7 +303,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 				) : null}
 			</div>
 
-			{!usesClientSubmit ? (
+			{!usesClientSubmit && !comoEmpresa ? (
 				<MobileStickyAction
 					step={paymentStep}
 					isShippingRequired={isShippingRequired}

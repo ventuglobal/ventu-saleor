@@ -269,6 +269,73 @@ fallo se trata como «sin tabla»: la ficha nunca muestra un error por esto.
 La tabla es informativa. El precio de compra lo resuelve la cantidad del
 carrito, como en el sitio actual.
 
+## El recorrido completo en 1.0
+
+Registrarse → ver el catálogo → precio por volumen → elegir medio de pago →
+comprar. Cada paso, y lo que lo condiciona:
+
+**1. Registro con RUT.** `/signup` pide razón social y RUT junto con la cuenta.
+El alta de la empresa la hace el servidor con el id que devuelve
+`accountRegister`, nunca con uno que venga del navegador: aceptarlo del cliente
+permitiría asociar una empresa a la cuenta de otra persona. Si el alta falla, la
+cuenta igual quedó creada —deshacerla dejaría el correo tomado sin poder
+reintentar— y se completa después en `/empresa`.
+
+El dígito verificador lo valida la App B2B (módulo 11): una sola implementación,
+y del lado que no se puede saltar.
+
+**2. Catálogo reservado.** Los canales listados en `B2B_CHANNELS` redirigen a
+`/login` a quien no tiene sesión y a `/empresa` a quien tiene cuenta pero no
+empresa.
+
+> Es una **puerta comercial, no un límite de seguridad**: los canales de Saleor
+> son consultables por la API sin autenticación, así que quien conozca el slug
+> puede leer los precios por su cuenta. Lo que sí queda protegido es la escalera
+> de tramos y el costo, que viven en metadata privada. La distinción importa
+> para no confundir «no se llega sin identificarse» con «es secreto».
+
+Si Saleor no responde, la puerta **deja pasar**: cerrarle el catálogo a un
+cliente registrado por una caída ajena sería peor, y los precios del canal ya son
+públicos.
+
+**3. Precio por volumen.** La tabla en la ficha de producto (§ Precios en 1.0).
+
+**4. Medios de pago.** Cuando quien compra es una empresa, el paso de pago
+reemplaza la caja de pasarelas por los medios de Ventu:
+
+| Medio | Estado | Condición |
+|---|---|---|
+| Tarjeta de crédito | Se ofrece, no conectada | — |
+| Tarjeta de débito | Se ofrece, no conectada | — |
+| Transferencia bancaria | Operativa | — |
+| Cheke Maxxa 30 días | Operativa | Crédito aprobado |
+
+Los medios que no están conectados **se muestran igual**, deshabilitados y con el
+motivo. Una vitrina que solo lista lo que funciona no le dice a la empresa qué va
+a poder usar, ni por qué le conviene pedir crédito. Y el medio se valida en el
+servidor antes de tocar Saleor: si no corresponde, el carrito queda intacto para
+que elija otro.
+
+**5. Compra.** `POST /pedido` usa `orderCreateFromCheckout` y no
+`checkoutComplete`. `checkoutComplete` exige que el total esté cubierto —regla
+correcta para una venta al consumidor, equivocada para una venta a 30 días—.
+El pedido nace **por pagar** (`ventu.pago.estado = pendiente`) y eso es su
+condición normal, no una anomalía: en distribución mayorista la orden se despacha
+contra una promesa de pago.
+
+El id del checkout se toma de la cookie del canal y el del usuario de la sesión;
+ninguno del cuerpo de la petición.
+
+### Lo que falta para operar de verdad
+
+- **Confirmación de cuenta por correo.** Saleor tiene
+  `enableAccountConfirmationByEmail` activo: sin envío de correos configurado,
+  una cuenta recién creada no puede iniciar sesión. Decisión pendiente: conectar
+  el correo o desactivar la confirmación.
+- **Pasarela de tarjetas** (Webpay). Hasta entonces los dos medios de tarjeta se
+  muestran deshabilitados.
+- **Cobro y conciliación** de la transferencia, y el envío del pedido a Maxxa.
+
 ## Dónde vive el código
 
 App independiente `apps/ventu-b2b`, siguiendo el molde de `apps/ventu` y

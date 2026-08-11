@@ -4,6 +4,9 @@ export { PaymentGatewayAlerts } from "./payment-gateway-alerts";
 
 export { PaymentMethodArea } from "./payment-method-area";
 
+/** Medios de pago B2B — reemplazan la caja de pasarelas cuando compra una empresa. */
+export { MediosPagoVentu } from "./medios-pago-ventu";
+
 export { IntegratedPaymentUi } from "./integrated-payment-ui";
 
 export { PaymentError } from "./payment-error";

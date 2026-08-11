@@ -27,6 +27,9 @@ from .company import rut as rut_mod
 from .company import service as company_svc
 from .credito import estados as credito_st
 from .credito import service as credito_svc
+from .pedido import medios as medios_mod
+from .pedido import service as pedido_svc
+from .company import models as company_models
 from .company.models import Company, CompanyInvalida
 
 logging.basicConfig(level=logging.INFO)
@@ -107,6 +110,30 @@ async def registrar_empresa(entrada: CompanyIn) -> dict:
 
     return {"status": "ok", "rut": company.rut,
             "nivel_precio": company.nivel_precio}
+
+
+@app.get("/company/de-usuario/{user_id}")
+async def empresa_de_usuario(user_id: str) -> dict:
+    """¿Este usuario compra como empresa?
+
+    Es la pregunta que hace el storefront en cada carga del catálogo B2B, así
+    que responde 200 siempre: un usuario sin empresa no es un error, es el
+    estado normal de quien recién se registró.
+    """
+    company = company_svc.obtener_de_usuario(user_id)
+    if not company:
+        return {"registrada": False}
+
+    return {
+        "registrada": True,
+        "rut": company.rut,
+        "razon_social": company.razon_social,
+        "nivel_precio": company.nivel_precio,
+        "condicion_pago": company.condicion_pago,
+        "credito_estado": company.credito_estado,
+        "medios_pago": medios_mod.disponibles(
+            tiene_credito=company_models.tiene_credito(company)),
+    }
 
 
 @app.get("/company/por-rut/{rut_libre}")
@@ -360,3 +387,51 @@ async def resolver_carrito(link_id: str) -> dict:
 
     return {"checkout_id": nodo["id"], "token": nodo.get("token"),
             "canal": (nodo.get("channel") or {}).get("slug")}
+
+
+# ─────────────────────────── pedido ───────────────────────────
+
+class PedidoIn(BaseModel):
+    checkout_id: str
+    user_id: str
+    metodo_pago: str
+
+
+@app.post("/pedido")
+async def crear_pedido(entrada: PedidoIn) -> dict:
+    """Cierra el carrito como orden con el medio de pago elegido.
+
+    El pedido nace **por pagar**: en distribución mayorista la orden se despacha
+    contra una promesa de pago, así que no se exige que el total esté cubierto.
+    La identidad tributaria viaja en la metadata de la orden, que es lo que
+    después permite facturar.
+    """
+    company = company_svc.obtener_de_usuario(entrada.user_id)
+    if not company:
+        # 403 y no 404: aquí sí corresponde ser explícito. Comprar como empresa
+        # es exactamente lo que este endpoint hace, y quien llama necesita saber
+        # que le falta el alta para poder completarla.
+        raise HTTPException(403, "el usuario no tiene empresa asociada")
+
+    try:
+        pedido = pedido_svc.crear(
+            entrada.checkout_id,
+            entrada.metodo_pago,
+            tiene_credito=company_models.tiene_credito(company),
+            extra_metadata=company.para_orden(company_id=entrada.user_id),
+        )
+    except medios_mod.MedioNoDisponible as exc:
+        # 409: el medio existe, es el estado de esta empresa el que no lo admite.
+        raise HTTPException(409, str(exc)) from exc
+    except pedido_svc.PedidoError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    return {
+        "order_id": pedido.order_id,
+        "numero": pedido.numero,
+        "estado": pedido.estado,
+        "total": pedido.total,
+        "moneda": pedido.moneda,
+        "metodo_pago": pedido.metodo_pago,
+        "estado_pago": medios_mod.PENDIENTE,
+    }

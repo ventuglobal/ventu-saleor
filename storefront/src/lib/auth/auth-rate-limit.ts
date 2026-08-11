@@ -69,7 +69,9 @@ export function rateLimitResponse(retryAfterSeconds: number): Response {
 /** Returns a 429 response when the client exceeds the auth route limit. */
 export function rejectIfRateLimited(
 	request: Request,
-	action: "login" | "register" | "set-password" | "reset-password" | "confirm-account",
+	// `b2b-company` no es autenticación, pero consulta identidad tributaria
+	// contra Saleor: sin límite sirve para averiguar qué RUT están registrados.
+	action: "login" | "register" | "set-password" | "reset-password" | "confirm-account" | "b2b-company",
 	options?: RateLimitOptions,
 ): Response | null {
 	const key = `${action}:${getClientIp(request)}`;

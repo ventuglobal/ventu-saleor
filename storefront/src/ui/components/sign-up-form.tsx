@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Building2, Hash } from "lucide-react";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
@@ -16,6 +16,8 @@ export function SignUpForm() {
 	const t = useTranslations("account");
 	const params = useParams<{ locale: string; channel: string }>();
 
+	const [rut, setRut] = useState("");
+	const [razonSocial, setRazonSocial] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
@@ -47,6 +49,11 @@ export function SignUpForm() {
 			return;
 		}
 
+		if (!rut.trim() || !razonSocial.trim()) {
+			setError(t("errors.empresaRequerida"));
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
@@ -58,6 +65,8 @@ export function SignUpForm() {
 					password,
 					firstName,
 					lastName,
+					rut,
+					razonSocial,
 					channel: params.channel,
 					redirectUrl: buildAccountConfirmationRedirectUrl(
 						window.location.origin,
@@ -70,6 +79,7 @@ export function SignUpForm() {
 			const data = (await response.json()) as {
 				errors?: Array<{ message: string; code?: string }>;
 				user?: { id: string; email: string };
+				empresa?: { ok: boolean; mensaje?: string };
 			};
 
 			if (data.errors?.length) {
@@ -79,6 +89,14 @@ export function SignUpForm() {
 				} else {
 					setError(t("errors.createAccountFailed"));
 				}
+				return;
+			}
+
+			// La cuenta quedó creada aunque el alta de empresa haya fallado. Se dice
+			// cuál de las dos cosas falló, porque el paso siguiente es distinto:
+			// confirmar el correo, o completar el RUT en /empresa.
+			if (data.empresa && !data.empresa.ok) {
+				setError(data.empresa.mensaje || t("errors.empresaFallida"));
 				return;
 			}
 
@@ -138,10 +156,50 @@ export function SignUpForm() {
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{error && (
-						<div role="alert" className="bg-destructive/10 rounded-md p-3 text-sm text-destructive">
+						<div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
 							{error}
 						</div>
 					)}
+
+					<div className="space-y-1.5">
+						<Label htmlFor="razonSocial" className="text-sm font-medium">
+							{t("fields.razonSocial")}
+						</Label>
+						<div className="relative">
+							<Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								id="razonSocial"
+								type="text"
+								placeholder={t("placeholders.razonSocial")}
+								autoComplete="organization"
+								value={razonSocial}
+								onChange={(e) => setRazonSocial(e.target.value)}
+								className="h-12 pl-10"
+								required
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-1.5">
+						<Label htmlFor="rut" className="text-sm font-medium">
+							{t("fields.rut")}
+						</Label>
+						<div className="relative">
+							<Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								id="rut"
+								type="text"
+								placeholder={t("placeholders.rut")}
+								inputMode="text"
+								spellCheck={false}
+								value={rut}
+								onChange={(e) => setRut(e.target.value)}
+								className="h-12 pl-10"
+								required
+							/>
+						</div>
+						<p className="text-xs text-muted-foreground">{t("signup.rutHint")}</p>
+					</div>
 
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">
