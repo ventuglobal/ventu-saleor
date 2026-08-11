@@ -4,7 +4,7 @@ import { getStaticStorefrontChannelSlugs, isAllowedStorefrontChannel } from "@/c
 import { getDefaultLocaleSlug, isLocaleSlug, isStorefrontLocaleSlug } from "@/config/locale";
 import { BROWSE_LOCALE_COOKIE, getBrowseLocaleCookieOptions } from "@/lib/browse-locale";
 import { buildStorefrontPath, isDefaultMarket } from "@/lib/storefront-path";
-import { nombresDeCookieDeSesion, requiereSesion } from "@/lib/b2b/puerta";
+import { haySesionEnCookies, requiereSesion } from "@/lib/b2b/puerta";
 
 const RESERVED_ROOT_SEGMENTS = new Set([
 	"api",
@@ -29,7 +29,7 @@ function isChannelSlug(segment: string): boolean {
 function haySesion(request: NextRequest): boolean {
 	const api = process.env.NEXT_PUBLIC_SALEOR_API_URL;
 	if (!api) return true; // Sin API configurada no se cierra nada.
-	return nombresDeCookieDeSesion(api).some((nombre) => Boolean(request.cookies.get(nombre)?.value));
+	return haySesionEnCookies(request.cookies.getAll(), api);
 }
 
 function withBrowseLocaleCookie(request: NextRequest, response: NextResponse, locale: string): NextResponse {
