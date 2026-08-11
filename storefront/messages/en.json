@@ -80,6 +80,15 @@
 			"previous": "Previous image",
 			"next": "Next image",
 			"counter": "{current} / {total}"
+		},
+		"tramos": {
+			"title": "Volume pricing",
+			"caption": "The tier price applies to every unit on the line. It is calculated in the cart from the quantity.",
+			"from": "From",
+			"unitPrice": "Unit price",
+			"discount": "Discount",
+			"unit": "unit",
+			"units": "units"
 		}
 	},
 	"plp": {

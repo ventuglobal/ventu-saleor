@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from .. import config
 from ..saleor_client import data_errors, gql, payload
 from ..margen import markup_real_a
 from ..tiers import TramoInvalido, escalera_a_tramos, precio_para, siguiente_tramo
@@ -78,7 +79,8 @@ def resolver_precio(variant_id: str, cantidad: int, *, canal: str,
     if cantidad < 1:
         raise TramoInvalido(f"cantidad debe ser >= 1, recibida {cantidad}")
 
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal})
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
+               token=config.SALEOR_PRODUCTS_TOKEN)
     if data_errors(body):
         raise RuntimeError(f"lectura de variante: {data_errors(body)}")
 
@@ -108,7 +110,8 @@ def incentivo(variant_id: str, cantidad: int, *, canal: str,
     Es lo que convierte la tabla de tramos en una herramienta de venta y no solo
     en un cálculo.
     """
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal})
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
+               token=config.SALEOR_PRODUCTS_TOKEN)
     if data_errors(body):
         raise RuntimeError(f"lectura de variante: {data_errors(body)}")
     v = payload(body).get("productVariant")
@@ -142,7 +145,8 @@ K_COSTO = "ventu.pricing.costo"
 
 def costo_de(variant_id: str, *, canal: str) -> Optional[float]:
     """Costo unitario publicado del producto, o `None` si no lo tiene."""
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal})
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
+               token=config.SALEOR_PRODUCTS_TOKEN)
     if data_errors(body):
         raise RuntimeError(f"lectura de variante: {data_errors(body)}")
     v = payload(body).get("productVariant")
@@ -194,7 +198,8 @@ def tabla_visible(variant_id: str, *, canal: str, escalera_channel: str = "",
     Devuelve solo cantidad y precio: el costo y el margen nunca salen de aquí,
     ni siquiera hacia una empresa registrada.
     """
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal})
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
+               token=config.SALEOR_PRODUCTS_TOKEN)
     if data_errors(body):
         raise RuntimeError(f"lectura de variante: {data_errors(body)}")
     v = payload(body).get("productVariant")

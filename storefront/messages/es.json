@@ -80,6 +80,15 @@
 			"previous": "Imagen anterior",
 			"next": "Imagen siguiente",
 			"counter": "{current} / {total}"
+		},
+		"tramos": {
+			"title": "Precio por volumen",
+			"caption": "El precio del tramo aplica a todas las unidades de la línea. Se calcula en el carrito según la cantidad.",
+			"from": "Desde",
+			"unitPrice": "Precio unitario",
+			"discount": "Descuento",
+			"unit": "unidad",
+			"units": "unidades"
 		}
 	},
 	"plp": {

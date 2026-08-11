@@ -5,6 +5,14 @@ import os
 SALEOR_API_URL = os.getenv("SALEOR_API_URL", "")
 SALEOR_AUTH_TOKEN = os.getenv("SALEOR_AUTH_TOKEN", "")
 
+# Token con el que se leen la escalera de tramos y el costo. Ambos viven en la
+# metadata **privada** del producto, y leerla exige `MANAGE_PRODUCTS`: un permiso
+# de escritura sobre los 22.765 artículos del catálogo.
+#
+# Se separa para no tener que ampliar los permisos de esta app entera, que sobre
+# el catálogo solo necesita leer. Vacío = usa el token propio.
+SALEOR_PRODUCTS_TOKEN = os.getenv("SALEOR_PRODUCTS_TOKEN", "") or SALEOR_AUTH_TOKEN
+
 # Canal por defecto de una empresa recién registrada. Se separa del canal en que
 # se arman los carritos de WhatsApp: una empresa nueva parte en retail hasta que
 # se le asigna nivel mayorista.

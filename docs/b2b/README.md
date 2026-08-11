@@ -204,7 +204,70 @@ para todo el catálogo sin repetir precios producto por producto. Un canal sin
 escalera definida simplemente no tiene tramos, lo que es configuración válida y
 no un error.
 
+**Manda la tabla del producto.** Ventu 1.0 define los tramos como montos
+absolutos por producto —«este artículo, a 4 unidades, vale $8.900»— porque cada
+monto es una decisión comercial y no siempre corresponde a un porcentaje redondo.
+Ese es el caso principal; la escalera del canal es el último recurso. La
+precedencia es: variante → producto → canal.
+
 El precio por empresa queda para la fase 1.2.
+
+### Dónde se guarda la escalera
+
+En `privateMetadata` del producto (`ventu.pricing.tramos`), junto con el costo
+(`ventu.pricing.costo`). **No en `metadata`**: la metadata de producto de Saleor
+se lee sin autenticación, así que publicar ahí la escalera la dejaría a la vista
+de cualquiera —un cliente retail, un competidor— y el costo quedaría directamente
+expuesto.
+
+La contrapartida es de permisos: leer metadata privada exige `MANAGE_PRODUCTS`,
+que es escritura sobre todo el catálogo. Para no ampliar los permisos de la App
+B2B entera, la lectura se firma con `SALEOR_PRODUCTS_TOKEN`; vacío usa el token
+propio de la app.
+
+### Quién ve la tabla
+
+`GET /tramos/{variant_id}?user_id=…` es el único camino por el que la escalera
+sale de la App B2B, y responde con cifras **solo** si detrás de la sesión hay una
+empresa registrada:
+
+| Sesión | Respuesta |
+|---|---|
+| Anónima | `{"visible": false, "motivo": "sin_identificar"}` |
+| Cliente retail | `{"visible": false, "motivo": "sin_empresa"}` |
+| Empresa registrada | `{"visible": true, "rut", "canal", "tramos": [...]}` |
+
+Siempre **200**, nunca 403: que un cliente retail sepa que existe una tabla que
+no puede ver no le aporta nada y sí invita a buscarla.
+
+La respuesta lleva `desde` y `precio_unitario`, nada más. El costo y el margen no
+salen de la app **ni siquiera para la empresa registrada** — hay una prueba que
+busca esas palabras en el cuerpo crudo de la respuesta.
+
+### El stock condiciona la tabla
+
+Ofrecer «50 unidades a $8.400» con 12 en bodega es una promesa que el checkout va
+a rechazar: el cliente arma el pedido y recién ahí descubre que no hay. Peor en
+B2B, donde la cantidad es el motivo de la compra.
+
+- Los tramos por sobre el stock disponible se descartan.
+- Bajo `B2B_STOCK_MINIMO_TRAMOS` no se publica tabla alguna.
+- Si la consulta no trae dato de stock, **no se filtra**: es preferible mostrar
+  la tabla que ocultarla por una respuesta incompleta.
+
+### Dónde se muestra
+
+En la ficha de producto del storefront, dentro de la caja de compra. El
+storefront no lee la escalera de Saleor: pregunta a la App B2B con el id de
+sesión resuelto en el servidor y pinta lo que reciba. Para cualquier otra sesión
+el componente no llega a renderizarse, así que la tabla tampoco viaja en el HTML.
+
+Requiere `B2B_APP_URL` en el storefront. Sin esa variable la tienda funciona
+igual, solo que sin tabla. La consulta tiene un presupuesto de 2,5 s y cualquier
+fallo se trata como «sin tabla»: la ficha nunca muestra un error por esto.
+
+La tabla es informativa. El precio de compra lo resuelve la cantidad del
+carrito, como en el sitio actual.
 
 ## Dónde vive el código
 

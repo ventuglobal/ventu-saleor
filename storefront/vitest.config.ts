@@ -12,6 +12,11 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),
+			// `server-only` lanza al importarse. Es lo correcto en un bundle de
+			// cliente, pero deja sin pruebas a cualquier módulo que lleve la marca.
+			// Se sustituye por un stub vacío, que es lo que el módulo hace en el
+			// servidor.
+			"server-only": path.resolve(__dirname, "./src/test/server-only-stub.ts"),
 		},
 	},
 });
