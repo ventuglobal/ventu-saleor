@@ -21,3 +21,13 @@ STOREFRONT_URL = os.getenv("STOREFRONT_URL", "").rstrip("/")
 # Tamaño máximo de la Carpeta Tributaria. Existe para acotar lo que el proceso
 # llega a tener en memoria: el documento no se persiste, se reenvía.
 CARPETA_MAX_BYTES = int(os.getenv("B2B_CARPETA_MAX_BYTES", str(15 * 1024 * 1024)))
+
+
+def tramos_del_canal(channel_slug: str) -> str:
+    """Escalera por defecto del channel, si la tiene.
+
+    Es el último recurso: manda la del producto. Existe para no tener que cargar
+    una tabla por cada uno de los 22.765 artículos cuando la regla es general.
+    """
+    key = "PRICING_TIERS_" + channel_slug.upper().replace("-", "_")
+    return os.getenv(key, os.getenv("PRICING_TIERS", ""))

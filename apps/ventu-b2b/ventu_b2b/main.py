@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from . import config
 from .cart import link as link_mod
+from .cart import precios as precios_mod
 from .cart import service as cart
 from .company import rut as rut_mod
 from .company import service as company_svc
@@ -243,10 +244,28 @@ async def crear_carrito(entrada: CarritoIn) -> dict:
             # orden: es lo que después permite facturar.
             extra = company.para_orden(company_id=entrada.user_id)
 
+    # Si el llamador no fija precio, se resuelve por la cantidad: es el
+    # comportamiento del sitio actual, donde la tabla de tramos vive en el
+    # producto y la cantidad elegida determina el precio unitario.
+    canal = entrada.canal or config.CANAL_CARRITO
+    lineas: List[cart.Linea] = []
+    for l in entrada.lineas:
+        precio = l.precio_unitario
+        if precio is None:
+            try:
+                precio = precios_mod.resolver_precio(
+                    l.variant_id, l.cantidad, canal=canal,
+                    escalera_channel=config.tramos_del_canal(canal))
+            except Exception as exc:  # noqa: BLE001
+                # Una escalera mal escrita no debe impedir vender: se cae al
+                # precio de catálogo y queda el registro para corregirla.
+                logger.warning("(b2b) tramos ilegibles para %s: %s", l.variant_id, exc)
+                precio = None
+        lineas.append(cart.Linea(l.variant_id, l.cantidad, precio))
+
     try:
         carrito = cart.crear(
-            [cart.Linea(l.variant_id, l.cantidad, l.precio_unitario)
-             for l in entrada.lineas],
+            lineas,
             canal=entrada.canal or "",
             origen=entrada.origen,
             extra_metadata=extra,
