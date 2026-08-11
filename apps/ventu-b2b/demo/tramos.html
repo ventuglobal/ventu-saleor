@@ -1,0 +1,412 @@
+<title>Ventu B2B — Precios por volumen</title>
+
+<style>
+  :root{
+    --ground:#eceef1; --surface:#ffffff; --surface-2:#f5f6f8;
+    --ink:#151a21; --ink-2:#4a5461; --ink-3:#78828f;
+    --line:#d8dce2; --line-2:#e8ebef;
+    --accent:#22447e; --accent-soft:#e4eaf5;
+    --ok:#1d6b46; --ok-soft:#e0efe7;
+    --warn:#8a5a06; --warn-soft:#f6eddb;
+    --off:#8d3a34; --off-soft:#f5e5e3;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0e1216; --surface:#161b21; --surface-2:#1c222a;
+      --ink:#e6eaef; --ink-2:#a3adb9; --ink-3:#7b8593;
+      --line:#2a323b; --line-2:#222932;
+      --accent:#8fb2ea; --accent-soft:#1b2739;
+      --ok:#6cc79a; --ok-soft:#15291f;
+      --warn:#dcb166; --warn-soft:#2a2216;
+      --off:#e09189; --off-soft:#2c1c1b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1216; --surface:#161b21; --surface-2:#1c222a;
+    --ink:#e6eaef; --ink-2:#a3adb9; --ink-3:#7b8593;
+    --line:#2a323b; --line-2:#222932;
+    --accent:#8fb2ea; --accent-soft:#1b2739;
+    --ok:#6cc79a; --ok-soft:#15291f;
+    --warn:#dcb166; --warn-soft:#2a2216;
+    --off:#e09189; --off-soft:#2c1c1b;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:28px 20px 64px}
+
+  /* ── encabezado ── */
+  header.top{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 16px; margin-bottom:22px}
+  .marca{font-size:22px; font-weight:650; letter-spacing:-.02em}
+  .marca span{color:var(--accent)}
+  .sub{color:var(--ink-2); font-size:14px}
+  .eyebrow{
+    font-size:11px; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--ink-3); font-weight:600;
+  }
+
+  /* ── barra de sesión ── */
+  .sesion{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:16px 18px; margin-bottom:20px;
+  }
+  .sesion-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px}
+  .cuentas{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  button.cuenta{
+    font:inherit; font-size:13.5px; cursor:pointer; text-align:left;
+    background:var(--surface-2); color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:9px 13px; display:flex; flex-direction:column; gap:1px;
+    transition:border-color .12s, background .12s;
+  }
+  button.cuenta:hover{border-color:var(--accent)}
+  button.cuenta[aria-pressed="true"]{
+    border-color:var(--accent); background:var(--accent-soft);
+    box-shadow:inset 0 0 0 1px var(--accent);
+  }
+  button.cuenta small{color:var(--ink-3); font-size:11.5px; font-family:var(--mono)}
+  button.cuenta[aria-pressed="true"] small{color:var(--ink-2)}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .estado{display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--ink-2)}
+  .punto{width:9px; height:9px; border-radius:50%; background:var(--ink-3); flex:none}
+  .punto.on{background:var(--ok)}
+
+  /* ── cuerpo ── */
+  .panel{display:grid; grid-template-columns:300px 1fr; gap:18px; align-items:start}
+  @media (max-width:820px){ .panel{grid-template-columns:1fr} }
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px}
+  .card h2{
+    margin:0; padding:13px 16px; border-bottom:1px solid var(--line-2);
+    font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3);
+  }
+
+  ul.catalogo{list-style:none; margin:0; padding:6px; max-height:520px; overflow-y:auto}
+  ul.catalogo button{
+    width:100%; text-align:left; font:inherit; font-size:13.5px; cursor:pointer;
+    background:none; border:0; border-radius:7px; padding:9px 10px; color:var(--ink);
+    display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+  }
+  ul.catalogo button:hover{background:var(--surface-2)}
+  ul.catalogo button[aria-pressed="true"]{background:var(--accent-soft); font-weight:600}
+  ul.catalogo .precio{font-family:var(--mono); font-size:12.5px; color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums}
+
+  .detalle{padding:18px}
+  .titulo{font-size:19px; font-weight:640; letter-spacing:-.015em; margin:0 0 3px; text-wrap:balance}
+  .meta{font-family:var(--mono); font-size:12px; color:var(--ink-3); margin-bottom:16px}
+
+  .controles{display:flex; flex-wrap:wrap; gap:20px; padding:14px 0; border-top:1px solid var(--line-2); border-bottom:1px solid var(--line-2)}
+  .control{display:flex; flex-direction:column; gap:6px; min-width:190px; flex:1}
+  .control label{font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3); font-weight:600}
+  .fila{display:flex; align-items:center; gap:10px}
+  input[type=range]{flex:1; accent-color:var(--accent); min-width:110px}
+  .valor{font-family:var(--mono); font-size:14px; font-weight:600; min-width:56px; font-variant-numeric:tabular-nums}
+
+  /* ── resultado ── */
+  .resultado{margin-top:18px; display:flex; flex-wrap:wrap; gap:14px; align-items:stretch}
+  .cifra{
+    flex:1; min-width:150px; background:var(--surface-2); border:1px solid var(--line-2);
+    border-radius:9px; padding:12px 14px;
+  }
+  .cifra .k{font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3); font-weight:600}
+  .cifra .v{font-family:var(--mono); font-size:21px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; margin-top:3px}
+  .cifra .n{font-size:12px; color:var(--ink-2); margin-top:2px}
+
+  .aviso{
+    margin-top:14px; border-radius:9px; padding:11px 14px; font-size:13.5px;
+    display:flex; gap:9px; align-items:flex-start;
+  }
+  .aviso.ok{background:var(--ok-soft); color:var(--ok)}
+  .aviso.warn{background:var(--warn-soft); color:var(--warn)}
+  .aviso.off{background:var(--off-soft); color:var(--off)}
+  .aviso b{font-weight:650}
+
+  /* ── tabla de tramos ── */
+  .tramos-wrap{margin-top:18px; overflow-x:auto}
+  table{border-collapse:collapse; width:100%; font-size:14px}
+  thead th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--ink-3); font-weight:600; padding:0 12px 7px; border-bottom:1px solid var(--line);
+  }
+  thead th.num, td.num{text-align:right}
+  td{padding:9px 12px; border-bottom:1px solid var(--line-2); font-variant-numeric:tabular-nums}
+  td.num{font-family:var(--mono)}
+  tr.activo td{background:var(--accent-soft); font-weight:650}
+  tr.activo td:first-child::before{content:"▸ "; color:var(--accent)}
+  .desc{color:var(--ok); font-family:var(--mono); font-size:12.5px}
+
+  .oculta{
+    margin-top:18px; border:1px dashed var(--line); border-radius:9px;
+    padding:22px 18px; text-align:center; color:var(--ink-2); font-size:14px;
+  }
+  .oculta .motivo{font-family:var(--mono); font-size:12px; color:var(--ink-3); margin-top:7px}
+
+  /* ── respuesta cruda ── */
+  details.crudo{margin-top:18px}
+  details.crudo summary{
+    cursor:pointer; font-size:12px; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--ink-3); font-weight:600;
+  }
+  pre{
+    background:var(--surface-2); border:1px solid var(--line-2); border-radius:8px;
+    padding:12px 14px; overflow-x:auto; font-family:var(--mono); font-size:12.5px;
+    line-height:1.55; margin:9px 0 0; color:var(--ink);
+  }
+
+  footer.nota{
+    margin-top:26px; border-top:1px solid var(--line); padding-top:16px;
+    font-size:13px; color:var(--ink-2);
+  }
+  footer.nota h3{font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3); margin:0 0 8px; font-weight:600}
+  footer.nota ul{margin:0; padding-left:18px}
+  footer.nota li{margin-bottom:5px}
+  footer.nota code{font-family:var(--mono); font-size:12px; background:var(--surface-2); padding:1px 5px; border-radius:4px}
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="marca">Ventu <span>B2B</span></div>
+    <div class="sub">Precios por volumen — demostración del control de visibilidad</div>
+  </header>
+
+  <section class="sesion">
+    <div class="sesion-head">
+      <div class="eyebrow">Sesión</div>
+      <div class="estado"><span class="punto" id="punto"></span><span id="estado-txt"></span></div>
+    </div>
+    <div class="cuentas" id="cuentas"></div>
+  </section>
+
+  <div class="panel">
+
+    <nav class="card" aria-label="Catálogo">
+      <h2>Catálogo · canal <span id="canal-cat">b2b-cl</span></h2>
+      <ul class="catalogo" id="catalogo"></ul>
+    </nav>
+
+    <section class="card detalle">
+      <h1 class="titulo" id="titulo"></h1>
+      <div class="meta" id="meta"></div>
+
+      <div class="controles">
+        <div class="control">
+          <label for="cant">Cantidad en el carrito</label>
+          <div class="fila">
+            <input type="range" id="cant" min="1" max="30" value="1">
+            <span class="valor" id="cant-v">1</span>
+          </div>
+        </div>
+        <div class="control">
+          <label for="stk">Stock disponible en bodega</label>
+          <div class="fila">
+            <input type="range" id="stk" min="0" max="60" value="25">
+            <span class="valor" id="stk-v">25</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="dinamico"></div>
+    </section>
+
+  </div>
+
+  <footer class="nota">
+    <h3>Qué está mirando</h3>
+    <ul>
+      <li>Los <b>10 productos</b>, sus precios y su stock salen del canal <code>b2b-cl</code> de la instancia de Saleor en producción.</li>
+      <li>La <b>escalera de tramos</b> y el <b>costo</b> se calcularon con los módulos reales (<code>ventu_b2b.tiers</code>, <code>ventu_b2b.cart.precios</code>) y pasaron la validación de monotonía y piso de costo.</li>
+      <li>Esta página <b>simula el login</b> para poder mostrar los tres estados uno al lado del otro. La regla de visibilidad, la resolución por cantidad y el recorte por stock son las del endpoint <code>GET /tramos/{variant_id}</code>.</li>
+      <li>El costo y el margen <b>no aparecen en ninguna respuesta</b>, ni siquiera para la empresa registrada.</li>
+    </ul>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+const PRODUCTOS = [
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE5", nombre:"Batería recargable Ni-MH 9V 280mAh", base:11126, stock:25, escalera:"1=11130,6=10020,12=9130,24=8350"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDEy", nombre:"Cable USB 2.0 de 4 puertos, 10 cm", base:9252, stock:25, escalera:"1=9260,6=8330,12=7590,24=6940"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDEz", nombre:"Concentrador USB 3.0, 1 puerto de entrada", base:13000, stock:25, escalera:"1=13000,6=11700,12=10660,24=9750"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE0", nombre:"Impresora láser monocromática BROTHER HL-1202", base:110504, stock:25, escalera:"1=110510,6=99460,12=90620,24=82880"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDIw", nombre:"Inversor 150 W 12 VDC a 220 VAC con puerto USB", base:28378, stock:25, escalera:"1=28380,6=25550,12=23270,24=21290"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE4", nombre:"Pila alcalina 12 V formato 23A", base:3000, stock:25, escalera:"1=3000,6=2700,12=2460,24=2250"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE1", nombre:"Protector notebook 14,6\" acolchado", base:6874, stock:25, escalera:"1=6880,6=6190,12=5640,24=5160"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE3", nombre:"Ratón óptico con cable USB-AM de 125 cm", base:8252, stock:25, escalera:"1=8260,6=7430,12=6770,24=6190"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDIx", nombre:"Teclado cableado resistente a derrames", base:26126, stock:25, escalera:"1=26130,6=23520,12=21430,24=19600"},
+ {id:"UHJvZHVjdFZhcmlhbnQ6NDE2", nombre:"Ventilador 12 × 12 cm 220 VAC sin enchufe", base:13387, stock:25, escalera:"1=13390,6=12050,12=10980,24=10050"}
+];
+
+const CUENTAS = [
+  {k:"anon",   nombre:"Sin identificar",        pie:"visitante anónimo",          canal:"retail-cl", empresa:null},
+  {k:"retail", nombre:"cliente@correo.cl",      pie:"cuenta retail, sin empresa", canal:"retail-cl", empresa:null},
+  {k:"b2b",    nombre:"compras@comercialst.cl", pie:"76.543.210-3",               canal:"b2b-cl",
+   empresa:{rut:"76.543.210-3", razon:"Comercial Santa Teresa SpA", nivel:"b2b-cl"}}
+];
+
+// Umbral bajo el cual no se publica tabla por volumen (B2B_STOCK_MINIMO_TRAMOS).
+const STOCK_MINIMO = 6;
+const IVA = 0.19;
+
+let sesion = "anon", sel = 0, cantidad = 1, stock = 25;
+
+const clp = n => new Intl.NumberFormat("es-CL",
+  {style:"currency", currency:"CLP", maximumFractionDigits:0}).format(Math.round(n));
+
+// ── lógica portada de ventu_b2b.tiers / cart.precios ──
+function escaleraATramos(crudo){
+  return crudo.split(",").map(t => {
+    const [d,v] = t.split("=");
+    return {desde:parseInt(d,10), precio_unitario:parseFloat(v)};
+  }).sort((a,b) => a.desde - b.desde);
+}
+function tramosAlcanzables(tramos, disponible, minimo){
+  if (disponible === null) return tramos;                 // sin dato: no se filtra
+  if (disponible < Math.max(minimo,1)) return [];         // poco stock: no hay tabla
+  return tramos.filter(t => t.desde <= disponible);
+}
+function precioPara(cant, tramos){
+  let elegido = tramos[0];
+  for (const t of tramos){ if (t.desde <= cant) elegido = t; else break; }
+  return elegido.precio_unitario;
+}
+function siguienteTramo(cant, tramos){
+  return tramos.find(t => t.desde > cant) || null;
+}
+
+// Lo que devolvería GET /tramos/{variant_id}
+function respuestaTramos(prod, cuenta){
+  if (cuenta.k === "anon")   return {visible:false, motivo:"sin_identificar"};
+  if (!cuenta.empresa)       return {visible:false, motivo:"sin_empresa"};
+  const tramos = tramosAlcanzables(escaleraATramos(prod.escalera), stock, STOCK_MINIMO);
+  if (!tramos.length)        return {visible:false, motivo:"sin_tramos"};
+  return {visible:true, rut:cuenta.empresa.rut, canal:cuenta.empresa.nivel, tramos};
+}
+
+// ── interfaz ──
+const $ = id => document.getElementById(id);
+
+function pintarCuentas(){
+  $("cuentas").innerHTML = CUENTAS.map(c => `
+    <button class="cuenta" data-k="${c.k}" aria-pressed="${c.k===sesion}">
+      <span>${c.nombre}</span><small>${c.pie}</small>
+    </button>`).join("");
+  $("cuentas").querySelectorAll("button").forEach(b =>
+    b.onclick = () => { sesion = b.dataset.k; pintar(); });
+
+  const c = CUENTAS.find(x => x.k === sesion);
+  $("punto").className = "punto" + (c.empresa ? " on" : "");
+  $("estado-txt").textContent = c.empresa
+    ? `${c.empresa.razon} · compra en ${c.empresa.nivel}`
+    : (c.k === "anon" ? "sin sesión · precios de lista" : "cuenta personal · precios de lista");
+  $("canal-cat").textContent = c.canal;
+}
+
+function pintarCatalogo(){
+  const c = CUENTAS.find(x => x.k === sesion);
+  $("catalogo").innerHTML = PRODUCTOS.map((p,i) => {
+    const precio = c.empresa ? p.base : p.base * (1 + IVA);
+    return `<li><button data-i="${i}" aria-pressed="${i===sel}">
+      <span>${p.nombre}</span><span class="precio">${clp(precio)}</span></button></li>`;
+  }).join("");
+  $("catalogo").querySelectorAll("button").forEach(b =>
+    b.onclick = () => { sel = +b.dataset.i; pintar(); });
+}
+
+function pintarDetalle(){
+  const p = PRODUCTOS[sel], c = CUENTAS.find(x => x.k === sesion);
+  const r = respuestaTramos(p, c);
+  const esEmpresa = !!c.empresa;
+
+  const unitario = r.visible ? precioPara(cantidad, r.tramos)
+                             : (esEmpresa ? p.base : p.base * (1 + IVA));
+  const lista    = esEmpresa ? p.base : p.base * (1 + IVA);
+  const ahorro   = (lista - unitario) * cantidad;
+  const prox     = r.visible ? siguienteTramo(cantidad, r.tramos) : null;
+
+  const MOTIVOS = {
+    sin_identificar:["Inicie sesión para ver los precios por volumen.",
+                     "La tabla de tramos no viaja al navegador de un visitante anónimo."],
+    sin_empresa:    ["Esta cuenta no tiene empresa registrada.",
+                     "Un cliente retail ve el precio de lista con IVA; la política de descuentos por volumen no se le entrega."],
+    sin_tramos:     ["Sin precios por volumen para este producto.",
+                     `Quedan ${stock} unidades y el mínimo para publicar tramos es ${STOCK_MINIMO}: ofrecer precio por cantidad prometería algo que la bodega no puede cumplir.`]
+  };
+
+  const tabla = r.visible ? `
+    <div class="tramos-wrap">
+      <table>
+        <thead><tr>
+          <th>Desde</th><th class="num">Precio unitario</th>
+          <th class="num">Descuento</th><th class="num">Total del tramo</th>
+        </tr></thead>
+        <tbody>${r.tramos.map(t => {
+          const act = precioPara(cantidad, r.tramos) === t.precio_unitario;
+          const d = Math.round((1 - t.precio_unitario / r.tramos[0].precio_unitario) * 100);
+          return `<tr class="${act ? "activo" : ""}">
+            <td>${t.desde}${t.desde === 1 ? " unidad" : " unidades"}</td>
+            <td class="num">${clp(t.precio_unitario)}</td>
+            <td class="num ${d ? "desc" : ""}">${d ? "−" + d + "%" : "—"}</td>
+            <td class="num">${clp(t.precio_unitario * t.desde)}</td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table>
+    </div>` : `
+    <div class="oculta">
+      <div>${MOTIVOS[r.motivo][0]}</div>
+      <div class="motivo">motivo: ${r.motivo}</div>
+    </div>`;
+
+  const aviso = r.visible
+    ? (prox
+        ? `<div class="aviso ok">◆<div>Lleva <b>${prox.desde - cantidad}</b> ${prox.desde-cantidad===1?"unidad":"unidades"} más y el unitario baja a <b>${clp(prox.precio_unitario)}</b>.</div></div>`
+        : `<div class="aviso ok">◆<div>Está en el mejor tramo disponible con este stock.</div></div>`)
+    : `<div class="aviso ${r.motivo === "sin_tramos" ? "warn" : "off"}">■<div>${MOTIVOS[r.motivo][1]}</div></div>`;
+
+  $("titulo").textContent = p.nombre;
+  $("meta").textContent = `${p.id} · canal ${esEmpresa ? "b2b-cl (neto)" : "retail-cl (con IVA)"}`;
+  $("cant-v").textContent = cantidad;
+  $("stk-v").textContent = stock;
+
+  $("dinamico").innerHTML = `
+    <div class="resultado">
+      <div class="cifra">
+        <div class="k">Precio unitario</div>
+        <div class="v">${clp(unitario)}</div>
+        <div class="n">${r.visible ? "resuelto por la cantidad" : "precio de lista"}</div>
+      </div>
+      <div class="cifra">
+        <div class="k">Total de la línea</div>
+        <div class="v">${clp(unitario * cantidad)}</div>
+        <div class="n">${cantidad} × ${clp(unitario)}</div>
+      </div>
+      <div class="cifra">
+        <div class="k">${ahorro > 0 ? "Ahorro por volumen" : "Sin descuento"}</div>
+        <div class="v">${ahorro > 0 ? "−" + clp(ahorro) : "—"}</div>
+        <div class="n">${ahorro > 0 ? "frente al tramo de 1 unidad" : "cantidad bajo el primer corte"}</div>
+      </div>
+    </div>
+
+    ${aviso}
+    ${tabla}
+
+    <details class="crudo">
+      <summary>Respuesta de GET /tramos/${p.id}</summary>
+      <pre>${JSON.stringify(r, null, 2)}</pre>
+    </details>`;
+}
+
+function pintar(){ pintarCuentas(); pintarCatalogo(); pintarDetalle(); }
+
+$("cant").addEventListener("input", e => { cantidad = +e.target.value; pintarDetalle(); });
+$("stk").addEventListener("input",  e => { stock    = +e.target.value; pintarDetalle(); });
+pintar();
+</script>
