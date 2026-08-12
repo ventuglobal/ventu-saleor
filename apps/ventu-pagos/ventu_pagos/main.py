@@ -26,6 +26,55 @@ from . import config, handlers, webpay_client
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ventu.pagos")
 
+# ── subscriptions de los webhooks ──
+# Los webhooks SÍNCRONOS de transacción construyen su payload a partir de esta
+# consulta. Sin ella Saleor envía un payload mínimo: llega el evento pero sin
+# `action.amount`, el monto queda en 0 y Transbank responde 422
+# ("Invalid value for parameter: amount"). No es opcional.
+SESSION_SUBSCRIPTION = """
+subscription {
+  event {
+    ... on PaymentGatewayInitializeSession {
+      sourceObject { ... on Checkout { id } ... on Order { id } }
+      data
+    }
+    ... on TransactionInitializeSession {
+      transaction { id }
+      sourceObject { ... on Checkout { id } ... on Order { id } }
+      action { amount currency actionType }
+      idempotencyKey
+      merchantReference
+      data
+    }
+    ... on TransactionProcessSession {
+      transaction { id }
+      sourceObject { ... on Checkout { id } ... on Order { id } }
+      action { amount currency actionType }
+      data
+    }
+  }
+}
+"""
+
+ACTION_SUBSCRIPTION = """
+subscription {
+  event {
+    ... on TransactionChargeRequested {
+      transaction { id pspReference }
+      action { amount currency actionType }
+    }
+    ... on TransactionRefundRequested {
+      transaction { id pspReference }
+      action { amount currency actionType }
+    }
+    ... on TransactionCancelationRequested {
+      transaction { id pspReference }
+      action { amount currency actionType }
+    }
+  }
+}
+"""
+
 app = FastAPI(title="Ventu Pagos", version="0.1.0")
 
 
@@ -37,10 +86,16 @@ async def health() -> dict:
 @app.get("/manifest")
 async def manifest(request: Request) -> dict:
     base = str(request.base_url).rstrip("/")
-    events = [
+    # Dos webhooks, no uno: los eventos de *sesión* y los de *acción* exponen
+    # `transaction`/`action` con tipos distintos, así que una sola subscription
+    # que los cubra a todos no valida ("conflicting types"). Separarlos mantiene
+    # cada consulta coherente; ambos apuntan al mismo endpoint.
+    session_events = [
         "PAYMENT_GATEWAY_INITIALIZE_SESSION",
         "TRANSACTION_INITIALIZE_SESSION",
         "TRANSACTION_PROCESS_SESSION",
+    ]
+    action_events = [
         "TRANSACTION_CHARGE_REQUESTED",
         "TRANSACTION_REFUND_REQUESTED",
         "TRANSACTION_CANCELATION_REQUESTED",
@@ -53,13 +108,24 @@ async def manifest(request: Request) -> dict:
         "permissions": ["HANDLE_PAYMENTS"],
         "appUrl": base,
         "tokenTargetUrl": f"{base}/register",
-        "webhooks": [{
-            "name": "Ventu Webpay payments",
-            "targetUrl": f"{base}/webhooks/saleor",
-            "syncEvents": events,
-            "asyncEvents": [],
-            "isActive": True,
-        }],
+        "webhooks": [
+            {
+                "name": "Ventu Webpay sesiones",
+                "targetUrl": f"{base}/webhooks/saleor",
+                "syncEvents": session_events,
+                "asyncEvents": [],
+                "isActive": True,
+                "query": SESSION_SUBSCRIPTION,
+            },
+            {
+                "name": "Ventu Webpay acciones",
+                "targetUrl": f"{base}/webhooks/saleor",
+                "syncEvents": action_events,
+                "asyncEvents": [],
+                "isActive": True,
+                "query": ACTION_SUBSCRIPTION,
+            },
+        ],
     }
 
 
