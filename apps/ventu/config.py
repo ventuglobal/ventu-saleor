@@ -31,18 +31,28 @@ DEFAULT_CATEGORY_NAME = os.getenv("SALEOR_DEFAULT_CATEGORY_NAME", "Ventu")
 # entonces la sube al storage y puede devolver su URL directa. Sin calentarlas,
 # la primera visita de cada producto pasa por la API en vez de ir al CDN.
 # Vacío ("") desactiva el calentamiento.
-# Los tamaños por defecto cubren los que pide el storefront: 1024 en el listado
-# y 2048 en la ficha de producto (verificado sobre el HTML servido).
+#
+# Cada (tamaño, formato) es una miniatura DISTINTA: los defaults se toman de lo
+# que el storefront realmente pide en sus queries, no de una escalera genérica.
+# Calentar de más no es gratis — cada variante es un decode+resize de Pillow, y
+# el 2048 en formato de origen es el más caro de todos.
+#
+#   storefront/src/graphql/ProductDetails.graphql:23,28  → size: 2048, WEBP
+#   storefront/src/graphql/VariantDetailsFragment.graphql:52 → size: 2048, WEBP
+#   storefront/src/graphql/ProductListItem.graphql:53    → size: 1024, WEBP
+#
+# El checkout pide además 128/WEBP y 72 (origen), que se dejan fuera a
+# propósito: son baratas de generar y solo las ve quien ya está comprando, así
+# que no justifican calentarlas en cada publicación del catálogo.
 THUMBNAIL_WARM_SIZES = [int(s) for s in
-                        os.getenv("THUMBNAIL_WARM_SIZES", "256,512,1024,2048").split(",")
+                        os.getenv("THUMBNAIL_WARM_SIZES", "1024,2048").split(",")
                         if s.strip().isdigit()]
 
-# Cada (tamaño, formato) es una miniatura DISTINTA en el storage. El storefront
-# pide `url(size: 2048, format: WEBP)`, así que calentar solo el formato de
-# origen deja la variante webp sin generar y la ficha vuelve a pasar por la API.
-# "" = formato original; el resto son formatos de Saleor (webp, avif…).
+# "" = formato original; el resto son formatos de Saleor (webp, avif…). El
+# storefront pide WEBP en todas sus queries de imagen, así que calentar el
+# formato de origen genera variantes que nadie solicita.
 THUMBNAIL_WARM_FORMATS = [f.strip().lower() for f in
-                          os.getenv("THUMBNAIL_WARM_FORMATS", ",webp").split(",")]
+                          os.getenv("THUMBNAIL_WARM_FORMATS", "webp").split(",")]
 
 # ── Pricing ──
 # Channels a los que se publica precio, y política por defecto (env-configurable).
