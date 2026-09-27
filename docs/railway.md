@@ -52,7 +52,7 @@ cd landing-global && railway up --service landing-global
 
 | Servicio | Imagen | Configuración relevante |
 |---|---|---|
-| `saleor-api` | `ghcr.io/saleor/saleor:3.23` | Puerto 8000. Pre-deploy: `migrate` y asegura el superusuario `admin@ventu.cl`. |
+| `saleor-api` | `ghcr.io/saleor/saleor:3.23` | Puerto 8000. Pre-deploy: `migrate` y asegura el superusuario del dashboard. |
 | `saleor-worker` | `ghcr.io/saleor/saleor:3.23` | Start: `celery -A saleor --app=saleor.celeryconf:app worker --loglevel=info` |
 | `saleor-dashboard` | `ghcr.io/saleor/saleor-dashboard:3.23` | Puerto 80. Variable `API_URL`. |
 
