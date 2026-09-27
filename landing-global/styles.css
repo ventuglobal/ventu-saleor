@@ -1,0 +1,828 @@
+/* ════════════════════════════════════════════════════════════
+   VENTU · company site
+   Same palette and type as ventu.cl, set more soberly: this page is read
+   by people evaluating a business, not by someone about to place an order.
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:          #ffffff;
+  --bg-soft:     #faf6ff;
+  --bg-elev:     #f4eefb;
+  --ink:         #0f0a17;
+  --ink-2:       #2e1f3f;
+  --ink-3:       #5b4a6b;
+  --ink-4:       #71617f;
+  --line:        #e8e0f2;
+  --line-2:      #d8cae8;
+
+  --brand-rgb:   124, 36, 236;
+  --brand:       rgb(var(--brand-rgb));
+  --brand-deep:  #5a14b5;
+  --brand-bg:    rgba(var(--brand-rgb), 0.07);
+  --brand-line:  rgba(var(--brand-rgb), 0.22);
+
+  --good:        #0e7c66;
+  --good-bg:     rgba(14, 124, 102, 0.09);
+  --mid:         #8a6410;
+  --mid-bg:      rgba(138, 100, 16, 0.09);
+  --bad:         #b03636;
+  --bad-bg:      rgba(176, 54, 54, 0.08);
+
+  --sans: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  --wrap: 1160px;
+  --gutter: 24px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; color: var(--ink); letter-spacing: -0.03em; line-height: 1.14; }
+p { margin: 0 0 1em; }
+p:last-child { margin-bottom: 0; }
+img { max-width: 100%; display: block; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+.wrap.narrow { max-width: 820px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* The wordmark is a mask so it takes the colour of whatever it sits in. */
+.mark::before { content: 'Ventu'; color: var(--brand); font-weight: 700; }
+@supports (mask-image: url("ventu-logo.png")) or (-webkit-mask-image: url("ventu-logo.png")) {
+  .mark {
+    display: inline-block;
+    height: 1.78ex;
+    aspect-ratio: 2088 / 492;
+    vertical-align: baseline;
+    background: var(--brand);
+    -webkit-mask: url("ventu-logo.png") no-repeat center / contain;
+            mask: url("ventu-logo.png") no-repeat center / contain;
+  }
+  .mark::before { content: none; }
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  margin-bottom: 14px;
+}
+
+/* ────────── Nav ────────── */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-in {
+  max-width: var(--wrap); margin: 0 auto; padding: 14px var(--gutter);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.brand-img { height: 26px; width: auto; }
+.nav-links { display: flex; align-items: center; gap: 26px; }
+.nav-links a {
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink-3);
+  transition: color 0.2s var(--ease);
+}
+.nav-links a:hover { color: var(--brand); }
+/* .nav-links a outranks .btn on specificity, so the button has to say it. */
+.nav-links a.btn { color: #fff; }
+.nav-links a.btn:hover { color: #fff; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--brand); color: #fff;
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  padding: 11px 20px; border: 1px solid var(--brand); border-radius: 10px;
+  cursor: pointer; transition: background 0.2s var(--ease);
+}
+.btn:hover { background: var(--brand-deep); border-color: var(--brand-deep); }
+.btn-sm { font-size: 13px; padding: 8px 15px; border-radius: 8px; }
+.btn-lg { font-size: 16px; padding: 14px 26px; }
+.btn-ghost { background: transparent; color: var(--brand); }
+.btn-ghost:hover { background: var(--brand-bg); border-color: var(--brand); color: var(--brand-deep); }
+
+.link-out {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 600; color: var(--brand);
+  border-bottom: 1px solid var(--brand-line); padding-bottom: 2px;
+  transition: border-color 0.2s var(--ease);
+}
+.link-out:hover { border-color: var(--brand); }
+.link-out svg { width: 14px; height: 14px; flex: none; }
+
+/* ────────── Hero ────────── */
+.hero { padding: 96px 0 84px; background: linear-gradient(180deg, var(--bg-soft), var(--bg)); }
+.hero h1 {
+  font-size: clamp(34px, 4.6vw, 60px);
+  font-weight: 700;
+  max-width: 17ch;
+  margin-bottom: 24px;
+  text-wrap: balance;
+}
+h1 em, h2 em, h3 em { font-style: normal; font-weight: 600; color: var(--brand); }
+.lead {
+  font-size: clamp(18px, 1.6vw, 21px);
+  line-height: 1.55;
+  color: var(--ink-3);
+  max-width: 58ch;
+  margin-bottom: 40px;
+  text-wrap: pretty;
+}
+
+.thesis {
+  list-style: none; margin: 0 0 40px; padding: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden;
+}
+.thesis li { background: var(--bg); }
+.thesis-v {
+  display: block; font-size: clamp(24px, 2.6vw, 32px); font-weight: 700;
+  letter-spacing: -0.03em; color: var(--brand); line-height: 1.05; margin-bottom: 6px;
+}
+.thesis-k { display: block; font-size: 14px; line-height: 1.4; color: var(--ink-3); }
+
+/* The tile is the claim; the baseline it beats sits behind a click, so the
+   hero keeps its height and the comparison is still one gesture away. */
+.thesis-btn {
+  display: block; width: 100%; text-align: left;
+  padding: 22px 42px 22px 20px;
+  background: none; border: 0; cursor: pointer;
+  font: inherit; color: inherit;
+  position: relative;
+  transition: background 0.2s var(--ease);
+}
+.thesis-btn:hover { background: var(--brand-bg); }
+.thesis-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.thesis-chev {
+  position: absolute; right: 18px; top: 28px;
+  width: 8px; height: 8px;
+  border-right: 1.5px solid var(--brand);
+  border-bottom: 1.5px solid var(--brand);
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.25s var(--ease);
+}
+.thesis-item.open .thesis-chev { transform: rotate(225deg) translate(-1px, -1px); }
+.thesis-panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s var(--ease);
+}
+.thesis-item.open .thesis-panel { grid-template-rows: 1fr; }
+.thesis-panel-in { overflow: hidden; }
+.thesis-panel-body { padding: 0 20px 22px; }
+.thesis-cat {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; font-weight: 600; color: var(--brand);
+  margin-bottom: 10px;
+}
+.thesis-old { font-size: 13.5px; line-height: 1.5; color: var(--ink-4); margin-bottom: 8px; }
+.thesis-old s { text-decoration-color: var(--line-2); }
+.thesis-tag {
+  display: inline-block; margin-right: 7px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  font-weight: 600; color: var(--ink-4);
+  border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 7px;
+  vertical-align: 1px;
+}
+.thesis-why { font-size: 13.5px; line-height: 1.5; color: var(--ink-3); }
+
+.hero-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; }
+
+/* ────────── Sections ────────── */
+.sec { padding: 84px 0; }
+.sec-alt { background: var(--bg-soft); }
+.sec-head { max-width: 760px; margin-bottom: 44px; }
+.sec-head h2 { font-size: clamp(28px, 3.2vw, 40px); font-weight: 700; text-wrap: balance; }
+.sec-sub { margin-top: 16px; font-size: 17px; line-height: 1.6; color: var(--ink-3); text-wrap: pretty; }
+
+.body-lg { font-size: 17px; line-height: 1.7; color: var(--ink-3); text-wrap: pretty; }
+.body-lg strong { color: var(--ink); font-weight: 700; }
+.wide { max-width: 74ch; margin-bottom: 22px; }
+.two-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; }
+
+/* ────────── Architecture layers ────────── */
+.layers {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+}
+.layer {
+  display: grid; grid-template-columns: auto 1fr; gap: 16px;
+  padding: 24px 22px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--bg);
+}
+.layer-n { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--brand); }
+.layer h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.layer p { font-size: 15px; line-height: 1.55; color: var(--ink-3); }
+
+/* ────────── Proof ────────── */
+.proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
+.proof {
+  border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px;
+  background: var(--bg-soft);
+}
+.proof-lab {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; font-weight: 600; color: var(--brand);
+  margin-bottom: 16px; min-height: 2.4em;
+}
+.proof-fig {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px;
+  font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+}
+.proof-fig .from { font-size: clamp(21px, 1.9vw, 26px); color: var(--ink-4); }
+.proof-fig .to   { font-size: clamp(21px, 1.9vw, 26px); color: var(--brand); }
+.proof-fig .unit { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--ink-3); }
+.proof-fig .arr  { font-size: 18px; color: var(--line-2); }
+.proof-sub { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.proof p { margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-3); text-wrap: pretty; }
+
+.callout {
+  border: 1px solid var(--brand-line); border-radius: 16px;
+  background: var(--brand-bg); padding: 28px 30px;
+}
+.callout p { font-size: 17px; line-height: 1.65; color: var(--ink-2); margin-bottom: 18px; text-wrap: pretty; }
+.callout strong { color: var(--brand-deep); }
+
+/* ────────── Scale, on dark ────────── */
+.sec-dark { background: #17102a; }
+.sec-dark h2 { color: #fff; }
+.sec-dark h2 em { color: #c9a9ff; }
+.sec-dark .eyebrow { color: #c9a9ff; }
+.sec-dark .sec-sub { color: #c6bcd6; }
+.metrics {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+.metric {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 16px 18px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 14.5px; color: #e6e0f0;
+}
+.metric i { font-style: normal; font-size: 17px; font-weight: 700; }
+.metric--up i { color: #63e0b0; }
+.metric--down i { color: #ffb4a8; }
+
+/* ────────── Comparison table ────────── */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+.cmp { width: 100%; border-collapse: collapse; min-width: 720px; font-size: 14.5px; }
+.cmp th, .cmp td { padding: 13px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+.cmp thead th {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; font-weight: 600; color: var(--ink-4);
+  background: var(--bg-soft); white-space: nowrap;
+}
+.cmp thead .t-head-us { color: var(--brand); }
+.cmp tbody th { font-weight: 600; color: var(--ink); }
+.cmp tbody tr:last-child th, .cmp tbody tr:last-child td { border-bottom: 0; }
+.cmp td span {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-weight: 600; font-size: 13.5px;
+}
+.t-good span { color: var(--good); background: var(--good-bg); }
+.t-mid  span { color: var(--mid);  background: var(--mid-bg); }
+.t-bad  span { color: var(--bad);  background: var(--bad-bg); }
+
+/* ────────── Flywheel ────────── */
+.fly { display: grid; gap: 18px; margin-bottom: 32px; }
+.fly-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.fly-in { border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: var(--bg); }
+.fly-in h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.fly-in p { font-size: 14.5px; line-height: 1.55; color: var(--ink-3); }
+.fly-core {
+  text-align: center; font-family: var(--mono); font-size: 13px;
+  letter-spacing: 0.16em; font-weight: 600; color: #fff;
+  background: var(--brand-deep); border-radius: 12px; padding: 16px;
+}
+.fly-out {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+.fly-out li {
+  text-align: center; font-size: 14px; font-weight: 600; color: var(--brand-deep);
+  background: var(--brand-bg); border: 1px solid var(--brand-line);
+  border-radius: 10px; padding: 12px 10px;
+}
+
+/* ────────── Model ────────── */
+.stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.stage { border: 1px solid var(--line); border-radius: 16px; padding: 26px 24px; background: var(--bg); }
+.stage-k {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+  font-weight: 600; color: var(--brand); margin-bottom: 12px;
+}
+.stage h3 { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+.stage p { font-size: 15px; line-height: 1.6; color: var(--ink-3); }
+
+/* ────────── Vision ────────── */
+.sec-vision { text-align: center; padding: 96px 0; }
+.sec-vision .eyebrow { margin-bottom: 18px; }
+.vision-h {
+  font-size: clamp(30px, 3.8vw, 48px); font-weight: 700;
+  max-width: 20ch; margin: 0 auto 24px; text-wrap: balance;
+}
+.sec-vision .wide { margin-left: auto; margin-right: auto; }
+.vision-line {
+  margin-top: 30px; font-family: var(--mono); font-size: clamp(13px, 1.3vw, 16px);
+  letter-spacing: 0.06em; font-weight: 600; color: var(--brand);
+}
+
+.contact-cta { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* ────────── Footer ────────── */
+.foot { background: #17102a; color: #c6bcd6; padding: 56px 0 30px; }
+.foot .brand-img { height: 24px; filter: brightness(0) invert(1); }
+.foot-top { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 30px; }
+.foot-top p { font-size: 15px; color: #c6bcd6; }
+.foot-links { display: flex; flex-wrap: wrap; gap: 22px; padding-bottom: 26px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.foot-links a { font-size: 15px; color: #e6e0f0; }
+.foot-links a:hover { color: #fff; }
+.foot-bottom {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding-top: 22px; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.08em; color: #9a8fb0;
+}
+
+/* ────────── Contact modal ────────── */
+.cf-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(15, 10, 23, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.cf-modal {
+  background: #fff; border-radius: 18px; width: 100%; max-width: 520px;
+  padding: 30px 28px; position: relative; max-height: 92vh; overflow-y: auto;
+}
+.cf-close {
+  position: absolute; top: 14px; right: 16px; background: none; border: 0;
+  font-size: 26px; line-height: 1; color: var(--ink-4); cursor: pointer;
+}
+.cf-head { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 20px; }
+.cf-field { display: block; margin-bottom: 14px; }
+.cf-label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+.cf-field input, .cf-field textarea {
+  width: 100%; font-family: var(--sans); font-size: 15px; color: var(--ink);
+  padding: 11px 13px; border: 1px solid var(--line-2); border-radius: 10px;
+  background: #fff; resize: vertical;
+}
+.cf-field input:focus, .cf-field textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+.cf-err { display: block; font-size: 12.5px; color: var(--bad); min-height: 1em; margin-top: 3px; }
+.cf-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--ink-3); margin: 6px 0 4px; }
+.cf-hp { position: absolute; left: -9999px; opacity: 0; }
+.cf-form-err { font-size: 14px; color: var(--bad); margin-bottom: 12px; min-height: 0; }
+.cf-form-err:empty { margin-bottom: 0; }
+.cf-submit { width: 100%; justify-content: center; margin-top: 6px; }
+.cf-ok { text-align: center; padding: 18px 0 8px; }
+.cf-ok-title { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+
+/* ────────── Responsive ────────── */
+@media (max-width: 1040px) {
+  .thesis { grid-template-columns: repeat(2, 1fr); }
+  .layers { grid-template-columns: repeat(2, 1fr); }
+  .proof-grid { grid-template-columns: repeat(2, 1fr); }
+  .proof-lab { min-height: 0; }
+  .metrics { grid-template-columns: repeat(3, 1fr); }
+  .fly-out { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 860px) {
+  .nav-links a:not(.btn) { display: none; }
+  .two-col { grid-template-columns: 1fr; gap: 20px; }
+  .stages { grid-template-columns: 1fr; }
+  .fly-inputs { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  body { font-size: 16px; }
+  .hero { padding: 64px 0 60px; }
+  .sec { padding: 60px 0; }
+  .thesis { grid-template-columns: 1fr; }
+  .layers { grid-template-columns: 1fr; }
+  .proof-grid { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .fly-out { grid-template-columns: repeat(2, 1fr); }
+  .foot-bottom { flex-direction: column; gap: 8px; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   STACK · ported verbatim from ventu.cl
+   The investor should see the same diagram the product page shows, so the
+   rules below are the ventu.cl originals. Only the token names differ
+   between the two stylesheets, so they are aliased here rather than
+   rewritten inside every declaration.
+   ════════════════════════════════════════════════════════════ */
+:root {
+  --font-mono:   var(--mono);
+  --fg:          var(--ink);
+  --fg-muted:    var(--ink-3);
+  --fg-subtle:   var(--ink-4);
+  --line-bright: var(--line-2);
+  /* Cards sit on the tinted section background, so they lift with white. */
+  --bg-elevated: #ffffff;
+  --accent:      #00b873;
+  --accent-bg:   rgba(0, 184, 115, 0.08);
+  --accent-line: rgba(0, 184, 115, 0.25);
+}
+
+/* ────────── Inline Ventu wordmark ──────────
+   Used where display copy names the brand, so "Ventu" renders as the logo
+   instead of as text. The PNG spans ascender to baseline, and its x-height
+   is 75.8% of the file height (373px of 492px), so 1ex / 0.758 = 1.32ex
+   makes the mark's x-height match the surrounding text at any font size,
+   and whether Satoshi loads or a fallback stands in. */
+/* The mark is painted as a masked gradient rather than as the PNG itself, so
+   it picks up each page's brand hue instead of dropping a purple wordmark
+   into the middle of a blue or amber heading. Falls back to the word. */
+.ventu-mark::before {
+  content: "Ventu";
+  color: var(--brand);
+  font-weight: 700;
+}
+@supports (mask-image: url("ventu-logo.png")) or (-webkit-mask-image: url("ventu-logo.png")) {
+  .ventu-mark {
+    display: inline-block;
+    height: 1.32ex;
+    aspect-ratio: 2088 / 492;
+    vertical-align: baseline;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+    -webkit-mask: url("ventu-logo.png") no-repeat center / contain;
+            mask: url("ventu-logo.png") no-repeat center / contain;
+  }
+  .ventu-mark::before { content: none; }
+
+  /* Uppercase mono labels have no x-height to match; align to the cap band
+     instead, which for this family runs about 1.4x the x-height. */
+  .ventu-mark--caps {
+    height: 1.85ex;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   STACK · one core, three engines
+   ════════════════════════════════════════════════════════════ */
+.stk-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  margin-bottom: 10px;
+}
+.stk-core {
+  /* The icon-and-copy row is its own grid now, so the card itself just stacks. */
+  display: block;
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.07) 0%, rgba(var(--brand-rgb), 0.02) 100%);
+  border: 1px solid var(--brand-line);
+  border-radius: 18px;
+  padding: 30px 32px;
+}
+.stk-core-mark {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--brand-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+}
+.stk-core-mark svg { width: 36px; height: 36px; }
+.stk-core-title {
+  font-size: clamp(24px, 2.6vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+/* The alignment floor only exists to line up the three engine columns. */
+.stk-core .stk-desc { min-height: 0; margin-bottom: 0; }
+
+/* Connector drawn in CSS: a stem down from the core, a bar across, three drops. */
+/* Full grid width, so the three drops land on the column centres below. */
+.stk-branch {
+  position: relative;
+  height: 46px;
+  width: 100%;
+}
+.stk-branch-stem,
+.stk-branch-bar,
+.stk-branch-drop {
+  position: absolute;
+  background: var(--brand-line);
+}
+.stk-branch-stem { left: 50%; top: 0; width: 1px; height: 22px; }
+.stk-branch-bar  { left: 16.66%; right: 16.66%; top: 22px; height: 1px; }
+.stk-branch-drop { top: 22px; width: 1px; height: 24px; }
+.stk-branch-drop:nth-of-type(3) { left: 16.66%; }
+.stk-branch-drop:nth-of-type(4) { left: 50%; }
+.stk-branch-drop:nth-of-type(5) { left: 83.33%; }
+
+.stk-engines {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  /* Not stretch: an open accordion should grow its own card, not its neighbours. */
+  align-items: start;
+}
+.stk-engine {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.stk-engine:hover {
+  border-color: var(--brand-line);
+  transform: translateY(-2px);
+}
+.stk-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  color: var(--brand);
+  margin-bottom: 10px;
+}
+.stk-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+.stk-benefit {
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--brand-deep);
+  margin: 0 0 8px;
+  text-wrap: pretty;
+}
+.stk-desc {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  margin: 0 0 18px;
+  text-wrap: pretty;
+  /* Three lines, so the rules below the descriptions align across columns
+     even though the module lists have different lengths. */
+  min-height: 78px;
+}
+
+.stk-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.stk-tag--live {
+  color: #06724a;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-line);
+}
+.stk-tag--beta {
+  color: #8a4b00;
+  background: rgba(196, 120, 0, 0.09);
+  border: 1px solid rgba(196, 120, 0, 0.28);
+}
+.stk-tag--soon {
+  color: var(--fg-subtle);
+  background: rgba(26, 15, 37, 0.04);
+  border: 1px solid var(--line-bright);
+}
+
+@media (max-width: 980px) {
+  .stk-engines { grid-template-columns: 1fr; gap: 14px; }
+  .stk-branch { height: 24px; max-width: 100%; }
+  .stk-branch-bar, .stk-branch-drop { display: none; }
+  .stk-branch-stem { height: 24px; }
+}
+@media (max-width: 560px) {
+  .stk-core { padding: 26px 22px; }
+  .stk-core-top { grid-template-columns: 1fr; gap: 16px; }
+  .stk-mod { flex-wrap: wrap; gap: 6px; }
+}
+
+
+/* The italic display face was the hardest thing on the page to read at size.
+   Removing the declarations was not enough: em is italic by user-agent
+   default, so the headings have to opt out explicitly. The two-tone
+   distinction now rides on weight and colour alone. */
+h1 em, h2 em, h3 em, h4 em { font-style: normal; }
+
+/* ════════════════════════════════════════════════════════════
+   STACK MODULES · the twelve pieces, inside the diagram
+   Module cards carry their own accent, one shade deeper than the
+   frame around them, so the levels stay legible as levels.
+   ════════════════════════════════════════════════════════════ */
+.stk-core-top {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 24px;
+}
+.stk-core-body { max-width: 860px; }
+/* Title and status share a baseline row rather than stacking. */
+.stk-core-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.stk-core-line .stk-core-title { margin-bottom: 0; }
+.stk-engine-head { margin-bottom: 22px; }
+
+
+.stk-modlist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stk-modcard {
+  --brand-rgb:  90, 20, 181;
+  --brand:      rgb(var(--brand-rgb));
+  --brand-bg:   rgba(var(--brand-rgb), 0.07);
+  --brand-line: rgba(var(--brand-rgb), 0.2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  transition: border-color 0.2s var(--ease);
+}
+.stk-modcard:hover { border-color: var(--brand-line); }
+.stk-modcard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.stk-modcard-ic {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+}
+.stk-modcard-ic svg { width: 18px; height: 18px; }
+/* Only the lower 73% of the logo file is the body of the word; the top
+   quarter is the ascender of the "t" alone. Sizing the box to the x-height
+   therefore leaves the wordmark visibly smaller than the capitals beside
+   it, so the box is scaled by that factor to bring the letters up to the
+   cap band of the module name. */
+.stk-modcard-name .ventu-mark {
+  height: 1.78ex;
+  margin-right: 4px;
+}
+.stk-core-title .ventu-mark {
+  height: 1.78ex;
+  margin-right: 7px;
+}
+.stk-modcard-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0 auto 0 0;
+}
+.stk-modcard-benefit {
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--brand);
+  margin: 0 0 8px;
+  text-wrap: pretty;
+}
+.stk-modcard-tech {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* The technical paragraph is the depth, not the headline: it opens on
+   demand so a card reads as one claim until someone asks for more. */
+.stk-modcard-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 2px 0 0 -6px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--brand);
+  transition: background 0.2s var(--ease);
+}
+.stk-modcard-more:hover { background: var(--brand-bg); }
+.stk-modcard-more .stk-chev {
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.25s var(--ease);
+}
+.stk-modcard.open .stk-chev { transform: rotate(225deg) translate(-1px, -1px); }
+.stk-modcard-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s var(--ease);
+}
+.stk-modcard.open .stk-modcard-panel { grid-template-rows: 1fr; }
+.stk-modcard-panel-in { overflow: hidden; }
+.stk-modcard-panel-in .stk-modcard-tech { padding-top: 12px; }
+
+@media (max-width: 700px) {
+  .stk-modcard-head { flex-wrap: wrap; }
+  .stk-modcard-name { margin-right: 0; }
+}
+
+/* The stack heading sat a couple of points above everything around it. */
+#stack .hiw-head h2 { font-size: clamp(27px, 3vw, 38px); }
+
+/* Available to a screen reader, absent from the page. The chevron carries
+   the affordance visually; the label still has to exist for anyone who
+   cannot see it. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STACK · a colour per engine
+   Each engine carries its own hue on the rule above its title and on
+   its number, so the three lanes read apart at a glance. Contrast on the
+   card background is 4.9:1 or better in every case, so the numbers stay
+   legible as text rather than only as decoration.
+   ════════════════════════════════════════════════════════════ */
+.stk-engine { --lane: var(--brand); position: relative; }
+.stk-engine--1 { --lane: #7c24ec; }
+.stk-engine--2 { --lane: #0e7c66; }
+.stk-engine--3 { --lane: #1f5fbf; }
+
+.stk-engine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 26px;
+  right: 26px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--lane);
+}
+.stk-engine .stk-num { color: var(--lane); }
+.stk-engine .stk-title { color: var(--fg); }
+.stk-engine:hover { border-color: color-mix(in srgb, var(--lane) 35%, transparent); }
+
+/* The connector drop into each engine picks up its lane colour too. */
+.stk-branch-drop:nth-of-type(3) { background: #7c24ec; }
+.stk-branch-drop:nth-of-type(4) { background: #0e7c66; }
+.stk-branch-drop:nth-of-type(5) { background: #1f5fbf; }
+
+@media (max-width: 560px) {
+  .stk-engine::before { left: 20px; right: 20px; }
+}
