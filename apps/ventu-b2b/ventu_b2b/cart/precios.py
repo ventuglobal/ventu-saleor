@@ -9,12 +9,12 @@ publica y la App B2B la lee: una sola fuente, sin duplicar la escalera.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from .. import config
-from ..saleor_client import data_errors, gql, payload
+from ..saleor_client import SaleorRespuestaError, data_errors, gql, payload
 from ..margen import markup_real_a
-from ..tiers import TramoInvalido, escalera_a_tramos, precio_para, siguiente_tramo
+from ..tiers import Tramo, TramoInvalido, escalera_a_tramos, precio_para, siguiente_tramo
 
 # Claves en `privateMetadata`. Formato de la escalera: "1=13240,4=8900,6=8400"
 # (montos) o "1:1.0,10:0.9" (factores). Ver `ventu_b2b.tiers`.
@@ -26,21 +26,79 @@ K_TRAMOS = "ventu.pricing.tramos"
 # competidor— y el costo quedaría directamente expuesto.
 #
 # `quantityAvailable` se pide para no ofrecer tramos que no se pueden cumplir.
+#
+# El precio viene neto y bruto, junto con cómo el channel ingresa sus precios,
+# porque el precio de un tramo se escribe en la línea como `price` y Saleor lo
+# toma como si fuera el de lista: si el channel ingresa precios sin IVA
+# (b2b-cl, ver docs/b2b/lanzamiento.md §d), le suma el IVA encima. Calcular el
+# tramo sobre el bruto cobraría el IVA dos veces. `taxConfiguration` exige un
+# token de app o de staff, que es lo que usa esta consulta.
 _VARIANTE = """
 query($id: ID!, $channel: String!) {
   productVariant(id: $id, channel: $channel) {
     id
     quantityAvailable
-    pricing { price { gross { amount } } }
+    pricing { price { net { amount } gross { amount } } }
     product { privateMetadata { key value } }
     privateMetadata { key value }
   }
+  channel(slug: $channel) { taxConfiguration { pricesEnteredWithTax } }
 }
 """
 
 
 def _pares(meta) -> dict:
     return {p["key"]: p["value"] for p in (meta or [])}
+
+
+def _leer(variant_id: str, canal: str) -> dict:
+    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
+               token=config.SALEOR_PRODUCTS_TOKEN)
+    if data_errors(body):
+        raise SaleorRespuestaError(f"lectura de variante: {data_errors(body)}")
+    return payload(body)
+
+
+def _bases(datos: dict) -> Tuple[float, float]:
+    """`(precio de entrada, factor para mostrar)` de la variante en el channel.
+
+    El de entrada es el que Saleor espera en `price` de una línea: el neto si
+    el channel ingresa precios sin IVA, el bruto si los ingresa con IVA. Los
+    tramos se calculan y se escriben en esa base.
+
+    El factor lleva un precio de entrada a lo que muestra la ficha (el bruto):
+    así la tabla y el incentivo se leen igual que el precio de al lado, y
+    coinciden con lo que el carrito termina cobrando.
+
+    Sin dato del channel se asume precio con IVA, que es lo que Saleor usa por
+    omisión en una configuración de impuestos nueva.
+    """
+    v = datos.get("productVariant") or {}
+    precio = ((v.get("pricing") or {}).get("price")) or {}
+    bruto = float((precio.get("gross") or {}).get("amount") or 0.0)
+    neto = float((precio.get("net") or {}).get("amount") or 0.0) or bruto
+    impuestos = ((datos.get("channel") or {}).get("taxConfiguration")) or {}
+    entrada = neto if impuestos.get("pricesEnteredWithTax") is False else bruto
+    return entrada, (bruto / entrada if entrada else 1.0)
+
+
+def _tramos(datos: dict, *, escalera_channel: str,
+            stock_minimo: int) -> Tuple[List[Tramo], float]:
+    """Tramos alcanzables en la base de entrada del channel, y el factor para
+    mostrarlos (ver `_bases`). Sin variante o sin escalera, ninguno."""
+    v = datos.get("productVariant")
+    if not v:
+        return [], 1.0
+    crudo = (_pares(v.get("privateMetadata")).get(K_TRAMOS)
+             or _pares((v.get("product") or {}).get("privateMetadata")).get(K_TRAMOS)
+             or escalera_channel
+             or "")
+    if not crudo.strip():
+        return [], 1.0
+    entrada, a_vista = _bases(datos)
+    tramos = tramos_alcanzables(escalera_a_tramos(entrada, crudo),
+                                v.get("quantityAvailable"), minimo=stock_minimo)
+    return tramos, a_vista
 
 
 def tramos_alcanzables(tramos, disponible: Optional[int], *, minimo: int = 0):
@@ -75,29 +133,15 @@ def resolver_precio(variant_id: str, cantidad: int, *, canal: str,
 
     La escalera de la variante gana sobre la del producto, y ambas sobre la del
     channel: lo más específico manda.
+
+    El precio vuelve en la base de entrada del channel (neto en b2b-cl), que es
+    la que espera `price` en la línea del checkout.
     """
     if cantidad < 1:
         raise TramoInvalido(f"cantidad debe ser >= 1, recibida {cantidad}")
 
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
-               token=config.SALEOR_PRODUCTS_TOKEN)
-    if data_errors(body):
-        raise RuntimeError(f"lectura de variante: {data_errors(body)}")
-
-    v = payload(body).get("productVariant")
-    if not v:
-        return None
-
-    crudo = (_pares(v.get("privateMetadata")).get(K_TRAMOS)
-             or _pares((v.get("product") or {}).get("privateMetadata")).get(K_TRAMOS)
-             or escalera_channel
-             or "")
-    if not crudo.strip():
-        return None
-
-    base = (((v.get("pricing") or {}).get("price") or {}).get("gross") or {}).get("amount") or 0.0
-    tramos = tramos_alcanzables(escalera_a_tramos(float(base), crudo),
-                                v.get("quantityAvailable"), minimo=stock_minimo)
+    tramos, _ = _tramos(_leer(variant_id, canal), escalera_channel=escalera_channel,
+                        stock_minimo=stock_minimo)
     if not tramos:
         return None
     return precio_para(cantidad, tramos)
@@ -108,32 +152,17 @@ def incentivo(variant_id: str, cantidad: int, *, canal: str,
     """Próximo tramo por alcanzar: «lleva N más y pagas $X c/u».
 
     Es lo que convierte la tabla de tramos en una herramienta de venta y no solo
-    en un cálculo.
+    en un cálculo. El precio va como lo muestra la ficha (ver `_bases`).
     """
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
-               token=config.SALEOR_PRODUCTS_TOKEN)
-    if data_errors(body):
-        raise RuntimeError(f"lectura de variante: {data_errors(body)}")
-    v = payload(body).get("productVariant")
-    if not v:
-        return None
-
-    crudo = (_pares(v.get("privateMetadata")).get(K_TRAMOS)
-             or _pares((v.get("product") or {}).get("privateMetadata")).get(K_TRAMOS)
-             or escalera_channel or "")
-    if not crudo.strip():
-        return None
-
-    base = (((v.get("pricing") or {}).get("price") or {}).get("gross") or {}).get("amount") or 0.0
-    tramos = tramos_alcanzables(escalera_a_tramos(float(base), crudo),
-                                v.get("quantityAvailable"), minimo=stock_minimo)
+    tramos, a_vista = _tramos(_leer(variant_id, canal), escalera_channel=escalera_channel,
+                              stock_minimo=stock_minimo)
     if not tramos:
         return None
     prox = siguiente_tramo(cantidad, tramos)
     if not prox:
         return None
     return {"faltan": prox.desde - cantidad, "desde": prox.desde,
-            "precio_unitario": prox.precio_unitario}
+            "precio_unitario": round(prox.precio_unitario * a_vista, 2)}
 
 
 # ─────────── revisión de precios negociados ───────────
@@ -145,11 +174,7 @@ K_COSTO = "ventu.pricing.costo"
 
 def costo_de(variant_id: str, *, canal: str) -> Optional[float]:
     """Costo unitario publicado del producto, o `None` si no lo tiene."""
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
-               token=config.SALEOR_PRODUCTS_TOKEN)
-    if data_errors(body):
-        raise RuntimeError(f"lectura de variante: {data_errors(body)}")
-    v = payload(body).get("productVariant")
+    v = _leer(variant_id, canal).get("productVariant")
     if not v:
         return None
     crudo = (_pares(v.get("privateMetadata")).get(K_COSTO)
@@ -197,22 +222,12 @@ def tabla_visible(variant_id: str, *, canal: str, escalera_channel: str = "",
 
     Devuelve solo cantidad y precio: el costo y el margen nunca salen de aquí,
     ni siquiera hacia una empresa registrada.
+
+    Los precios van como los muestra la ficha, junto al precio de lista (el
+    bruto): la línea se cobra en la base de entrada y Saleor le suma el IVA,
+    así que lo que se ve aquí es lo que termina pagando (ver `_bases`).
     """
-    body = gql(_VARIANTE, {"id": variant_id, "channel": canal},
-               token=config.SALEOR_PRODUCTS_TOKEN)
-    if data_errors(body):
-        raise RuntimeError(f"lectura de variante: {data_errors(body)}")
-    v = payload(body).get("productVariant")
-    if not v:
-        return []
-
-    crudo = (_pares(v.get("privateMetadata")).get(K_TRAMOS)
-             or _pares((v.get("product") or {}).get("privateMetadata")).get(K_TRAMOS)
-             or escalera_channel or "")
-    if not crudo.strip():
-        return []
-
-    base = (((v.get("pricing") or {}).get("price") or {}).get("gross") or {}).get("amount") or 0.0
-    tramos = tramos_alcanzables(escalera_a_tramos(float(base), crudo),
-                                v.get("quantityAvailable"), minimo=stock_minimo)
-    return [{"desde": t.desde, "precio_unitario": t.precio_unitario} for t in tramos]
+    tramos, a_vista = _tramos(_leer(variant_id, canal), escalera_channel=escalera_channel,
+                              stock_minimo=stock_minimo)
+    return [{"desde": t.desde, "precio_unitario": round(t.precio_unitario * a_vista, 2)}
+            for t in tramos]

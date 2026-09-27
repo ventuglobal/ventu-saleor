@@ -3,6 +3,7 @@ import { invariant } from "ts-invariant";
 import { buildCheckoutPath, buildOrderConfirmationPath } from "@paper/session-bridge";
 import { DefaultChannelSlug } from "@/app/config";
 import { CheckoutApp } from "@/checkout/checkout-app";
+import { esCanalB2B } from "@/lib/b2b/canales";
 import { resolveBrowseLocaleForCheckout } from "@/lib/browse-locale-server";
 import { getStorefrontContent } from "@/lib/content/server";
 import { loadCheckoutMessages } from "@/i18n/load-messages";
@@ -96,6 +97,11 @@ export async function CheckoutSessionLoader({
 		loadCheckoutMessages(browseLocale),
 	]);
 
+	// Se calcula aquí porque `B2B_CHANNELS` solo existe en el servidor. Este
+	// componente ya se renderiza por petición (lee cookies y `searchParams`), así
+	// que la variable se lee en ejecución y no queda fijada al compilar.
+	const canalB2B = channelSlug ? esCanalB2B(channelSlug) : false;
+
 	return (
 		<CheckoutApp
 			checkoutId={checkoutIdFromUrl}
@@ -106,6 +112,7 @@ export async function CheckoutSessionLoader({
 			checkoutContent={checkoutContent}
 			storefrontLocale={browseLocale}
 			messages={messages}
+			canalB2B={canalB2B}
 		/>
 	);
 }

@@ -45,6 +45,40 @@ def test_linea_con_precio_negociado_lo_declara():
     assert entrada["priceOverrideReason"]
 
 
+def test_el_precio_negociado_lleva_la_cantidad_acordada():
+    """El precio vale para esa cantidad: si el cliente la cambia, el pedido lo
+    detecta. Va en el motivo porque solo una app puede escribirlo."""
+    entrada = Linea(VAR, 500, precio_unitario=900.0).to_input()
+    assert entrada["priceOverrideReason"] == "Precio negociado (B2B) x500"
+    assert service.cantidad_negociada(entrada["priceOverrideReason"]) == 500
+
+
+def test_el_motivo_del_tramo_no_lleva_cantidad():
+    entrada = Linea(VAR, 12, precio_unitario=900.0, motivo=service.MOTIVO_TRAMO).to_input()
+    assert entrada["priceOverrideReason"] == service.MOTIVO_TRAMO
+
+
+@pytest.mark.parametrize("motivo", [
+    None, "", service.MOTIVO_TRAMO, service.MOTIVO_NEGOCIADO,
+    "Precio negociado (B2B) x", "Precio negociado (B2B) xdiez",
+    "Precio negociado (B2B) x²", "Precio por tramo de cantidad (B2B)",
+])
+def test_motivo_sin_cantidad_negociada(motivo):
+    """Tolerante: un motivo que no la lleva no se puede verificar, no es error."""
+    assert service.cantidad_negociada(motivo) is None
+
+
+def test_lineas_negociadas_con_otra_cantidad():
+    lineas = [
+        {"id": "igual", "quantity": 500, "priceOverrideReason": service.motivo_negociado(500)},
+        {"id": "menos", "quantity": 1, "priceOverrideReason": service.motivo_negociado(500)},
+        {"id": "tramo", "quantity": 1, "priceOverrideReason": service.MOTIVO_TRAMO},
+        {"id": "antigua", "quantity": 1, "priceOverrideReason": service.MOTIVO_NEGOCIADO},
+        {"id": "lista", "quantity": 7, "priceOverrideReason": None},
+    ]
+    assert service.negociadas_alteradas(lineas) == ["menos"]
+
+
 # ───────────────────────── creación ─────────────────────────
 
 def test_crea_en_el_canal_b2b_y_marca_el_origen(monkeypatch):

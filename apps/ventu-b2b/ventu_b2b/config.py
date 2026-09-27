@@ -1,6 +1,12 @@
 """Configuración de la App B2B (variables de entorno)."""
 
 import os
+from typing import List
+
+
+def _lista(valor: str) -> List[str]:
+    return [p.strip() for p in valor.split(",") if p.strip()]
+
 
 SALEOR_API_URL = os.getenv("SALEOR_API_URL", "")
 SALEOR_AUTH_TOKEN = os.getenv("SALEOR_AUTH_TOKEN", "")
@@ -55,3 +61,43 @@ COMISION_PASARELA = float(os.getenv("B2B_COMISION_PASARELA", "0") or 0)
 # Stock por debajo del cual no se publican tramos por volumen: con pocas
 # unidades, ofrecer precio por cantidad promete algo que no se puede cumplir.
 STOCK_MINIMO_TRAMOS = int(os.getenv("B2B_STOCK_MINIMO_TRAMOS", "0") or 0)
+
+
+# ── autenticación ──
+# El servicio es alcanzable desde internet y actúa sobre Saleor con permisos de
+# app (MANAGE_USERS, HANDLE_CHECKOUTS): sin token, cualquiera podría leer la
+# empresa de un usuario o cerrar un carrito ajeno como pedido.
+#
+# Dos credenciales porque hay dos llamadores con confianza distinta:
+# - SERVICE_TOKEN lo envía el servidor del storefront en nombre del cliente.
+# - STAFF_TOKEN lo usan las herramientas internas: fijar el nivel de precio,
+#   registrar el veredicto de crédito, armar carritos con precio negociado.
+# Filtrarse el del storefront no debe permitir aprobarse crédito a uno mismo.
+#
+# Ambos vacíos = **cerrado**: toda ruta con datos responde 503. Abrir la API
+# sin tokens exige pedirlo con B2B_AUTH_ABIERTA=1, solo en desarrollo local. Un
+# entorno nuevo, un servicio clonado o una variable renombrada dejan la API
+# cerrada en vez de dejarla abierta en silencio.
+SERVICE_TOKEN = os.getenv("B2B_SERVICE_TOKEN", "").strip()
+STAFF_TOKEN = os.getenv("B2B_STAFF_TOKEN", "").strip()
+# Sin efecto si hay algún token configurado: los tokens siempre mandan.
+AUTH_ABIERTA = os.getenv("B2B_AUTH_ABIERTA", "").strip() == "1"
+
+# Canales en que se vende como empresa. Un pedido B2B (por pagar, con identidad
+# tributaria) solo tiene sentido en ellos; en retail sería un pedido impago que
+# nadie espera cobrar. Vacío se trata como el valor por defecto.
+CANALES = _lista(os.getenv("B2B_CANALES", "") or "b2b-cl")
+
+# Niveles de precio que el staff puede asignar a una empresa. Lista cerrada para
+# que un error de tipeo no deje a una empresa en un canal inexistente, donde
+# ningún producto tiene precio.
+NIVELES_PERMITIDOS = _lista(os.getenv("B2B_NIVELES_PERMITIDOS", "")
+                            or "retail-cl,b2b-cl")
+
+# Datos bancarios que se muestran al cerrar un pedido por transferencia. Vacío
+# = `null`: mejor no mostrar nada que una cuenta inventada.
+INSTRUCCIONES_TRANSFERENCIA = os.getenv("B2B_INSTRUCCIONES_TRANSFERENCIA", "") or None
+
+# URL pública de la app, para el manifest. Detrás del proxy de Railway el
+# proceso ve http y Saleor rechaza instalar una app que se anuncia sin TLS.
+PUBLIC_URL = os.getenv("B2B_PUBLIC_URL", "").strip().rstrip("/")

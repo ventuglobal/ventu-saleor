@@ -28,9 +28,10 @@ import { getFormattedMoney, formatMoneyWithFallback } from "@/checkout/lib/utils
 import { AuthorizedPaymentRecovery } from "@/checkout/components/payment/stripe/authorized-payment-recovery";
 import { isCheckoutFreeOrder } from "@/checkout/lib/payment/checkout-pay-amount";
 import { shouldShowPaymentMethodArea } from "@/checkout/lib/payment/should-show-payment-method-area";
-import { usesClientPaymentSubmit } from "@/checkout/lib/payment";
+import { updateCheckoutBilling, usesClientPaymentSubmit } from "@/checkout/lib/payment";
 import { consumePaymentCompletionError } from "@/checkout/lib/payment/checkout-payment-completion";
 import { useCheckoutPaymentReturnError } from "@/checkout/providers/checkout-payment-return-error";
+import { useCheckoutCanalB2B } from "@/checkout/providers/checkout-canal-b2b";
 import { useSyncCheckoutRouterUrl } from "@/checkout/hooks/use-sync-checkout-router-url";
 
 interface PaymentStepProps {
@@ -56,9 +57,12 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 	const hasShippingAddress = !!checkout.shippingAddress;
 	const shippingAddress = checkout.shippingAddress;
 
-	// Compra como empresa: la App B2B responde con sus propios medios de pago y
-	// entonces la caja de pasarelas y el botón de pagar sobran.
-	const [comoEmpresa, setComoEmpresa] = useState(false);
+	// En un canal de empresa el pago es siempre el de Ventu B2B: la caja de
+	// pasarelas, sus avisos y el botón de pagar no se muestran en ningún estado
+	// —invitado, sin empresa, en revisión o aprobada—. Mostrarlos mientras la
+	// empresa no puede comprar abriría un camino de pago con tarjeta a precio de
+	// empresa. En retail el checkout es el de siempre.
+	const canalB2B = useCheckoutCanalB2B();
 
 	const [isPaymentBusy, setIsPaymentBusy] = useState(false);
 	const [sameAsBilling, setSameAsBilling] = useState(isShippingRequired && hasShippingAddress);
@@ -136,6 +140,38 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 		setBillingData(data);
 	}, []);
 
+	// El pedido de empresa no pasa por `submit`, así que la facturación se guarda
+	// aquí con el mismo camino que usa el pago con pasarela. La orden copia la
+	// dirección de facturación del checkout: sin este paso, la factura saldría
+	// con la que hubiera quedado antes, o sin ninguna.
+	const guardarFacturacion = useCallback(async (): Promise<boolean> => {
+		const resultado = await updateCheckoutBilling({
+			checkoutId: checkout.id,
+			sameAsBilling,
+			hasShippingAddress,
+			billingData,
+			shippingAddress,
+			userAddresses: user?.addresses,
+			authenticated,
+		});
+		if (!resultado.ok) {
+			setBillingErrors(resultado.errors, resultado.focusField);
+			return false;
+		}
+		// Borra los errores de un intento anterior que ya se corrigió.
+		setBillingErrors({});
+		return true;
+	}, [
+		checkout.id,
+		sameAsBilling,
+		hasShippingAddress,
+		billingData,
+		shippingAddress,
+		user?.addresses,
+		authenticated,
+		setBillingErrors,
+	]);
+
 	const summaryLabels = useCheckoutSummaryLabels();
 	const summaryRows = useMemo(
 		() => buildPaymentSummaryRows(checkout, summaryLabels),
@@ -173,6 +209,19 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 	}, [errors]);
 
 	const isDisabled = isLoading || hasInvalidDelivery || (!canSubmit && !isFreeOrder);
+
+	// Con Enter en un campo de facturación el formulario se envía: en un canal de
+	// empresa eso no debe llegar a `submit`, que paga con la pasarela.
+	const alEnviarFormulario = useCallback(
+		(event: React.FormEvent<HTMLFormElement>) => {
+			if (canalB2B) {
+				event.preventDefault();
+				return;
+			}
+			void submit(event);
+		},
+		[canalB2B, submit],
+	);
 
 	const paymentContent = (
 		<>
@@ -216,9 +265,11 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 				</div>
 			)}
 
-			<PaymentGatewayAlerts gateways={checkout.availablePaymentGateways} />
+			{/* Sin pasarelas en el canal de empresa, este aviso le pediría a quien
+			    compra que instale una app de pagos. */}
+			{!canalB2B ? <PaymentGatewayAlerts gateways={checkout.availablePaymentGateways} /> : null}
 
-			{usesClientSubmit && !isFreeOrder ? (
+			{!canalB2B && usesClientSubmit && !isFreeOrder ? (
 				<AuthorizedPaymentRecovery checkout={checkout} onError={handlePaymentError} />
 			) : null}
 
@@ -240,9 +291,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 
 			<PaymentError message={errors.payment || returnError || undefined} />
 
-			<MediosPagoVentu canal={checkout.channel.slug} onDisponible={setComoEmpresa} />
-
-			{!comoEmpresa && shouldShowPaymentMethodArea(checkout) ? (
+			{!canalB2B && shouldShowPaymentMethodArea(checkout) ? (
 				<PaymentMethodArea
 					provider={provider}
 					checkout={checkout}
@@ -276,6 +325,12 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 				/>
 			) : null}
 
+			{/* Después de la facturación: el botón del pedido la guarda antes de
+			    enviarlo, así que quien compra la revisa primero. */}
+			{canalB2B ? (
+				<MediosPagoVentu canal={checkout.channel.slug} guardarFacturacion={guardarFacturacion} />
+			) : null}
+
 			<div className="flex items-center justify-between">
 				<button
 					type="button"
@@ -286,7 +341,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 					<ChevronLeft className="h-4 w-4" />
 					{isShippingRequired ? tActions("returnToShipping") : tActions("returnToInformation")}
 				</button>
-				{!usesClientSubmit && !comoEmpresa ? (
+				{!usesClientSubmit && !canalB2B ? (
 					<div className="hidden flex-col items-end gap-3 md:flex">
 						<PaymentTrustSignals />
 						<Button type="submit" disabled={isDisabled} className="h-12 min-w-[200px] px-8">
@@ -303,7 +358,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 				) : null}
 			</div>
 
-			{!usesClientSubmit && !comoEmpresa ? (
+			{!usesClientSubmit && !canalB2B ? (
 				<MobileStickyAction
 					step={paymentStep}
 					isShippingRequired={isShippingRequired}
@@ -324,7 +379,7 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 			{usesClientSubmit ? (
 				<div className="space-y-8">{paymentContent}</div>
 			) : (
-				<form className="space-y-8" onSubmit={submit}>
+				<form className="space-y-8" onSubmit={alEnviarFormulario}>
 					{paymentContent}
 				</form>
 			)}

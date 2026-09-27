@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { checkoutIdCookieName } from "@paper/session-bridge";
+import { avisarSiRechazaToken, b2bBaseUrl, b2bHeaders } from "@/lib/b2b/company";
 import { buildStorefrontPath } from "@/lib/storefront-path";
 
 /**
@@ -18,6 +19,12 @@ import { buildStorefrontPath } from "@/lib/storefront-path";
 /** Mismo alfabeto y largo que genera la App B2B (sin 0/O/1/l/I). */
 const LINK_ID = /^[23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ]{22}$/;
 
+/**
+ * El cliente está esperando con el enlace recién tocado; si la App B2B no
+ * contesta a tiempo, es mejor dejarlo en el catálogo que en una pestaña colgada.
+ */
+const TIMEOUT_MS = 5000;
+
 type Resuelto = {
 	checkout_id: string;
 	canal: string | null;
@@ -32,7 +39,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ lin
 		return NextResponse.redirect(new URL("/", process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000"));
 	}
 
-	const base = process.env.B2B_APP_URL?.replace(/\/$/, "");
+	const base = b2bBaseUrl();
 	const storefront = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
 	if (!base) {
 		return NextResponse.redirect(new URL("/", storefront));
@@ -40,7 +47,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ lin
 
 	let resuelto: Resuelto | null = null;
 	try {
-		const res = await fetch(`${base}/cart/${linkId}`, { cache: "no-store" });
+		const res = await fetch(`${base}/cart/${linkId}`, {
+			headers: b2bHeaders(),
+			cache: "no-store",
+			signal: AbortSignal.timeout(TIMEOUT_MS),
+		});
+		avisarSiRechazaToken(res, "/cart/{linkId}");
 		if (res.ok) {
 			resuelto = (await res.json()) as Resuelto;
 		}

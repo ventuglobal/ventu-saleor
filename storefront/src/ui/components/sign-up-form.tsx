@@ -9,10 +9,51 @@ import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { buildAccountConfirmationRedirectUrl } from "@/lib/auth/account-confirmation-url";
+import { empresaDelRegistro } from "@/lib/b2b/registro";
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { cn } from "@/lib/utils";
 
-export function SignUpForm() {
+/** Lo que responde la ruta de registro sobre la empresa, solo en canales de empresa. */
+type EmpresaRegistro = { ok: true } | { ok: false; pendiente?: boolean; mensaje?: string; code?: string };
+
+/**
+ * Error de la ruta de registro → texto del formulario. Se traduce por código
+ * con los textos de cada idioma; el `message` de la respuesta es solo para
+ * otros clientes.
+ */
+function claveDeError(code?: string) {
+	switch (code) {
+		case "UNIQUE":
+			return "errors.accountExists" as const;
+		case "EMPRESA_REQUERIDA":
+			return "errors.empresaRequerida" as const;
+		case "RUT_INVALIDO":
+			return "errors.rutInvalido" as const;
+		case "PASSWORD_TOO_SHORT":
+		case "PASSWORD_TOO_COMMON":
+		case "PASSWORD_ENTIRELY_NUMERIC":
+		case "PASSWORD_TOO_SIMILAR":
+		case "INVALID_PASSWORD":
+			return "errors.passwordWeak" as const;
+		case "NETWORK":
+			return "errors.serviceUnavailable" as const;
+		case "RATE_LIMITED":
+			return "errors.tooManyAttempts" as const;
+		default:
+			return "errors.createAccountFailed" as const;
+	}
+}
+
+type SignUpFormProps = {
+	/**
+	 * El canal es de empresa: se piden RUT y razón social. Lo calcula el
+	 * servidor —`B2B_CHANNELS` no existe en el navegador— y en retail el
+	 * formulario queda como el de cualquier tienda.
+	 */
+	empresaRequerida?: boolean;
+};
+
+export function SignUpForm({ empresaRequerida = false }: SignUpFormProps) {
 	const t = useTranslations("account");
 	const params = useParams<{ locale: string; channel: string }>();
 
@@ -27,6 +68,8 @@ export function SignUpForm() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState(false);
+	/** Qué pasó con la empresa: se muestra en la pantalla de éxito, no como error. */
+	const [empresa, setEmpresa] = useState<EmpresaRegistro | null>(null);
 
 	const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -49,7 +92,8 @@ export function SignUpForm() {
 			return;
 		}
 
-		if (!rut.trim() || !razonSocial.trim()) {
+		const datosEmpresa = empresaDelRegistro(empresaRequerida, rut, razonSocial);
+		if (!datosEmpresa.ok) {
 			setError(t("errors.empresaRequerida"));
 			return;
 		}
@@ -65,8 +109,9 @@ export function SignUpForm() {
 					password,
 					firstName,
 					lastName,
-					rut,
-					razonSocial,
+					// En retail no viaja nada de empresa: el servidor lo ignoraría
+					// igual, pero no hay por qué mandar datos que nadie pidió.
+					...(datosEmpresa.empresa ?? {}),
 					channel: params.channel,
 					redirectUrl: buildAccountConfirmationRedirectUrl(
 						window.location.origin,
@@ -77,29 +122,19 @@ export function SignUpForm() {
 			});
 
 			const data = (await response.json()) as {
-				errors?: Array<{ message: string; code?: string }>;
-				user?: { id: string; email: string };
-				empresa?: { ok: boolean; mensaje?: string };
+				errors?: Array<{ message: string; code?: string | null }>;
+				empresa?: EmpresaRegistro;
 			};
 
 			if (data.errors?.length) {
-				const err = data.errors[0];
-				if (err.code === "UNIQUE") {
-					setError(t("errors.accountExists"));
-				} else {
-					setError(t("errors.createAccountFailed"));
-				}
+				setError(t(claveDeError(data.errors[0].code ?? undefined)));
 				return;
 			}
 
-			// La cuenta quedó creada aunque el alta de empresa haya fallado. Se dice
-			// cuál de las dos cosas falló, porque el paso siguiente es distinto:
-			// confirmar el correo, o completar el RUT en /empresa.
-			if (data.empresa && !data.empresa.ok) {
-				setError(data.empresa.mensaje || t("errors.empresaFallida"));
-				return;
-			}
-
+			// La cuenta quedó creada aunque el alta de empresa no: eso es un éxito
+			// con un paso pendiente, no un error. Mostrarlo en rojo haría pensar que
+			// hay que registrarse de nuevo, y el correo ya está tomado.
+			setEmpresa(data.empresa ?? null);
 			setSuccess(true);
 		} catch {
 			setError(t("errors.generic"));
@@ -126,6 +161,23 @@ export function SignUpForm() {
 						</div>
 						<h2 className="text-xl font-semibold">{t("signup.successTitle")}</h2>
 						<p className="mt-2 text-muted-foreground">{t("signup.successBody")}</p>
+						{empresa?.ok ? (
+							<p className="mt-4 rounded-md bg-muted p-3 text-sm text-foreground" role="status">
+								{t("signup.empresaEnRevision")}
+							</p>
+						) : empresa ? (
+							// El motivo viene de la ruta, ya en castellano y sin el error
+							// crudo; si no viene, el texto genérico dice qué hacer.
+							<div className="mt-4 rounded-md bg-muted p-3 text-sm text-foreground" role="status">
+								<p>{empresa.mensaje || t("signup.empresaPendiente")}</p>
+								<Link
+									href={buildStorefrontPath(params.locale, params.channel, "/empresa")}
+									className="mt-2 inline-block font-medium underline underline-offset-2 hover:no-underline"
+								>
+									{t("signup.completeCompany")}
+								</Link>
+							</div>
+						) : null}
 						<Link
 							href={buildStorefrontPath(params.locale, params.channel, "/login")}
 							className="mt-6 inline-block text-sm font-medium text-foreground underline underline-offset-2 hover:no-underline"
@@ -161,45 +213,49 @@ export function SignUpForm() {
 						</div>
 					)}
 
-					<div className="space-y-1.5">
-						<Label htmlFor="razonSocial" className="text-sm font-medium">
-							{t("fields.razonSocial")}
-						</Label>
-						<div className="relative">
-							<Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								id="razonSocial"
-								type="text"
-								placeholder={t("placeholders.razonSocial")}
-								autoComplete="organization"
-								value={razonSocial}
-								onChange={(e) => setRazonSocial(e.target.value)}
-								className="h-12 pl-10"
-								required
-							/>
-						</div>
-					</div>
+					{empresaRequerida && (
+						<>
+							<div className="space-y-1.5">
+								<Label htmlFor="razonSocial" className="text-sm font-medium">
+									{t("fields.razonSocial")}
+								</Label>
+								<div className="relative">
+									<Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+									<Input
+										id="razonSocial"
+										type="text"
+										placeholder={t("placeholders.razonSocial")}
+										autoComplete="organization"
+										value={razonSocial}
+										onChange={(e) => setRazonSocial(e.target.value)}
+										className="h-12 pl-10"
+										required
+									/>
+								</div>
+							</div>
 
-					<div className="space-y-1.5">
-						<Label htmlFor="rut" className="text-sm font-medium">
-							{t("fields.rut")}
-						</Label>
-						<div className="relative">
-							<Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								id="rut"
-								type="text"
-								placeholder={t("placeholders.rut")}
-								inputMode="text"
-								spellCheck={false}
-								value={rut}
-								onChange={(e) => setRut(e.target.value)}
-								className="h-12 pl-10"
-								required
-							/>
-						</div>
-						<p className="text-xs text-muted-foreground">{t("signup.rutHint")}</p>
-					</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="rut" className="text-sm font-medium">
+									{t("fields.rut")}
+								</Label>
+								<div className="relative">
+									<Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+									<Input
+										id="rut"
+										type="text"
+										placeholder={t("placeholders.rut")}
+										inputMode="text"
+										spellCheck={false}
+										value={rut}
+										onChange={(e) => setRut(e.target.value)}
+										className="h-12 pl-10"
+										required
+									/>
+								</div>
+								<p className="text-xs text-muted-foreground">{t("signup.rutHint")}</p>
+							</div>
+						</>
+					)}
 
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">

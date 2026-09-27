@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
+
+from ventu_b2b import auditoria
 
 from ventu_b2b.company.models import Company
 from ventu_b2b.credito import estados as st
@@ -17,8 +21,11 @@ def _company(**kw):
     return Company(**base)
 
 
-def _router(capturas=None, errores=None):
+def _router(capturas=None, errores=None, historial=None):
     def gql(query, variables=None, **kw):
+        if "privateMetafield" in query:
+            # El registro se lee antes de anexarle la entrada nueva.
+            return {"data": {"user": {"privateMetafield": historial}}}
         if "updatePrivateMetadata" in query:
             if capturas is not None:
                 capturas.append((variables or {}).get("input"))
@@ -67,6 +74,67 @@ def test_cada_cambio_deja_registro(monkeypatch):
     assert AHORA in log
     assert "pendiente>aprobada" in log
     assert "MX-42" in log
+
+
+def test_el_registro_se_anexa_y_no_se_sobrescribe(monkeypatch):
+    """Antes cada cambio pisaba al anterior y solo quedaba el último."""
+    capturas = []
+    previo = json.dumps([{"ts": "2026-08-01T00:00:00Z", "transicion": "sin_solicitud>pendiente"}])
+    monkeypatch.setattr(service, "gql", _router(capturas, historial=previo))
+    service.resolver("VXNlcjo1", _company(credito_estado=st.PENDIENTE),
+                     "aprobada", ahora=AHORA, referencia="MX-42", actor="staff@ejemplo.cl")
+
+    log = json.loads(_claves(capturas[0])[service.K_AUDIT])
+    assert [e["transicion"] for e in log] == ["sin_solicitud>pendiente", "pendiente>aprobada"]
+    assert log[-1]["actor"] == "staff@ejemplo.cl"
+
+
+def test_el_registro_esta_acotado(monkeypatch):
+    """La metadata viaja completa en cada lectura del usuario: no puede crecer
+    sin límite."""
+    capturas = []
+    previo = json.dumps([{"n": i} for i in range(auditoria.MAX_ENTRADAS)])
+    monkeypatch.setattr(service, "gql", _router(capturas, historial=previo))
+    service.solicitar("VXNlcjo1", _company(), ahora=AHORA)
+
+    log = json.loads(_claves(capturas[0])[service.K_AUDIT])
+    assert len(log) == auditoria.MAX_ENTRADAS
+    assert log[0] == {"n": 1}, "se descarta la entrada más antigua"
+    assert log[-1]["transicion"] == "sin_solicitud>pendiente"
+
+
+def test_un_registro_en_formato_antiguo_se_conserva(monkeypatch):
+    capturas = []
+    monkeypatch.setattr(service, "gql", _router(capturas, historial="2026-07-01 pendiente"))
+    service.solicitar("VXNlcjo1", _company(credito_estado=st.RECHAZADA), ahora=AHORA)
+
+    log = json.loads(_claves(capturas[0])[service.K_AUDIT])
+    assert log[0] == {"legado": "2026-07-01 pendiente"}
+
+
+def test_si_no_se_puede_leer_el_historial_no_se_escribe(monkeypatch):
+    """Escribir sin haber leído borraría el historial existente."""
+    from ventu_b2b.saleor_client import SaleorTransportError
+
+    capturas = []
+
+    def gql(query, variables=None, **kw):
+        if "privateMetafield" in query:
+            raise SaleorTransportError("caído")
+        capturas.append(variables)
+        return {"data": {"updatePrivateMetadata": {"errors": []}}}
+
+    monkeypatch.setattr(service, "gql", gql)
+    with pytest.raises(service.RegistroFallido):
+        service.solicitar("VXNlcjo1", _company(), ahora=AHORA)
+    assert capturas == []
+
+
+def test_anexar_recorta_al_maximo():
+    crudo = ""
+    for i in range(5):
+        crudo = auditoria.anexar(crudo, {"n": i}, maximo=3)
+    assert json.loads(crudo) == [{"n": 2}, {"n": 3}, {"n": 4}]
 
 
 def test_la_referencia_de_maxxa_se_guarda(monkeypatch):

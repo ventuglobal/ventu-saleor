@@ -29,16 +29,21 @@ def _company(**kw):
     return Company(**base)
 
 
-def _router(tramos=TABLA, disponible=9999):
+def _router(tramos=TABLA, disponible=9999, neto=13240.0, bruto=13240.0):
+    """Saleor falso. Por omisión, neto = bruto; con IVA, el channel de §d
+    (precios ingresados sin IVA)."""
     def gql(query, variables=None, **kw):
-        return {"data": {"productVariant": {
-            "id": VAR,
-            "quantityAvailable": disponible,
-            "pricing": {"price": {"gross": {"amount": 13240.0}}},
-            "privateMetadata": [],
-            "product": {"privateMetadata": (
-                [{"key": precios.K_TRAMOS, "value": tramos}] if tramos else [])},
-        }}}
+        return {"data": {
+            "productVariant": {
+                "id": VAR,
+                "quantityAvailable": disponible,
+                "pricing": {"price": {"net": {"amount": neto}, "gross": {"amount": bruto}}},
+                "privateMetadata": [],
+                "product": {"privateMetadata": (
+                    [{"key": precios.K_TRAMOS, "value": tramos}] if tramos else [])},
+            },
+            "channel": {"taxConfiguration": {"pricesEnteredWithTax": False}},
+        }}
     return gql
 
 
@@ -98,12 +103,78 @@ def test_la_tabla_no_incluye_costo_ni_margen(monkeypatch, cliente):
         assert prohibido not in crudo.lower()
 
 
+def test_empresa_en_revision_igual_ve_la_tabla(monkeypatch, cliente):
+    """La revisión frena la compra, no la cotización: una empresa recién
+    registrada ya es un cliente identificado, y ver el precio por volumen es
+    justamente lo que la trae a pedir la aprobación."""
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario",
+                        lambda uid: _company(nivel_precio="retail-cl"))
+    monkeypatch.setattr(precios, "gql", _router())
+    d = cliente.get(f"/tramos/{VAR}",
+                    params={"user_id": "VXNlcjo1", "canal": "b2b-cl"}).json()
+    assert d["visible"] is True
+    assert d["canal"] == "b2b-cl"
+
+
 def test_usa_el_canal_de_la_empresa(monkeypatch, cliente):
     monkeypatch.setattr(main.company_svc, "obtener_de_usuario",
                         lambda uid: _company(nivel_precio="b2b-cl"))
     monkeypatch.setattr(precios, "gql", _router())
     d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1"}).json()
     assert d["canal"] == "b2b-cl"
+
+
+def test_el_canal_pedido_manda_sobre_el_de_la_empresa(monkeypatch, cliente):
+    """La tabla tiene que coincidir con lo que cobra el reprecio, que usa el
+    canal del carrito y no el nivel de la empresa."""
+    leidos = []
+    base = _router()
+
+    def gql(query, variables=None, **kw):
+        leidos.append((variables or {}).get("channel"))
+        return base(query, variables, **kw)
+
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario",
+                        lambda uid: _company(nivel_precio="retail-cl"))
+    monkeypatch.setattr(precios, "gql", gql)
+    d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1", "canal": "b2b-cl"}).json()
+    assert d["canal"] == "b2b-cl"
+    assert leidos == ["b2b-cl"]
+
+
+def test_fuera_de_un_canal_b2b_no_hay_tabla(monkeypatch, cliente):
+    """El carrito retail cobra precio de lista: mostrarle la tabla a una
+    empresa en retail-cl sería prometer un precio que no se cobra."""
+    def explota(*a, **kw):
+        raise AssertionError("no debió leerse la escalera")
+
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario", lambda uid: _company())
+    monkeypatch.setattr(precios, "gql", explota)
+    d = cliente.get(f"/tramos/{VAR}",
+                    params={"user_id": "VXNlcjo1", "canal": "retail-cl"}).json()
+    assert d == {"visible": False, "motivo": "canal_no_b2b"}
+
+
+def test_empresa_en_revision_sin_canal_cae_a_retail(monkeypatch, cliente):
+    """Sin canal se usa el nivel de la empresa; una en revisión está en
+    retail-cl y ahí no hay tabla."""
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario",
+                        lambda uid: _company(nivel_precio="retail-cl"))
+    monkeypatch.setattr(precios, "gql", _router())
+    d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1"}).json()
+    assert d["motivo"] == "canal_no_b2b"
+
+
+def test_la_tabla_se_muestra_con_iva_como_la_ficha(monkeypatch, cliente):
+    """En b2b-cl el precio se ingresa sin IVA: el tramo se cobra sobre el neto
+    y Saleor le suma el IVA, así que la tabla lo muestra ya con IVA, igual que
+    el precio de lista que está al lado."""
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario", lambda uid: _company())
+    monkeypatch.setattr(precios, "gql",
+                        _router(tramos="1:1.0,10:0.9", neto=10000.0, bruto=11900.0))
+    d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1"}).json()
+    assert d["tramos"] == [{"desde": 1, "precio_unitario": 11900.0},
+                           {"desde": 10, "precio_unitario": 10710.0}]
 
 
 # ───────────────── el stock condiciona la tabla ─────────────────
