@@ -147,17 +147,21 @@ queda en ejecución y crear una cuenta en el storefront sigue funcionando.
 - **`b2b-cl`: ya está desactivado.** La compra B2B no pasa por una pasarela:
   `POST /pedido` crea la orden por pagar con `orderCreateFromCheckout`. Nada del
   flujo B2B depende del Dummy.
-- **`retail-cl`: sigue activo. La decisión está pendiente.** Mientras esté
-  activo, cualquiera puede completar una compra retail con un pago simulado que
-  Saleor registra como cobrado. El resultado es una orden que parece pagada sin
-  que haya entrado dinero. Hay dos opciones:
-  - Desactivarlo antes de que la tienda retail sea pública. El checkout retail
-    queda sin medio de pago hasta conectar Webpay.
-  - Mantenerlo solo mientras retail no se anuncie, sabiendo que toda orden
-    retail es de prueba.
+- **`retail-cl`: también está desactivado** (27-09-2026). Con el Dummy activo,
+  cualquiera podía completar una compra retail con un pago simulado que Saleor
+  registraba como cobrado: una orden que parece pagada sin que haya entrado
+  dinero. Era el único medio de pago del canal, así que **el checkout retail no
+  ofrece ningún medio de pago hasta conectar una pasarela real** (Webpay).
 
-Dónde: Dashboard → *Configuration → Plugins* → *Dummy*. Elige el canal
-`retail-cl`.
+Para verificarlo, `availablePaymentGateways` debe devolver `[]` en ambos canales:
+
+```bash
+curl -s "https://<dominio-de-la-api>/graphql/" -H 'content-type: application/json' \
+  -d '{"query":"{ shop { availablePaymentGateways(channel: \"retail-cl\") { id } } }"}'
+```
+
+Para reactivarlo en un canal (solo pruebas): Dashboard → *Configuration →
+Plugins* → *Dummy*, elige el canal y márcalo activo.
 
 ---
 
@@ -403,7 +407,6 @@ Hazla con una cuenta de prueba nueva, en ventana privada.
    catálogo se ve sin iniciar sesión y los precios incluyen IVA.
 2. La ficha no muestra tabla de tramos, ni en ventana privada ni con la sesión
    de un usuario que tiene empresa registrada.
-3. El registro y el checkout no piden RUT. El pago ofrece las pasarelas del canal
-   (según § c), no los medios B2B.
-4. Si el Dummy sigue activo, no completes el pago, salvo que quieras una orden de
-   prueba. En ese caso, cancélala al terminar.
+3. El registro y el checkout no piden RUT, y el pago no muestra los medios B2B.
+4. Mientras no haya pasarela real, el paso de pago de retail no ofrece ningún
+   medio (§ c). Es lo esperado: no hay forma de cerrar una orden retail.
