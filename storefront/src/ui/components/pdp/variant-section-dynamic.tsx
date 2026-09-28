@@ -15,6 +15,7 @@ import { resolvePdpVariants } from "@/lib/catalog/get-product-data";
 import { pickTranslatedSlug } from "@/lib/saleor-translations";
 import { getHeaderAuthState } from "@/lib/auth/get-header-user";
 import { getTramos } from "@/lib/b2b/tramos";
+import { esCanalB2B } from "@/lib/b2b/canales";
 import { reprecificar } from "@/lib/b2b/carrito";
 
 import { TramosTable } from "./tramos-table";
@@ -88,11 +89,14 @@ export async function VariantSectionDynamic({
 	// Precios por volumen. Quién puede verlos lo decide la App B2B a partir de la
 	// sesión: el storefront pregunta y pinta, nunca lee la escalera de Saleor.
 	// Sin empresa detrás la respuesta no trae cifras, así que la tabla no llega
-	// siquiera al HTML.
-	const auth = await getHeaderAuthState();
+	// siquiera al HTML. Solo en canales de empresa: el carrito retail no aplica
+	// tramos, y mostrar una tabla que después no se cobra es prometer un precio
+	// falso. El canal va explícito para que la tabla sea la misma que después
+	// aplica el carrito de este canal.
+	const auth = esCanalB2B(channel) ? await getHeaderAuthState() : null;
 	const tramos =
-		selectedVariantID && auth.status === "authenticated"
-			? await getTramos(decodeURIComponent(selectedVariantID), auth.user.id)
+		selectedVariantID && auth?.status === "authenticated"
+			? await getTramos(decodeURIComponent(selectedVariantID), auth.user.id, channel)
 			: null;
 
 	const price = selectedVariant?.pricing?.price?.gross
@@ -170,8 +174,10 @@ export async function VariantSectionDynamic({
 			}
 
 			// La línea nace con el precio de catálogo; el tramo se aplica una vez
-			// que la cantidad está en el carrito.
-			await reprecificar(checkout.id, channel);
+			// que la cantidad está en el carrito. El canal es el que Saleor
+			// devuelve para el carrito: el id sale de una cookie, que el
+			// navegador puede apuntar a un carrito de otro canal.
+			await reprecificar(checkout.id, addResult.data.checkoutLinesAdd?.checkout?.channel.slug);
 
 			revalidateStorefrontBrowsePath(channel, "/cart");
 			revalidateStorefrontChrome(channel);

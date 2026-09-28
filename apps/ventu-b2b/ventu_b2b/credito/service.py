@@ -17,16 +17,25 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from .. import auditoria
 from ..company.models import K_CREDITO, K_CREDITO_REF, Company
-from ..saleor_client import data_errors, gql, payload
+from ..saleor_client import SaleorError, data_errors, gql, payload
 from . import estados as st
 
 logger = logging.getLogger("ventu-b2b.credito")
 
-# La auditoría vive fuera de la metadata: la metadata se sobrescribe y no
-# conserva historial. Sin esto, «¿por qué esta empresa tiene crédito aprobado?»
-# no tiene respuesta.
+# Historial de transiciones de crédito (lista JSON acotada, ver `auditoria`). El
+# estado vigente se sobrescribe; sin esto, «¿por qué esta empresa tiene crédito
+# aprobado?» no tiene respuesta.
 K_AUDIT = "ventu.b2b.credito_log"
+
+# Se lee solo la clave del historial: la metadata completa del usuario no hace
+# falta para anexar una entrada.
+_LEER_LOG = """
+query($id: ID!, $key: String!) {
+  user(id: $id) { privateMetafield(key: $key) }
+}
+"""
 
 _ESCRIBIR_PRIVADA = """
 mutation($id: ID!, $input: [MetadataInput!]!) {
@@ -39,6 +48,14 @@ mutation($id: ID!, $input: [MetadataInput!]!) {
 
 class CreditoError(RuntimeError):
     """No se pudo operar sobre la solicitud."""
+
+
+class RegistroFallido(CreditoError):
+    """Saleor no guardó el cambio de estado (o no se pudo leer el historial).
+
+    Es un fallo del servidor, no de la solicitud: la API lo responde como 502
+    para que el cliente reintente en vez de corregir algo que está bien.
+    """
 
 
 class EntregaFallida(CreditoError):
@@ -57,27 +74,50 @@ class Solicitud:
     referencia: str = ""
 
 
-def _registrar(user_id: str, transicion: st.Transicion, *, ahora: str) -> None:
-    """Escribe el estado nuevo y añade la transición al registro de auditoría.
+def _historial(user_id: str) -> str:
+    try:
+        res = gql(_LEER_LOG, {"id": user_id, "key": K_AUDIT})
+    except SaleorError as exc:
+        raise RegistroFallido(f"leer historial de crédito: {exc}") from exc
+    if data_errors(res):
+        raise RegistroFallido(f"leer historial de crédito: {data_errors(res)}")
+    return ((payload(res).get("user") or {}).get("privateMetafield")) or ""
 
-    `ahora` se recibe como parámetro y no se toma del reloj interno para que el
-    registro sea reproducible en los tests y para que quien llame decida la
-    fuente de tiempo.
+
+def _registrar(user_id: str, transicion: st.Transicion, *, ahora: str,
+               actor: str = "") -> None:
+    """Escribe el estado nuevo y anexa la transición al historial.
+
+    `ahora` se recibe como parámetro para que el registro sea reproducible en
+    los tests; en la API lo fija el servidor (`auditoria.ahora_utc`), nunca
+    quien llama.
+
+    Si no se puede leer el historial previo no se escribe nada: registrar el
+    cambio sin la historia la borraría.
     """
+    registro = auditoria.anexar(_historial(user_id), {
+        "ts": ahora,
+        "transicion": f"{transicion.desde}>{transicion.hacia}",
+        "motivo": transicion.motivo,
+        "referencia": transicion.referencia,
+        "actor": actor,
+    })
     entrada = [
         {"key": K_CREDITO, "value": transicion.hacia},
-        {"key": K_AUDIT, "value": f"{ahora}|{transicion.desde}>{transicion.hacia}"
-                                  f"|{transicion.motivo}|{transicion.referencia}"},
+        {"key": K_AUDIT, "value": registro},
     ]
     if transicion.referencia:
         entrada.append({"key": K_CREDITO_REF, "value": transicion.referencia})
 
-    res = gql(_ESCRIBIR_PRIVADA, {"id": user_id, "input": entrada})
+    try:
+        res = gql(_ESCRIBIR_PRIVADA, {"id": user_id, "input": entrada})
+    except SaleorError as exc:
+        raise RegistroFallido(f"registrar crédito: {exc}") from exc
     if data_errors(res):
-        raise CreditoError(f"registrar crédito: {data_errors(res)}")
+        raise RegistroFallido(f"registrar crédito: {data_errors(res)}")
     errs = (payload(res).get("updatePrivateMetadata") or {}).get("errors") or []
     if errs:
-        raise CreditoError(f"registrar crédito: {errs}")
+        raise RegistroFallido(f"registrar crédito: {errs}")
 
 
 def solicitar(user_id: str, company: Company, *, ahora: str) -> Solicitud:
@@ -85,7 +125,7 @@ def solicitar(user_id: str, company: Company, *, ahora: str) -> Solicitud:
     contado."""
     transicion = st.aplicar(company.credito_estado, st.PENDIENTE,
                             motivo="solicitud del cliente")
-    _registrar(user_id, transicion, ahora=ahora)
+    _registrar(user_id, transicion, ahora=ahora, actor="cliente")
     return Solicitud(company_rut=company.rut, estado=st.PENDIENTE)
 
 
@@ -128,7 +168,7 @@ def entregar_carpeta(
 
 
 def resolver(user_id: str, company: Company, veredicto: str, *, ahora: str,
-             referencia: str = "") -> Solicitud:
+             referencia: str = "", actor: str = "") -> Solicitud:
     """Registra el resultado que devuelve Maxxa.
 
     Un veredicto que no se entiende deja la solicitud pendiente en vez de
@@ -144,5 +184,5 @@ def resolver(user_id: str, company: Company, veredicto: str, *, ahora: str,
     transicion = st.aplicar(company.credito_estado, destino,
                             motivo=f"veredicto Maxxa: {veredicto}",
                             referencia=referencia)
-    _registrar(user_id, transicion, ahora=ahora)
+    _registrar(user_id, transicion, ahora=ahora, actor=actor)
     return Solicitud(company_rut=company.rut, estado=destino, referencia=referencia)

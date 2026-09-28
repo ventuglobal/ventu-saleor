@@ -11,6 +11,7 @@ escalonados nativos.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
@@ -48,17 +49,76 @@ mutation($id: ID!, $customerId: ID!) {
 """
 
 
+# Motivo con que se marca un precio que fijó el staff a mano. El reprecio lo
+# reconoce y no lo toca: recalcular por tramo desharía lo que se negoció.
+# `priceOverrideReason` solo puede escribirlo una app con HANDLE_CHECKOUTS, así
+# que el cliente no puede fabricar la marca para congelar un precio.
+MOTIVO_NEGOCIADO = "Precio negociado (B2B)"
+
+# Motivo del precio por volumen. Es el **único** que el reprecio puede
+# recalcular o borrar: cualquier otro motivo es un precio que alguien fijó con
+# intención (el staff, otra herramienta, una versión anterior de esta app) y
+# pisarlo cobraría otra cosa que lo acordado.
+MOTIVO_TRAMO = "Precio por volumen"
+
+
+def motivo_negociado(cantidad: int) -> str:
+    """Motivo de un precio negociado, con la cantidad para la que se acordó.
+
+    Un precio negociado vale para esa cantidad: 500 unidades a precio de
+    volumen no son 1 unidad al mismo precio. Saleor conserva el precio fijado
+    cuando el cliente cambia solo la cantidad, así que la cantidad acordada
+    tiene que quedar donde el cliente no pueda escribir: en el motivo, que solo
+    fija una app con HANDLE_CHECKOUTS. La metadata de la línea no sirve: el
+    cliente la escribe con `CheckoutLineInput.metadata`.
+    """
+    return f"{MOTIVO_NEGOCIADO} x{cantidad}"
+
+
+_CANTIDAD_NEGOCIADA = re.compile(r"x([0-9]+)")
+
+
+def cantidad_negociada(motivo: Optional[str]) -> Optional[int]:
+    """Cantidad acordada que lleva un motivo negociado.
+
+    `None` si el motivo no es negociado o no la lleva (un carrito armado antes
+    de este formato): esa línea no se puede verificar y se respeta como antes.
+    """
+    if not motivo or not motivo.startswith(MOTIVO_NEGOCIADO):
+        return None
+    m = _CANTIDAD_NEGOCIADA.fullmatch(motivo[len(MOTIVO_NEGOCIADO):].strip())
+    return int(m.group(1)) if m else None
+
+
+def negociadas_alteradas(lineas: Sequence[dict]) -> List[str]:
+    """Líneas del checkout con precio negociado cuya cantidad ya no es la
+    acordada (ids de Saleor)."""
+    alteradas = []
+    for linea in lineas or []:
+        acordada = cantidad_negociada(linea.get("priceOverrideReason"))
+        if acordada is not None and int(linea.get("quantity") or 0) != acordada:
+            alteradas.append(linea.get("id"))
+    return alteradas
+
+
 class CarritoError(RuntimeError):
     """No se pudo operar sobre el carrito."""
 
 
 @dataclass(frozen=True)
 class Linea:
-    """Línea del carrito. `precio_unitario` fija el tramo negociado."""
+    """Línea del carrito. `precio_unitario` fija el precio de la línea.
+
+    `motivo` distingue un precio por tramo —que el reprecio puede recalcular—
+    de uno negociado, que se respeta. Sin motivo se asume negociado: es el
+    caso que no debe perderse por omisión. El negociado se escribe con la
+    cantidad de la línea (ver `motivo_negociado`).
+    """
 
     variant_id: str
     cantidad: int
     precio_unitario: Optional[float] = None
+    motivo: Optional[str] = None
 
     def to_input(self) -> dict:
         entrada: Dict[str, object] = {
@@ -69,7 +129,10 @@ class Linea:
             entrada["price"] = self.precio_unitario
             # Saleor exige explicar por qué se sobrescribe el precio de lista.
             # Queda registrado en el checkout, así que sirve de rastro comercial.
-            entrada["priceOverrideReason"] = "Precio por tramo de cantidad (B2B)"
+            motivo = self.motivo or MOTIVO_NEGOCIADO
+            if motivo == MOTIVO_NEGOCIADO:
+                motivo = motivo_negociado(self.cantidad)
+            entrada["priceOverrideReason"] = motivo
         return entrada
 
 

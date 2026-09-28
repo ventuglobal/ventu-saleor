@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { clearPaymentCompleting } from "@/checkout/lib/payment/checkout-payment-completion";
+import { leerInstruccionesPago } from "@/checkout/lib/payment/instrucciones-pago";
 import { navigateToStorefrontHome } from "@/lib/auth";
 import { useCheckoutBrowseLocale } from "@/checkout/providers/checkout-browse";
-import { CheckCircle, Mail, MapPin, Package, CreditCard } from "lucide-react";
+import { CheckCircle, Mail, MapPin, Package, CreditCard, Landmark } from "lucide-react";
 import { Button } from "@/ui/components/ui/button";
 import { useOrder } from "@/checkout/hooks/use-order";
 import { OrderSummary } from "@/checkout/views/saleor-checkout/order-summary";
@@ -25,11 +26,47 @@ function formatAddress(address: {
 		.join(", ");
 }
 
+/** `sessionStorage` no avisa cambios hechos en la misma pestaña; basta leerlo al montar. */
+const sinSuscripcion = () => () => {};
+
+/**
+ * Instrucciones de pago de un pedido de empresa (datos de la transferencia, por
+ * ejemplo), dejadas por `MediosPagoVentu` al crear el pedido. Sin ellas no se
+ * pinta nada y la confirmación queda como siempre.
+ *
+ * Se leen en el navegador —en el servidor el snapshot es `null`— para que la
+ * hidratación coincida. Van como texto: React escapa el contenido y
+ * `whitespace-pre-line` conserva los saltos de línea que manda la App B2B.
+ */
+function InstruccionesPago({ orderId }: { orderId: string }) {
+	const t = useTranslations("checkout.confirmation");
+	const instrucciones = useSyncExternalStore(
+		sinSuscripcion,
+		() => leerInstruccionesPago(orderId),
+		() => null,
+	);
+
+	if (!instrucciones) {
+		return null;
+	}
+
+	return (
+		<div className="flex items-start gap-3" data-testid="instrucciones-pago">
+			<Landmark className="mt-0.5 h-5 w-5 text-muted-foreground" />
+			<div>
+				<p className="text-sm font-medium">{t("paymentInstructionsTitle")}</p>
+				<p className="text-sm text-muted-foreground">{t("paymentInstructionsBody")}</p>
+				<p className="mt-2 whitespace-pre-line text-sm text-foreground">{instrucciones}</p>
+			</div>
+		</div>
+	);
+}
+
 /**
  * Order confirmation — rendered at `/checkout/complete?order=…` after successful payment.
  */
 export const OrderConfirmation = () => {
-	const { order } = useOrder();
+	const { order, orderId } = useOrder();
 	const storefrontLocale = useCheckoutBrowseLocale();
 	const t = useTranslations("checkout.confirmation");
 	const tErrors = useTranslations("checkout.errors");
@@ -89,6 +126,10 @@ export const OrderConfirmation = () => {
 									</div>
 
 									<div className="space-y-4 p-4">
+										{/* Primero: es lo único que el comprador tiene que hacer ahora. La
+										    clave es el id con que se navegó (`?order=`), el mismo con que
+										    se guardaron. */}
+										<InstruccionesPago orderId={orderId ?? order.id} />
 										<div className="flex items-start gap-3">
 											<Mail className="mt-0.5 h-5 w-5 text-muted-foreground" />
 											<div>

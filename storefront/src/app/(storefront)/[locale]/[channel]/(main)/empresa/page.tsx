@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { getHeaderAuthState } from "@/lib/auth/get-header-user";
-import { getEmpresa } from "@/lib/b2b/company";
+import { getEmpresaPorPeticion } from "@/lib/b2b/company";
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { AuthFormSection } from "@/ui/components/auth/auth-form-section";
 import { EmpresaForm } from "@/ui/components/empresa-form";
@@ -42,8 +42,9 @@ async function EmpresaEntry({ params }: EmpresaPageProps) {
 	}
 
 	// Ya tiene empresa: no hay nada que completar, y volver a pedir el RUT
-	// invitaría a intentar cambiarlo.
-	const empresa = await getEmpresa(auth.user.id);
+	// invitaría a intentar cambiarlo. Es la misma consulta que ya hicieron el
+	// menú de la cuenta y el aviso de empresa en este render.
+	const empresa = await getEmpresaPorPeticion(auth.user.id);
 	if (empresa.registrada) {
 		redirect(buildStorefrontPath(locale, channel, "/products"));
 	}

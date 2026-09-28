@@ -110,7 +110,7 @@ export async function updateCartLineQuantity(
 		return deleteCartLine(checkoutId, lineId, channel);
 	}
 
-	await executeAuthenticatedGraphQL(CheckoutLinesUpdateDocument, {
+	const result = await executeAuthenticatedGraphQL(CheckoutLinesUpdateDocument, {
 		variables: {
 			checkoutId,
 			lines: [{ lineId, quantity }],
@@ -119,7 +119,10 @@ export async function updateCartLineQuantity(
 	});
 
 	// El precio depende de la cantidad, así que se recalcula después de fijarla.
-	await reprecificar(checkoutId, channel);
+	// Con el canal que Saleor dice que tiene el carrito, no con `channel`: ese
+	// argumento lo manda el navegador y no decide qué precios corresponden.
+	const canalDelCheckout = result.ok ? result.data.checkoutLinesUpdate?.checkout?.channel.slug : null;
+	await reprecificar(checkoutId, canalDelCheckout);
 
 	revalidateCart(channel);
 }

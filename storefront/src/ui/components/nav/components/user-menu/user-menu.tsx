@@ -17,9 +17,11 @@ import { UserAvatar } from "./components/user-avatar";
 
 type Props = {
 	user: UserDetailsFragment;
+	/** Canal de empresa y cuenta sin empresa: se ofrece completar el alta. */
+	registrarEmpresa?: boolean;
 };
 
-export function UserMenu({ user }: Props) {
+export function UserMenu({ user, registrarEmpresa = false }: Props) {
 	const t = useTranslations("nav.userMenu");
 
 	return (
@@ -39,6 +41,11 @@ export function UserMenu({ user }: Props) {
 				<DropdownMenuItem asChild>
 					<LinkWithChannel href="/account/orders">{t("myOrders")}</LinkWithChannel>
 				</DropdownMenuItem>
+				{registrarEmpresa ? (
+					<DropdownMenuItem asChild>
+						<LinkWithChannel href="/empresa">{t("registerCompany")}</LinkWithChannel>
+					</DropdownMenuItem>
+				) : null}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
 					<LogoutButton className="w-full cursor-default">{t("logOut")}</LogoutButton>

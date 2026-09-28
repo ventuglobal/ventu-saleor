@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getHeaderAuthState } from "@/lib/auth/get-header-user";
 import { rejectIfRateLimited } from "@/lib/auth/auth-rate-limit";
 import { getEmpresa, registrarEmpresa } from "@/lib/b2b/company";
+import { MENSAJE_EMPRESA_NO_DISPONIBLE } from "@/lib/b2b/errores";
 
 /**
  * La empresa de **la sesión**, y su alta.
@@ -12,13 +13,29 @@ import { getEmpresa, registrarEmpresa } from "@/lib/b2b/company";
  * peor, asociarle una.
  */
 
+/**
+ * `autenticado` le dice al checkout si mostrar «inicia sesión» o «registra tu
+ * empresa»: la sesión la decide el servidor, no el estado del navegador, que
+ * puede ir atrasado.
+ *
+ * Si no se puede saber —Saleor sin responder la sesión, o la App B2B caída— se
+ * contesta 503 en vez de «sin empresa»: una empresa ya registrada no debe ver
+ * «registra tu empresa» por una caída.
+ */
 export async function GET() {
 	const auth = await getHeaderAuthState();
+	if (auth.status === "guest") {
+		return NextResponse.json({ registrada: false, autenticado: false });
+	}
 	if (auth.status !== "authenticated") {
-		return NextResponse.json({ registrada: false });
+		return NextResponse.json({ mensaje: MENSAJE_EMPRESA_NO_DISPONIBLE }, { status: 503 });
 	}
 
-	return NextResponse.json(await getEmpresa(auth.user.id));
+	const empresa = await getEmpresa(auth.user.id);
+	if (!empresa.registrada && empresa.error) {
+		return NextResponse.json({ mensaje: MENSAJE_EMPRESA_NO_DISPONIBLE }, { status: 503 });
+	}
+	return NextResponse.json({ ...empresa, autenticado: true });
 }
 
 type AltaRequest = {
@@ -65,7 +82,10 @@ export async function POST(request: NextRequest) {
 	});
 
 	if (!resultado.ok) {
-		return NextResponse.json({ mensaje: resultado.mensaje }, { status: resultado.status });
+		// `mensaje` ya viene traducido por `registrarEmpresa`; el detalle crudo de
+		// la App B2B quedó en el log del servidor.
+		const { mensaje, code } = resultado;
+		return NextResponse.json({ mensaje, ...(code ? { code } : {}) }, { status: resultado.status });
 	}
 
 	return NextResponse.json({ ok: true, rut: resultado.rut });

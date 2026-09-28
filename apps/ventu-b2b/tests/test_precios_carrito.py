@@ -18,20 +18,28 @@ TABLA = "1=13240,4=8900,6=8400"
 
 
 def _router(*, tramos_variante="", tramos_producto="", base=13240.0, existe=True,
-            disponible=9999):
+            disponible=9999, bruto=None, con_iva=False):
     """Saleor falso. La escalera vive en `privateMetadata`: en `metadata` sería
-    legible sin autenticación."""
+    legible sin autenticación.
+
+    `base` es el precio neto; `bruto`, el que muestra la ficha (por omisión el
+    mismo: channel sin IVA). `con_iva` es `pricesEnteredWithTax` del channel.
+    """
     def gql(query, variables=None, **kw):
         if not existe:
             return {"data": {"productVariant": None}}
         meta = lambda v: ([{"key": precios.K_TRAMOS, "value": v}] if v else [])
-        return {"data": {"productVariant": {
-            "id": VAR,
-            "quantityAvailable": disponible,
-            "pricing": {"price": {"gross": {"amount": base}}},
-            "privateMetadata": meta(tramos_variante),
-            "product": {"privateMetadata": meta(tramos_producto)},
-        }}}
+        return {"data": {
+            "productVariant": {
+                "id": VAR,
+                "quantityAvailable": disponible,
+                "pricing": {"price": {"net": {"amount": base},
+                                      "gross": {"amount": base if bruto is None else bruto}}},
+                "privateMetadata": meta(tramos_variante),
+                "product": {"privateMetadata": meta(tramos_producto)},
+            },
+            "channel": {"taxConfiguration": {"pricesEnteredWithTax": con_iva}},
+        }}
     return gql
 
 
@@ -92,6 +100,67 @@ def test_tabla_mal_escrita_es_ruidosa(monkeypatch):
     monkeypatch.setattr(precios, "gql", _router(tramos_producto="1=13240,4:0.9"))
     with pytest.raises(TramoInvalido, match="mezcla"):
         precios.resolver_precio(VAR, 4, canal="b2b-cl")
+
+
+# ───────────────── IVA: la base en que se escribe el precio ─────────────────
+
+def test_con_precios_sin_iva_el_tramo_sale_del_neto(monkeypatch):
+    """b2b-cl ingresa precios sin IVA (lanzamiento §d): Saleor toma el `price`
+    de la línea como neto y le suma el 19 %. Un tramo calculado sobre el bruto
+    cobraría el IVA dos veces."""
+    monkeypatch.setattr(precios, "gql", _router(base=10000.0, bruto=11900.0))
+    assert precios.resolver_precio(VAR, 10, canal="b2b-cl",
+                                   escalera_channel="1:1.0,10:0.9") == 9000.0
+
+
+def test_con_precios_con_iva_el_tramo_sale_del_bruto(monkeypatch):
+    """Un channel que ingresa precios con IVA espera el `price` con IVA."""
+    monkeypatch.setattr(precios, "gql",
+                        _router(base=10000.0, bruto=11900.0, con_iva=True))
+    assert precios.resolver_precio(VAR, 10, canal="b2b-cl",
+                                   escalera_channel="1:1.0,10:0.9") == 10710.0
+
+
+def test_la_escalera_en_montos_se_toma_en_la_base_de_entrada(monkeypatch):
+    """Un monto absoluto no se convierte: es el precio que Saleor recibe (neto
+    en b2b-cl)."""
+    monkeypatch.setattr(precios, "gql",
+                        _router(tramos_producto=TABLA, base=10000.0, bruto=11900.0))
+    assert precios.resolver_precio(VAR, 4, canal="b2b-cl") == 8900.0
+
+
+def test_el_incentivo_se_muestra_como_la_ficha(monkeypatch):
+    """La ficha muestra el bruto: el incentivo, que se lee al lado, también."""
+    monkeypatch.setattr(precios, "gql",
+                        _router(tramos_producto=TABLA, base=10000.0, bruto=11900.0))
+    assert precios.incentivo(VAR, 3, canal="b2b-cl") == {
+        "faltan": 1, "desde": 4, "precio_unitario": 10591.0}
+
+
+def test_sin_dato_del_channel_se_asume_precio_con_iva(monkeypatch):
+    """Es lo que Saleor usa por omisión en una configuración nueva."""
+    def gql(query, variables=None, **kw):
+        return {"data": {"productVariant": {
+            "id": VAR, "quantityAvailable": 9999,
+            "pricing": {"price": {"net": {"amount": 10000.0}, "gross": {"amount": 11900.0}}},
+            "privateMetadata": [], "product": {"privateMetadata": []}}}}
+    monkeypatch.setattr(precios, "gql", gql)
+    assert precios.resolver_precio(VAR, 1, canal="b2b-cl",
+                                   escalera_channel="1:1.0") == 11900.0
+
+
+def test_la_consulta_pide_como_ingresa_precios_el_channel(monkeypatch):
+    vistas = []
+
+    def gql(query, variables=None, **kw):
+        vistas.append((query, variables))
+        return {"data": {"productVariant": None}}
+    monkeypatch.setattr(precios, "gql", gql)
+    precios.resolver_precio(VAR, 1, canal="b2b-cl")
+    query, variables = vistas[0]
+    assert "pricesEnteredWithTax" in query
+    assert "net { amount }" in query
+    assert variables["channel"] == "b2b-cl"
 
 
 # ───────────────── incentivo de compra ─────────────────

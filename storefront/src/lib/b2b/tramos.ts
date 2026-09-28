@@ -1,5 +1,8 @@
 import "server-only";
 
+import { esCanalB2B } from "./canales";
+import { avisarSiRechazaToken, b2bBaseUrl, b2bHeaders } from "./company";
+
 /**
  * Tabla de precios por volumen de la App B2B.
  *
@@ -29,7 +32,7 @@ export type TramosVisibles = {
 
 export type TramosOcultos = {
 	visible: false;
-	/** `sin_identificar` | `sin_empresa` | `sin_tramos` | `no_disponible` */
+	/** `sin_identificar` | `sin_empresa` | `sin_tramos` | `canal_no_b2b` | `no_disponible` */
 	motivo: string;
 };
 
@@ -69,20 +72,35 @@ function esValida(dato: unknown): dato is TramosResult {
  * decide si hay empresa detrás es la App B2B, no el navegador. Sin sesión se
  * consulta igual —la respuesta será `sin_identificar`— para que el motivo salga
  * de un solo lugar.
+ *
+ * `canal` es el slug del canal que se está mirando. La escalera depende del
+ * canal, y sin él la App B2B elegiría la del nivel de precio de la empresa: la
+ * ficha mostraría tramos de un canal y el carrito cobraría los de otro. En un
+ * canal retail no se consulta: su carrito cobra precio de catálogo, así que una
+ * tabla ahí sería un precio que nadie aplica.
  */
-export async function getTramos(variantId: string, userId?: string | null): Promise<TramosResult> {
-	const base = process.env.B2B_APP_URL?.replace(/\/$/, "");
+export async function getTramos(
+	variantId: string,
+	userId: string | null | undefined,
+	canal: string,
+): Promise<TramosResult> {
+	const base = b2bBaseUrl();
 	// Sin App B2B configurada la tienda funciona igual, solo que sin tabla.
 	if (!base) return oculta("no_disponible");
+	if (!esCanalB2B(canal)) return oculta("canal_no_b2b");
 	if (!userId) return oculta("sin_identificar");
 
-	const url = `${base}/tramos/${encodeURIComponent(variantId)}?user_id=${encodeURIComponent(userId)}`;
+	const url =
+		`${base}/tramos/${encodeURIComponent(variantId)}` +
+		`?user_id=${encodeURIComponent(userId)}&canal=${encodeURIComponent(canal)}`;
 
 	try {
 		const res = await fetch(url, {
+			headers: b2bHeaders(),
 			cache: "no-store",
 			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
+		avisarSiRechazaToken(res, "/tramos");
 		if (!res.ok) return oculta("no_disponible");
 
 		const dato: unknown = await res.json();

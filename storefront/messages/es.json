@@ -153,6 +153,7 @@
 			"login": "Iniciar sesión",
 			"myAccount": "Mi cuenta",
 			"myOrders": "Mis pedidos",
+			"registerCompany": "Registrar empresa",
 			"logOut": "Cerrar sesión",
 			"unavailableAriaLabel": "Cuenta no disponible",
 			"unavailableTitle": "No se pudo cargar la cuenta"
@@ -268,7 +269,11 @@
 			"setDefaultAddressFailed": "No se pudo establecer la dirección predeterminada",
 			"deleteAccountFailed": "No se pudo solicitar la eliminación de la cuenta",
 			"empresaRequerida": "Indica la razón social y el RUT de tu empresa.",
-			"empresaFallida": "No se pudo registrar la empresa. Revisa el RUT e inténtalo de nuevo."
+			"empresaFallida": "No se pudo registrar la empresa. Revisa el RUT e inténtalo de nuevo.",
+			"rutInvalido": "El RUT no es válido. Revisa el número y el dígito verificador.",
+			"passwordWeak": "Esa contraseña no es segura. Elige una más larga y difícil de adivinar.",
+			"serviceUnavailable": "No pudimos conectar con la tienda. Inténtalo de nuevo en unos minutos.",
+			"tooManyAttempts": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
 		},
 		"login": {
 			"title": "Te damos la bienvenida",
@@ -292,7 +297,10 @@
 			"terms": "Al crear una cuenta, aceptas nuestros <terms>Términos del servicio</terms> y nuestra <privacy>Política de privacidad</privacy>.",
 			"termsLink": "Términos del servicio",
 			"privacyLink": "Política de privacidad",
-			"rutHint": "Con o sin puntos, con guion antes del dígito verificador."
+			"rutHint": "Con o sin puntos, con guion antes del dígito verificador.",
+			"empresaEnRevision": "Recibimos los datos de tu empresa. El equipo de Ventu los está revisando y te avisaremos cuando puedas hacer pedidos.",
+			"empresaPendiente": "Tu cuenta quedó creada. Confirma tu correo, inicia sesión y completa los datos de tu empresa.",
+			"completeCompany": "Completar datos de empresa"
 		},
 		"setPassword": {
 			"title": "Establecer contraseña nueva",
@@ -426,6 +434,11 @@
 			"subtitle": "El catálogo mayorista es para clientes con RUT de empresa.",
 			"submit": "Registrar empresa",
 			"saving": "Registrando…"
+		},
+		"empresaAviso": {
+			"sinEmpresa": "Registra tu empresa para comprar al por mayor.",
+			"sinEmpresaCta": "Registrar empresa",
+			"enRevision": "Tu empresa está en revisión. Te avisaremos cuando esté habilitada para comprar."
 		}
 	},
 	"checkout": {
@@ -593,7 +606,9 @@
 			"emailSent": "Correo de confirmación enviado",
 			"shippingAddress": "Dirección de despacho",
 			"billingAddress": "Dirección de facturación",
-			"estimatedDelivery": "Entrega estimada"
+			"estimatedDelivery": "Entrega estimada",
+			"paymentInstructionsTitle": "Cómo completar el pago",
+			"paymentInstructionsBody": "Guarda estos datos: el pedido queda pendiente hasta que recibamos el pago."
 		},
 		"server": {
 			"marketingSaveFailed": "No se pudo guardar la preferencia de marketing",

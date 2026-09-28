@@ -2,6 +2,9 @@ mutation CheckoutAddLine($id: ID!, $productVariantId: ID!) {
 	checkoutLinesAdd(id: $id, lines: [{ quantity: 1, variantId: $productVariantId }]) {
 		checkout {
 			id
+			channel {
+				slug
+			}
 			lines {
 				id
 				quantity

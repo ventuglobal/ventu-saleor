@@ -1,7 +1,11 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
+import { esCanalB2B } from "@/lib/b2b/canales";
 import { AuthFormSection } from "@/ui/components/auth/auth-form-section";
 import { SignUpForm } from "@/ui/components/sign-up-form";
+
+type SignUpPageProps = { params: Promise<{ locale: string; channel: string }> };
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
 	const { locale } = await params;
@@ -12,13 +16,29 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	};
 }
 
-export default function SignUpPage() {
+export default function SignUpPage(props: SignUpPageProps) {
 	return (
 		<Suspense fallback={<SignUpSkeleton />}>
-			<AuthFormSection>
-				<SignUpForm />
-			</AuthFormSection>
+			<SignUpEntry {...props} />
 		</Suspense>
+	);
+}
+
+/**
+ * Si el canal es de empresa se decide con `B2B_CHANNELS` en cada petición, no
+ * al compilar: la imagen se construye sin esa variable, y leerla durante el
+ * prerenderizado dejaría horneado el formulario retail también en los canales
+ * de empresa. `connection()` lleva el render a la petición; por eso va dentro
+ * del `Suspense`.
+ */
+async function SignUpEntry({ params }: SignUpPageProps) {
+	const { channel } = await params;
+	await connection();
+
+	return (
+		<AuthFormSection>
+			<SignUpForm empresaRequerida={esCanalB2B(channel)} />
+		</AuthFormSection>
 	);
 }
 

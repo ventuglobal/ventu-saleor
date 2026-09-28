@@ -12,6 +12,7 @@ import { CheckoutUserProvider } from "@/checkout/providers/checkout-user";
 import { CheckoutBrowseProvider } from "@/checkout/providers/checkout-browse";
 import { CheckoutSessionProvider } from "@/checkout/providers/checkout-session";
 import { CheckoutPaymentReturnErrorProvider } from "@/checkout/providers/checkout-payment-return-error";
+import { CheckoutCanalB2BProvider } from "@/checkout/providers/checkout-canal-b2b";
 import type { LocaleSlug } from "@/config/locale";
 import type { CheckoutMessages } from "@/i18n/load-messages";
 import { CheckoutIntlProvider } from "@/checkout/providers/checkout-intl";
@@ -38,6 +39,8 @@ type CheckoutAppProps = {
 	checkoutContent: CheckoutContent;
 	storefrontLocale: LocaleSlug;
 	messages: CheckoutMessages;
+	/** Canal de empresa según el servidor (`B2B_CHANNELS`); habilita el pedido por pagar. */
+	canalB2B?: boolean;
 };
 
 /**
@@ -53,6 +56,7 @@ export function CheckoutApp({
 	checkoutContent,
 	storefrontLocale,
 	messages,
+	canalB2B = false,
 }: CheckoutAppProps) {
 	return (
 		<CheckoutIntlProvider locale={storefrontLocale} messages={messages}>
@@ -70,16 +74,18 @@ export function CheckoutApp({
 							shippingCountries={shippingCountries}
 						>
 							<CheckoutContentProvider content={checkoutContent}>
-								<CheckoutPaymentReturnErrorProvider>
-									<Suspense fallback={null}>
-										<StripeCheckoutCompletionHost />
-									</Suspense>
-									<ErrorBoundary FallbackComponent={CheckoutCrashFallback}>
-										<Suspense fallback={<CheckoutLoadingFallback />}>
-											<RootViews />
+								<CheckoutCanalB2BProvider canalB2B={canalB2B}>
+									<CheckoutPaymentReturnErrorProvider>
+										<Suspense fallback={null}>
+											<StripeCheckoutCompletionHost />
 										</Suspense>
-									</ErrorBoundary>
-								</CheckoutPaymentReturnErrorProvider>
+										<ErrorBoundary FallbackComponent={CheckoutCrashFallback}>
+											<Suspense fallback={<CheckoutLoadingFallback />}>
+												<RootViews />
+											</Suspense>
+										</ErrorBoundary>
+									</CheckoutPaymentReturnErrorProvider>
+								</CheckoutCanalB2BProvider>
 							</CheckoutContentProvider>
 						</CheckoutDataProvider>
 					</CheckoutUserProvider>

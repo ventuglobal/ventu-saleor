@@ -62,21 +62,35 @@ MEDIOS: Dict[str, Medio] = {
 ORDEN = (TARJETA_CREDITO, TARJETA_DEBITO, TRANSFERENCIA, MAXXA_30)
 
 
-def disponibles(*, tiene_credito: bool) -> list:
+# Motivo por el que un medio se muestra deshabilitado. El storefront traduce
+# cada uno; agregar uno exige agregarlo allá.
+SIN_CREDITO = "sin_credito"
+NO_OPERATIVO = "no_operativo"
+PENDIENTE_APROBACION = "pendiente_aprobacion"
+
+
+def disponibles(*, tiene_credito: bool, aprobada: bool) -> list:
     """Los medios tal como debe verlos esta empresa.
 
     Se devuelven **todos**, incluidos los que no puede usar, con el motivo. Un
     listado que esconde «Cheke Maxxa 30 días» a quien no tiene crédito le oculta
     justamente la razón para solicitarlo.
+
+    Mientras Ventu no apruebe la empresa, ninguno está habilitado y todos dicen
+    por qué: el motivo que importa es ese, no el de cada medio. `aprobada` es
+    obligatorio para que olvidarlo sea un error y no una empresa en revisión
+    con los medios abiertos.
     """
     salida = []
     for codigo in ORDEN:
         m = MEDIOS[codigo]
         motivo = None
-        if m.requiere_credito and not tiene_credito:
-            motivo = "sin_credito"
+        if not aprobada:
+            motivo = PENDIENTE_APROBACION
+        elif m.requiere_credito and not tiene_credito:
+            motivo = SIN_CREDITO
         elif not m.operativo:
-            motivo = "no_operativo"
+            motivo = NO_OPERATIVO
         salida.append({
             "codigo": m.codigo,
             "etiqueta": m.etiqueta,

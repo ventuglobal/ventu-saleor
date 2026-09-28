@@ -153,6 +153,7 @@
 			"login": "Log in",
 			"myAccount": "My account",
 			"myOrders": "My orders",
+			"registerCompany": "Register your company",
 			"logOut": "Log Out",
 			"unavailableAriaLabel": "Account unavailable",
 			"unavailableTitle": "Couldn't load account"
@@ -268,7 +269,11 @@
 			"setDefaultAddressFailed": "Failed to set default address",
 			"deleteAccountFailed": "Failed to request account deletion",
 			"empresaRequerida": "Enter your company name and tax ID.",
-			"empresaFallida": "The company could not be registered. Check the tax ID and try again."
+			"empresaFallida": "The company could not be registered. Check the tax ID and try again.",
+			"rutInvalido": "The tax ID (RUT) is not valid. Check the number and the check digit.",
+			"passwordWeak": "That password isn't strong enough. Choose a longer one that's harder to guess.",
+			"serviceUnavailable": "We couldn't reach the store. Please try again in a few minutes.",
+			"tooManyAttempts": "Too many attempts. Please wait a moment and try again."
 		},
 		"login": {
 			"title": "Welcome Back",
@@ -292,7 +297,10 @@
 			"terms": "By creating an account, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
 			"termsLink": "Terms of Service",
 			"privacyLink": "Privacy Policy",
-			"rutHint": "With or without dots, hyphen before the check digit."
+			"rutHint": "With or without dots, hyphen before the check digit.",
+			"empresaEnRevision": "We received your company details. The Ventu team is reviewing them and will let you know when you can place orders.",
+			"empresaPendiente": "Your account was created. Confirm your email, sign in and complete your company details.",
+			"completeCompany": "Complete company details"
 		},
 		"setPassword": {
 			"title": "Set New Password",
@@ -426,6 +434,11 @@
 			"subtitle": "The wholesale catalog is for customers with a company tax ID.",
 			"submit": "Register company",
 			"saving": "Registering…"
+		},
+		"empresaAviso": {
+			"sinEmpresa": "Register your company to buy wholesale.",
+			"sinEmpresaCta": "Register company",
+			"enRevision": "Your company is under review. We'll let you know when it can place orders."
 		}
 	},
 	"checkout": {
@@ -593,7 +606,9 @@
 			"emailSent": "Confirmation email sent",
 			"shippingAddress": "Shipping address",
 			"billingAddress": "Billing address",
-			"estimatedDelivery": "Estimated delivery"
+			"estimatedDelivery": "Estimated delivery",
+			"paymentInstructionsTitle": "How to complete your payment",
+			"paymentInstructionsBody": "Keep this information: your order stays pending until we receive your payment."
 		},
 		"server": {
 			"marketingSaveFailed": "Failed to save marketing preference",

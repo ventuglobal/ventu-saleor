@@ -1,4 +1,5 @@
 import { type ReactNode, Suspense } from "react";
+import { AvisoEmpresa } from "@/ui/components/b2b/aviso-empresa";
 import { Footer } from "@/ui/components/footer";
 import { Header } from "@/ui/components/header";
 import { ScrollToTopOnNavigate } from "@/ui/components/shared/scroll-to-top-on-navigate";
@@ -70,6 +71,15 @@ async function HeaderSlot({ params }: { params: BrowseRouteParams }) {
 	return <Header locale={locale} channel={channel} />;
 }
 
+/**
+ * Aviso de empresa del canal B2B. Va dentro de `<main>` y en su propio
+ * `Suspense` para que la sesión y la App B2B nunca retengan la página.
+ */
+async function AvisoEmpresaSlot({ params }: { params: BrowseRouteParams }) {
+	const { locale, channel } = await params;
+	return <AvisoEmpresa locale={locale} channel={channel} />;
+}
+
 async function FooterSlot({ params }: { params: BrowseRouteParams }) {
 	const { locale, channel } = await params;
 	return <Footer locale={locale} channel={channel} />;
@@ -93,7 +103,12 @@ export function MainChrome({ params, children }: { params: BrowseRouteParams; ch
 				<HeaderSlot params={params} />
 			</Suspense>
 			<div className="flex min-h-[calc(100dvh-var(--chrome-offset))] flex-col">
-				<main className="flex-1">{children}</main>
+				<main className="flex-1">
+					<Suspense fallback={null}>
+						<AvisoEmpresaSlot params={params} />
+					</Suspense>
+					{children}
+				</main>
 				<Suspense fallback={<FooterSkeleton />}>
 					<FooterSlot params={params} />
 				</Suspense>

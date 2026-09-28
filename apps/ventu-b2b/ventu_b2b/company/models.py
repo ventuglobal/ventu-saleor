@@ -12,12 +12,20 @@ tiene que estar del lado indexable.
 
 El reparto entonces es:
 
-- `metadata`      → lo que hace falta buscar y no revela condiciones comerciales
-                    (RUT, razón social: aparecen en cualquier factura)
-- `privateMetadata` → lo que sí las revela (nivel de precio, estado de crédito)
+- `metadata`      → índice de búsqueda y copia para mostrar: RUT, razón social
+                    (aparecen en cualquier factura) y el estado de aprobación,
+                    para listar las empresas en revisión
+- `privateMetadata` → la fuente de verdad: la identidad (RUT, razón social,
+                    giro, teléfono) y las condiciones comerciales (nivel de
+                    precio, estado de crédito)
 
-Ninguno de los dos es legible por un anónimo: leer un usuario en Saleor exige
-autenticación. La distinción es entre "buscable" y "condición comercial".
+**Por qué la identidad también va en la privada, y manda esa.** Saleor deja que
+un cliente escriba la `metadata` pública de su propio usuario sin permiso alguno
+(`public_user_permissions`); la privada exige MANAGE_USERS, o sea, solo la
+escribe esta app. Si el RUT se leyera de la pública, un cliente aprobado podría
+cambiarlo después de la revisión y facturar a nombre de otro, ocupar el RUT de
+otra empresa o inventarse una sin pasar por el alta. La copia pública queda
+solo para buscar; nada de lo que decide se lee de ahí.
 """
 
 from __future__ import annotations
@@ -25,6 +33,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
+from .. import config
 from . import rut as rut_mod
 
 # Prefijo de todas las claves, para no colisionar con metadata de otras apps.
@@ -38,10 +47,25 @@ K_NIVEL = f"{NS}.nivel_precio"
 K_CONDICION = f"{NS}.condicion_pago"
 K_CREDITO = f"{NS}.credito_estado"
 K_CREDITO_REF = f"{NS}.credito_ref"
+# Espejo público de la aprobación (ver `esta_aprobada`). Público porque es lo
+# único que Saleor deja filtrar: sin él, encontrar las empresas en revisión
+# obligaría a recorrer todos los clientes.
+K_ESTADO = f"{NS}.estado"
+
+ESTADO_PENDIENTE = "pendiente"
+ESTADO_APROBADA = "aprobada"
 
 
 class CompanyInvalida(ValueError):
     """Los datos de la empresa no permiten operar."""
+
+
+class SinEmpresa(CompanyInvalida):
+    """El usuario no tiene empresa: el estado normal de quien recién se registra.
+
+    Se distingue del resto de `CompanyInvalida` para no confundir «no hay
+    empresa» con «hay una empresa que no se puede leer», que sí merece aviso.
+    """
 
 
 # Estados de la solicitud de crédito. `sin_solicitud` es el inicial: una empresa
@@ -84,17 +108,31 @@ class Company:
     # ── serialización hacia Saleor ──
 
     def to_metadata(self) -> Dict[str, str]:
-        """Claves buscables. El RUT va aquí porque es la clave de búsqueda."""
+        """Índice buscable. El RUT va aquí porque es la clave de búsqueda; lo
+        que vale es la copia privada.
+
+        Incluye el espejo del estado, derivado del nivel: así el alta lo deja
+        escrito y la empresa aparece de inmediato entre las pendientes.
+        """
         return {
             K_RUT: self.rut,
             K_RAZON: self.razon_social,
             **({K_GIRO: self.giro} if self.giro else {}),
             **({K_TELEFONO: self.telefono} if self.telefono else {}),
+            K_ESTADO: estado_de(self),
         }
 
     def to_private_metadata(self) -> Dict[str, str]:
-        """Condiciones comerciales: no deben ser buscables ni visibles de más."""
+        """La fuente de verdad: identidad y condiciones comerciales.
+
+        La identidad se repite aquí porque la copia pública la puede reescribir
+        el propio cliente (ver el docstring del módulo).
+        """
         return {
+            K_RUT: self.rut,
+            K_RAZON: self.razon_social,
+            **({K_GIRO: self.giro} if self.giro else {}),
+            **({K_TELEFONO: self.telefono} if self.telefono else {}),
             K_NIVEL: self.nivel_precio,
             K_CONDICION: self.condicion_pago,
             K_CREDITO: self.credito_estado,
@@ -106,14 +144,26 @@ class Company:
     @classmethod
     def from_metadata(cls, meta: Dict[str, str],
                       private: Optional[Dict[str, str]] = None) -> "Company":
+        """Reconstruye la empresa. La identidad sale de la metadata privada.
+
+        Empresas anteriores a la copia privada: se leen de la pública solo si
+        la privada tiene el nivel de precio, que el alta siempre escribió y que
+        un cliente no puede escribir. Así una empresa inventada a mano en la
+        pública no existe para la app. El PATCH del staff congela esa identidad
+        en la privada (ver `service.actualizar`).
+        """
         private = private or {}
-        if not meta.get(K_RUT):
-            raise CompanyInvalida("el usuario no tiene empresa asociada")
+        if private.get(K_RUT):
+            identidad = private
+        elif meta.get(K_RUT) and private.get(K_NIVEL):
+            identidad = meta
+        else:
+            raise SinEmpresa("el usuario no tiene empresa asociada")
         return cls(
-            rut=meta[K_RUT],
-            razon_social=meta.get(K_RAZON, ""),
-            giro=meta.get(K_GIRO, ""),
-            telefono=meta.get(K_TELEFONO, ""),
+            rut=identidad[K_RUT],
+            razon_social=identidad.get(K_RAZON, ""),
+            giro=identidad.get(K_GIRO, ""),
+            telefono=identidad.get(K_TELEFONO, ""),
             nivel_precio=private.get(K_NIVEL, "retail-cl"),
             condicion_pago=private.get(K_CONDICION, "contado"),
             credito_estado=private.get(K_CREDITO, "sin_solicitud"),
@@ -134,6 +184,25 @@ class Company:
             K_RUT: self.rut,
             K_RAZON: self.razon_social,
         }
+
+
+def esta_aprobada(company: Company) -> bool:
+    """¿Ventu ya revisó esta empresa y la habilitó para comprar?
+
+    Se deriva del nivel de precio y no de `K_ESTADO`: el nivel es lo que el
+    staff asigna y lo que decide el precio, así que es la fuente de verdad. El
+    espejo público solo sirve para buscar, y una empresa anterior a él —que no
+    lo tiene— se sigue leyendo bien.
+
+    Aprobada = compra en un canal B2B (`B2B_CANALES`). El alta la deja en el
+    nivel por defecto (`retail-cl`), o sea en revisión.
+    """
+    return company.nivel_precio in config.CANALES
+
+
+def estado_de(company: Company) -> str:
+    """El valor que corresponde escribir en `K_ESTADO`."""
+    return ESTADO_APROBADA if esta_aprobada(company) else ESTADO_PENDIENTE
 
 
 def tiene_credito(company: Company) -> bool:
