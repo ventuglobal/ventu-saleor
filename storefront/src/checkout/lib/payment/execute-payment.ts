@@ -25,6 +25,14 @@ export async function executePayment(
 				error: messages.stripeUseCardForm,
 				errorKey: "payment",
 			};
+		case "webpay":
+			// Webpay renderiza su propio botón ("Pagar con Webpay") y maneja la
+			// redirección a Transbank; nunca debe pasar por el submit genérico.
+			return {
+				ok: false,
+				error: "Usa el botón “Pagar con Webpay” para continuar.",
+				errorKey: "payment",
+			};
 		case "none":
 			return {
 				ok: false,

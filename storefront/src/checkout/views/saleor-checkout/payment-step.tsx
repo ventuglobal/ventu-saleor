@@ -14,6 +14,7 @@ import { useCheckoutPayment } from "@/checkout/hooks/use-checkout-payment";
 import { MobileStickyAction } from "./mobile-sticky-action";
 import { useCheckoutStepNumber } from "@/checkout/hooks/use-checkout-steps";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
 	PaymentGatewayAlerts,
 	PaymentMethodArea,
@@ -33,6 +34,14 @@ import { consumePaymentCompletionError } from "@/checkout/lib/payment/checkout-p
 import { useCheckoutPaymentReturnError } from "@/checkout/providers/checkout-payment-return-error";
 import { useCheckoutCanalB2B } from "@/checkout/providers/checkout-canal-b2b";
 import { useSyncCheckoutRouterUrl } from "@/checkout/hooks/use-sync-checkout-router-url";
+
+/** Avisos del retorno de Webpay (canal retail; copy en español, ver plan Fase 3). */
+const WEBPAY_RETURN_MESSAGES: Record<string, string> = {
+	failed: "El pago con Webpay fue rechazado o no se pudo confirmar. Intenta nuevamente o usa otro medio de pago.",
+	aborted: "Cancelaste el pago en Webpay. Tu carrito sigue intacto; puedes intentarlo nuevamente.",
+	timeout: "El tiempo para pagar en Webpay expiró. Tu carrito sigue intacto; intenta nuevamente.",
+	error: "No pudimos completar el pago con Webpay. Intenta nuevamente.",
+};
 
 interface PaymentStepProps {
 	checkout: CheckoutFragment;
@@ -81,7 +90,12 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 		},
 	}));
 
-	const { error: returnError, clearError: clearReturnError } = useCheckoutPaymentReturnError();
+	const {
+		error: returnError,
+		setError: setReturnError,
+		clearError: clearReturnError,
+	} = useCheckoutPaymentReturnError();
+	const searchParams = useSearchParams();
 
 	const {
 		submit,
@@ -121,6 +135,24 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 			handlePaymentError(stashedError);
 		}
 	}, [handlePaymentError]);
+
+	// Retorno de Webpay con resultado no exitoso (`?webpay=failed|aborted|timeout|error`):
+	// mostramos el aviso y limpiamos el parámetro para que no reaparezca al recargar.
+	useEffect(() => {
+		const outcome = searchParams.get("webpay");
+		if (!outcome) {
+			return;
+		}
+
+		const message = WEBPAY_RETURN_MESSAGES[outcome];
+		if (message) {
+			setReturnError(message);
+		}
+
+		const url = new URL(window.location.href);
+		url.searchParams.delete("webpay");
+		window.history.replaceState(window.history.state, "", url.toString());
+	}, [searchParams, setReturnError]);
 
 	const handlePaymentActivityChange = useCallback(
 		(active: boolean) => {

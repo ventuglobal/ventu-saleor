@@ -7,26 +7,51 @@ de transacción, en el camino crítico del checkout, presupuesto < 10 s).
 
 Paquete importable: `ventu_pagos/` (la carpeta de deploy usa guion).
 
-## Flujo Webpay Plus
+Webpay Plus corre **solo en el canal `retail-cl`** (ver `WEBPAY_CHANNELS`); B2B
+(Transferencia/Maxxa) no pasa por esta app.
+
+## Regla de oro
+
+Un pago está aprobado **solo si el `commit` hecho por nuestro servidor devuelve
+`response_code = 0` y `status = AUTHORIZED`**. Nada que llegue por el navegador
+se da por bueno sin confirmar contra Transbank.
+
+## Flujo Webpay Plus (captura simultánea)
 
 ```
-storefront → paymentGatewayInitialize (Saleor)
-  → TRANSACTION_INITIALIZE_SESSION → webpay.create() → result CHARGE_ACTION_REQUIRED + url
-  → cliente paga en Webpay → redirige (POST token_ws) a /webpay/return
-  → webpay.commit(token) → AUTHORIZED/FAILED → transacción Saleor actualizada
-  → (OMS) capture diferido cuando se confirma abastecimiento
-  → refund / void según corresponda
+storefront (retail-cl) → TRANSACTION_INITIALIZE_SESSION
+  → valida canal + moneda CLP → webpay.create() → persiste webpay_tx (INITIALIZED)
+  → result CHARGE_ACTION_REQUIRED + { data:{ webpayUrl, token } }
+  → cliente paga en Webpay → return_url (storefront) → transactionProcess
+  → TRANSACTION_PROCESS_SESSION → webpay.commit(token_ws)
+      · verifica amount y buy_order contra lo guardado (si no cuadran → refund total)
+      · AUTHORIZED + response_code 0 ⇒ CHARGE_SUCCESS (síncrono), si no CHARGE_FAILURE
+  → metadata (authorization_code, payment_type_code, card_last4) best-effort
+  → refund / cancelation según corresponda
 ```
+
+`/webpay/return` queda como **fallback/testing** (commit idempotente directo); el
+`return_url` del flujo normal apunta al storefront. El **reconciliador**
+(`/tasks/reconcile`, cron) cierra transacciones INITIALIZED huérfanas (navegador
+cerrado) consultando `status` en Webpay y reportando a Saleor vía
+`transactionEventReport`.
 
 ## Endpoints
 
 | Método | Ruta | Qué hace |
 |---|---|---|
 | GET | `/health` | liveness + ambiente Webpay |
-| GET | `/manifest` | manifest de payment app (`HANDLE_PAYMENTS`) |
-| POST | `/register` | recibe el `auth_token` al instalar |
-| POST | `/webhooks/saleor` | eventos síncronos de pago (initialize/charge/refund/…) |
-| POST | `/webpay/return` | retorno de Webpay → `commit` |
+| GET | `/manifest` | manifest de payment app (`HANDLE_PAYMENTS` + subscription) |
+| POST | `/register` | persiste el `auth_token` + `saleor_api_url` al instalar |
+| POST | `/webhooks/saleor` | eventos síncronos de pago (verifica firma JWS) |
+| GET/POST | `/webpay/return` | retorno de Webpay (fallback/testing) → `commit` |
+| POST | `/tasks/reconcile` | reconciliador (protegido por `RECONCILE_TOKEN`) |
+
+## Persistencia
+
+SQLAlchemy sobre **Postgres** (`DATABASE_URL` en Railway) con **fallback SQLite**
+local/tests. Tablas: `webpay_tx` (una fila por token, con `commit_response` crudo
+y estado) y `app_config` (clave/valor: `auth_token`, `saleor_api_url`).
 
 ## Config (env)
 
@@ -37,13 +62,34 @@ prueba de Transbank.
 WEBPAY_ENV=integration            # integration | production
 WEBPAY_COMMERCE_CODE=597055555532 # test
 WEBPAY_API_KEY=...                # test (ver config.py)
-VENTU_PAGOS_RETURN_URL=https://<host>/webpay/return
-SALEOR_WEBHOOK_SECRET=...         # valida los webhooks entrantes
+WEBPAY_CHANNELS=retail-cl         # canales habilitados (coma-separado)
+WEBPAY_CURRENCY=CLP
+DATABASE_URL=postgresql+psycopg://…   # fallback sqlite:///./ventu_pagos.db
+SALEOR_API_URL=https://<saleor>/graphql/
+STOREFRONT_URL=https://<storefront>
+VENTU_PAGOS_RETURN_URL=https://<storefront>/checkout/webpay/retorno
+VENTU_PAGOS_VERIFY_SIGNATURE=1    # 0 en local (sin firma)
+RECONCILE_TOKEN=...               # Bearer de /tasks/reconcile
+RECONCILE_AFTER_MIN=15
 ```
+
+La firma de webhooks se verifica como **JWS RS256 detached** (`Saleor-Signature`)
+contra `{SALEOR_API_URL}/.well-known/jwks.json`; HMAC (`SALEOR_WEBHOOK_SECRET`)
+queda como fallback legacy.
 
 ## Estado
 
-- ✅ Estructura: manifest, dispatch de webhooks, cliente Webpay (create/commit/refund), `/webpay/return`, helpers puros testeados.
-- ⏳ Pendiente (contra payload real + credenciales): mapeo fino de payloads de transacción, `transactionUpdate`/report a Saleor tras commit, capture diferido gobernado por OMS, y persistencia del token de la App.
+- ✅ Backend (Fases 1–2): persistencia, firma JWS, cliente Webpay con manejo de
+  errores, commit idempotente con regla de oro + verificación monto/buy_order,
+  aislamiento de canal, reconciliador, reporte `transactionEventReport`. 20 tests.
+- ⏳ Pendiente (fuera de este código): contrato Transbank, validación formal con
+  Transbank y producción (Fases 0/4/5/6).
 
-> Local: `pip install -r requirements.txt && PYTHONPATH=. uvicorn ventu_pagos.main:app --port 8090`
+## Desarrollo
+
+```
+cd apps/ventu-pagos
+pip install -r requirements.txt pytest
+pytest tests -q
+PYTHONPATH=. VENTU_PAGOS_VERIFY_SIGNATURE=0 uvicorn ventu_pagos.main:app --port 8090
+```

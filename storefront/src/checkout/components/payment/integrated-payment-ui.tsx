@@ -6,6 +6,7 @@ import { isIntegratedPaymentProvider, type ResolvedPaymentProvider } from "@/che
 import { type CheckoutPriceChangeNotice } from "@/checkout/lib/payment/checkout-pay-amount";
 import { DummyPaymentPlaceholder } from "./dummy-payment-placeholder";
 import { StripePayment } from "./stripe/stripe-payment";
+import { WebpayPayment } from "./webpay/webpay-payment";
 import { type BillingAddressData } from "./billing-address-section";
 
 export type IntegratedPaymentUiProps = {
@@ -52,6 +53,22 @@ export const IntegratedPaymentUi: FC<IntegratedPaymentUiProps> = ({
 
 			return (
 				<StripePayment
+					checkout={checkout}
+					gatewayName={provider.gateway.name}
+					billing={billing}
+					onPaymentError={onPaymentError}
+					onBillingErrors={onBillingErrors}
+					onPriceChangeNotice={onPriceChangeNotice}
+					onPaymentActivityChange={onPaymentActivityChange}
+				/>
+			);
+		case "webpay":
+			if (!checkout || !billing || !onPaymentError || !onBillingErrors || !onPriceChangeNotice) {
+				return null;
+			}
+
+			return (
+				<WebpayPayment
 					checkout={checkout}
 					gatewayName={provider.gateway.name}
 					billing={billing}
