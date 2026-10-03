@@ -5,7 +5,8 @@ import { sortByOptionLabel } from "@/lib/sizes";
 import { localeConfig, resolveLocaleFromSlug } from "@/config/locale";
 import { PDP_VARIANT_CAP } from "@/config/variants";
 import { normalizeFacetValueSlug } from "@/config/facets";
-import { calculateDiscountPercent, hasDiscount, hasDiscountInPriceRange } from "@/lib/pricing";
+import { calculateDiscountPercent, elegirPrecio, hasDiscount, hasDiscountInPriceRange } from "@/lib/pricing";
+import { baseDePrecio } from "@/lib/b2b/canales";
 import { buildStorefrontPath } from "@/lib/storefront-path";
 import { pickTranslatedName, pickTranslatedSlug } from "@/lib/saleor-translations";
 import { isBestseller } from "@/lib/catalog/product-flags";
@@ -79,15 +80,18 @@ export function toProductCardData(
 	locale: string,
 	channel: string,
 ): ProductCardData {
-	const startPrice = product.pricing?.priceRange?.start?.gross;
-	const stopPrice = product.pricing?.priceRange?.stop?.gross;
-	const undiscountedStartPrice = product.pricing?.priceRangeUndiscounted?.start?.gross;
+	// En B2B las tarjetas (y la búsqueda, que pasa por aquí) muestran neto.
+	const base = baseDePrecio(channel);
+	const startPrice = elegirPrecio(product.pricing?.priceRange?.start, base);
+	const stopPrice = elegirPrecio(product.pricing?.priceRange?.stop, base);
+	const undiscountedStartPrice = elegirPrecio(product.pricing?.priceRangeUndiscounted?.start, base);
 	const startAmount = startPrice?.amount ?? 0;
 	const stopAmount = stopPrice?.amount;
 
 	const isSale = hasDiscountInPriceRange(
 		product.pricing?.priceRange,
 		product.pricing?.priceRangeUndiscounted,
+		base,
 	);
 	const undiscountedStartAmount = undiscountedStartPrice?.amount;
 	const discountPercent =

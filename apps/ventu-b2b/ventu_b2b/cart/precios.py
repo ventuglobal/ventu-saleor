@@ -31,8 +31,10 @@ K_TRAMOS = "ventu.pricing.tramos"
 # porque el precio de un tramo se escribe en la línea como `price` y Saleor lo
 # toma como si fuera el de lista: si el channel ingresa precios sin IVA
 # (b2b-cl, ver docs/b2b/lanzamiento.md §d), le suma el IVA encima. Calcular el
-# tramo sobre el bruto cobraría el IVA dos veces. `taxConfiguration` exige un
-# token de app o de staff, que es lo que usa esta consulta.
+# tramo sobre el bruto cobraría el IVA dos veces. `displayGrossPrices` dice en
+# qué base los muestra el channel (neta en b2b-cl), para que la tabla se lea
+# igual que el precio de al lado. `taxConfiguration` exige un token de app o de
+# staff, que es lo que usa esta consulta.
 _VARIANTE = """
 query($id: ID!, $channel: String!) {
   productVariant(id: $id, channel: $channel) {
@@ -42,7 +44,7 @@ query($id: ID!, $channel: String!) {
     product { privateMetadata { key value } }
     privateMetadata { key value }
   }
-  channel(slug: $channel) { taxConfiguration { pricesEnteredWithTax } }
+  channel(slug: $channel) { taxConfiguration { pricesEnteredWithTax displayGrossPrices } }
 }
 """
 
@@ -66,12 +68,15 @@ def _bases(datos: dict) -> Tuple[float, float]:
     el channel ingresa precios sin IVA, el bruto si los ingresa con IVA. Los
     tramos se calculan y se escriben en esa base.
 
-    El factor lleva un precio de entrada a lo que muestra la ficha (el bruto):
-    así la tabla y el incentivo se leen igual que el precio de al lado, y
-    coinciden con lo que el carrito termina cobrando.
+    El factor lleva un precio de entrada a la base en que el channel muestra
+    sus precios (`displayGrossPrices`): el neto en b2b-cl, donde el IVA se
+    desglosa aparte en carrito y checkout; el bruto en un channel que muestra
+    precios con IVA. Así la tabla y el incentivo se leen igual que el precio de
+    al lado de la ficha.
 
-    Sin dato del channel se asume precio con IVA, que es lo que Saleor usa por
-    omisión en una configuración de impuestos nueva.
+    Sin dato del channel se asume precio con IVA, tanto al ingresar como al
+    mostrar, que es lo que Saleor usa por omisión en una configuración de
+    impuestos nueva.
     """
     v = datos.get("productVariant") or {}
     precio = ((v.get("pricing") or {}).get("price")) or {}
@@ -79,7 +84,8 @@ def _bases(datos: dict) -> Tuple[float, float]:
     neto = float((precio.get("net") or {}).get("amount") or 0.0) or bruto
     impuestos = ((datos.get("channel") or {}).get("taxConfiguration")) or {}
     entrada = neto if impuestos.get("pricesEnteredWithTax") is False else bruto
-    return entrada, (bruto / entrada if entrada else 1.0)
+    vista = neto if impuestos.get("displayGrossPrices") is False else bruto
+    return entrada, (vista / entrada if entrada else 1.0)
 
 
 def _tramos(datos: dict, *, escalera_channel: str,
@@ -152,7 +158,8 @@ def incentivo(variant_id: str, cantidad: int, *, canal: str,
     """Próximo tramo por alcanzar: «lleva N más y pagas $X c/u».
 
     Es lo que convierte la tabla de tramos en una herramienta de venta y no solo
-    en un cálculo. El precio va como lo muestra la ficha (ver `_bases`).
+    en un cálculo. El precio va en la base en que el channel muestra sus
+    precios, como la ficha (ver `_bases`): neto en b2b-cl.
     """
     tramos, a_vista = _tramos(_leer(variant_id, canal), escalera_channel=escalera_channel,
                               stock_minimo=stock_minimo)
@@ -223,9 +230,9 @@ def tabla_visible(variant_id: str, *, canal: str, escalera_channel: str = "",
     Devuelve solo cantidad y precio: el costo y el margen nunca salen de aquí,
     ni siquiera hacia una empresa registrada.
 
-    Los precios van como los muestra la ficha, junto al precio de lista (el
-    bruto): la línea se cobra en la base de entrada y Saleor le suma el IVA,
-    así que lo que se ve aquí es lo que termina pagando (ver `_bases`).
+    Los precios van en la base en que el channel muestra sus precios
+    (`displayGrossPrices`), igual que el precio de lista que está al lado: netos
+    en b2b-cl, donde el carrito suma el IVA en una fila aparte (ver `_bases`).
     """
     tramos, a_vista = _tramos(_leer(variant_id, canal), escalera_channel=escalera_channel,
                               stock_minimo=stock_minimo)

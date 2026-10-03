@@ -2,8 +2,20 @@ fragment OrderDetails on Order {
 	id
 	number
 	created
+	# Decide si la orden se muestra en neto (canal B2B) o con IVA.
+	channel {
+		slug
+	}
 	total {
+		net {
+			amount
+			currency
+		}
 		gross {
+			amount
+			currency
+		}
+		tax {
 			amount
 			currency
 		}
@@ -34,6 +46,10 @@ fragment OrderDetails on Order {
 			}
 			pricing {
 				price {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency

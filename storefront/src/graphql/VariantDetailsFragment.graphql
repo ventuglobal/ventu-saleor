@@ -55,12 +55,20 @@ fragment VariantDetails on ProductVariant {
 	}
 	pricing {
 		price {
+			net {
+				currency
+				amount
+			}
 			gross {
 				currency
 				amount
 			}
 		}
 		priceUndiscounted {
+			net {
+				currency
+				amount
+			}
 			gross {
 				currency
 				amount

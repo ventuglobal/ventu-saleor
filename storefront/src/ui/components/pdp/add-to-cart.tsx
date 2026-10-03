@@ -15,6 +15,8 @@ interface AddToCartProps {
 	disabledReason?: "no-selection" | "out-of-stock";
 	secureCheckoutLabel: string;
 	freeShippingTrustLabel?: string | null;
+	/** Aviso junto al precio cuando se muestra sin IVA (canales B2B). */
+	priceNote?: string | null;
 }
 
 function AddToCartButton({
@@ -55,11 +57,13 @@ export function AddToCart({
 	disabledReason,
 	secureCheckoutLabel,
 	freeShippingTrustLabel,
+	priceNote,
 }: AddToCartProps) {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-baseline gap-3">
 				<span className="text-2xl font-semibold tabular-nums tracking-tight">{price}</span>
+				{priceNote ? <span className="text-sm text-muted-foreground">{priceNote}</span> : null}
 				{compareAtPrice && (
 					<>
 						<span className="text-lg tabular-nums text-muted-foreground line-through">{compareAtPrice}</span>

@@ -11,7 +11,9 @@
 			"continueShopping": "Continue Shopping",
 			"removeItem": "Remove {product}",
 			"decreaseQuantity": "Decrease quantity",
-			"increaseQuantity": "Increase quantity"
+			"increaseQuantity": "Increase quantity",
+			"subtotalNet": "Net subtotal",
+			"tax": "VAT (19%)"
 		},
 		"page": {
 			"title": "Shopping Cart",
@@ -22,7 +24,9 @@
 			"checkout": "Checkout",
 			"remove": "Remove",
 			"removing": "Removing",
-			"srLineFromCart": "line from cart"
+			"srLineFromCart": "line from cart",
+			"subtotalNet": "Net subtotal",
+			"tax": "VAT (19%)"
 		}
 	},
 	"productsListing": {
@@ -85,11 +89,12 @@
 			"title": "Volume pricing",
 			"caption": "The tier price applies to every unit on the line. It is calculated in the cart from the quantity.",
 			"from": "From",
-			"unitPrice": "Unit price",
+			"unitPrice": "Net unit price",
 			"discount": "Discount",
 			"unit": "unit",
 			"units": "units"
-		}
+		},
+		"priceNetHint": "+ VAT"
 	},
 	"plp": {
 		"quickAdd": "Quick Add",
@@ -347,7 +352,8 @@
 			"empty": "You haven't placed any orders yet.",
 			"loadMore": "Load more orders",
 			"signInRequired": "Sign in to view your orders.",
-			"orderNumber": "ORD-{number}"
+			"orderNumber": "ORD-{number}",
+			"net": "Net"
 		},
 		"orderDetail": {
 			"placedOn": "Placed on {date}",
@@ -363,7 +369,9 @@
 			"needHelp": "Need Help?",
 			"signInRequired": "Sign in to view this order.",
 			"loadFailed": "We couldn't load this order. Please try again.",
-			"timeline": "Order Timeline"
+			"timeline": "Order Timeline",
+			"subtotalNet": "Net subtotal",
+			"taxB2B": "VAT (19%)"
 		},
 		"orderStatus": {
 			"UNFULFILLED": "Processing",
@@ -524,7 +532,9 @@
 			"shipTo": "Ship to",
 			"method": "Method",
 			"delivery": "Delivery",
-			"digital": "Digital"
+			"digital": "Digital",
+			"subtotalNet": "Net subtotal",
+			"taxB2B": "VAT (19%)"
 		},
 		"promo": {
 			"placeholder": "Discount code",

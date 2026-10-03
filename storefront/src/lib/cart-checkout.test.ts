@@ -6,12 +6,16 @@ describe("withTranslatedCartCheckout", () => {
 		const checkout = withTranslatedCartCheckout({
 			id: "chk",
 			email: null,
-			totalPrice: { gross: { amount: 10, currency: "PLN" } },
+			totalPrice: {
+				net: { amount: 10, currency: "PLN" },
+				gross: { amount: 10, currency: "PLN" },
+				tax: { amount: 0, currency: "PLN" },
+			},
 			lines: [
 				{
 					id: "line-1",
 					quantity: 1,
-					totalPrice: { gross: { amount: 10, currency: "PLN" } },
+					totalPrice: { net: { amount: 10, currency: "PLN" }, gross: { amount: 10, currency: "PLN" } },
 					variant: {
 						id: "var-1",
 						name: "Black S",

@@ -15,9 +15,42 @@ export interface DiscountInfo {
 	discountPercent: number | null;
 }
 
+/**
+ * Con qué precio de un `TaxedMoney` se muestra la tienda: los canales B2B
+ * muestran neto (sin IVA) y el resto sigue con el bruto de siempre. Se decide
+ * en el servidor (ver `baseDePrecio` en `lib/b2b/canales.ts`) y llega a los
+ * componentes cliente ya resuelta.
+ */
+export type BaseDePrecio = "net" | "gross";
+
+export function baseDePrecioDe(precioNeto: boolean): BaseDePrecio {
+	return precioNeto ? "net" : "gross";
+}
+
+type MontoConImpuesto<T> = { gross: T; net?: T | null };
+
+/**
+ * El precio a mostrar según la base. Si la consulta no trajo `net`, cae al
+ * bruto: mejor un precio con IVA que un hueco.
+ */
+export function elegirPrecio<T>(precio: MontoConImpuesto<T>, base: BaseDePrecio): T;
+export function elegirPrecio<T>(
+	precio: MontoConImpuesto<T> | null | undefined,
+	base: BaseDePrecio,
+): T | undefined;
+export function elegirPrecio<T>(
+	precio: MontoConImpuesto<T> | null | undefined,
+	base: BaseDePrecio,
+): T | undefined {
+	if (!precio) return undefined;
+	return base === "net" ? (precio.net ?? precio.gross) : precio.gross;
+}
+
+type MontoDeRango = { amount?: number | null } | null;
+
 export interface PriceRange {
-	start?: { gross?: { amount?: number | null } | null } | null;
-	stop?: { gross?: { amount?: number | null } | null } | null;
+	start?: { gross?: MontoDeRango; net?: MontoDeRango } | null;
+	stop?: { gross?: MontoDeRango; net?: MontoDeRango } | null;
 }
 
 /**
@@ -102,11 +135,14 @@ export function getMaxDiscountInfo<T>(
 export function hasDiscountInPriceRange(
 	priceRange: PriceRange | null | undefined,
 	priceRangeUndiscounted: PriceRange | null | undefined,
+	base: BaseDePrecio = "gross",
 ): boolean {
-	const startPrice = priceRange?.start?.gross?.amount;
-	const stopPrice = priceRange?.stop?.gross?.amount;
-	const undiscountedStart = priceRangeUndiscounted?.start?.gross?.amount;
-	const undiscountedStop = priceRangeUndiscounted?.stop?.gross?.amount;
+	const monto = (punta: PriceRange["start"]) =>
+		(base === "net" ? (punta?.net ?? punta?.gross) : punta?.gross)?.amount;
+	const startPrice = monto(priceRange?.start);
+	const stopPrice = monto(priceRange?.stop);
+	const undiscountedStart = monto(priceRangeUndiscounted?.start);
+	const undiscountedStop = monto(priceRangeUndiscounted?.stop);
 
 	// Check if cheapest variant is on sale
 	const hasStartDiscount = hasDiscount(startPrice, undiscountedStart);

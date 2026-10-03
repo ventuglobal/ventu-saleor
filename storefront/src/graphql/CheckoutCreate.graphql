@@ -7,6 +7,10 @@ mutation CheckoutCreate($channel: String!, $languageCode: LanguageCodeEnum!) {
 				id
 				quantity
 				totalPrice {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency
@@ -27,6 +31,10 @@ mutation CheckoutCreate($channel: String!, $languageCode: LanguageCodeEnum!) {
 					}
 					pricing {
 						price {
+							net {
+								amount
+								currency
+							}
 							gross {
 								amount
 								currency
@@ -38,7 +46,15 @@ mutation CheckoutCreate($channel: String!, $languageCode: LanguageCodeEnum!) {
 				}
 			}
 			totalPrice {
+				net {
+					amount
+					currency
+				}
 				gross {
+					amount
+					currency
+				}
+				tax {
 					amount
 					currency
 				}

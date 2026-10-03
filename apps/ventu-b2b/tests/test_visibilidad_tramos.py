@@ -29,9 +29,15 @@ def _company(**kw):
     return Company(**base)
 
 
-def _router(tramos=TABLA, disponible=9999, neto=13240.0, bruto=13240.0):
+def _router(tramos=TABLA, disponible=9999, neto=13240.0, bruto=13240.0,
+            muestra_bruto=None):
     """Saleor falso. Por omisión, neto = bruto; con IVA, el channel de §d
-    (precios ingresados sin IVA)."""
+    (precios ingresados sin IVA). `muestra_bruto` es `displayGrossPrices`:
+    `None` lo omite, como una respuesta sin el dato."""
+    impuestos = {"pricesEnteredWithTax": False}
+    if muestra_bruto is not None:
+        impuestos["displayGrossPrices"] = muestra_bruto
+
     def gql(query, variables=None, **kw):
         return {"data": {
             "productVariant": {
@@ -42,7 +48,7 @@ def _router(tramos=TABLA, disponible=9999, neto=13240.0, bruto=13240.0):
                 "product": {"privateMetadata": (
                     [{"key": precios.K_TRAMOS, "value": tramos}] if tramos else [])},
             },
-            "channel": {"taxConfiguration": {"pricesEnteredWithTax": False}},
+            "channel": {"taxConfiguration": impuestos},
         }}
     return gql
 
@@ -165,13 +171,27 @@ def test_empresa_en_revision_sin_canal_cae_a_retail(monkeypatch, cliente):
     assert d["motivo"] == "canal_no_b2b"
 
 
-def test_la_tabla_se_muestra_con_iva_como_la_ficha(monkeypatch, cliente):
-    """En b2b-cl el precio se ingresa sin IVA: el tramo se cobra sobre el neto
-    y Saleor le suma el IVA, así que la tabla lo muestra ya con IVA, igual que
-    el precio de lista que está al lado."""
+def test_en_b2b_la_tabla_se_muestra_neta_como_la_ficha(monkeypatch, cliente):
+    """b2b-cl ingresa y muestra precios sin IVA (§d): la ficha pinta el neto y
+    el IVA se desglosa en el carrito, así que la tabla también va neta."""
     monkeypatch.setattr(main.company_svc, "obtener_de_usuario", lambda uid: _company())
     monkeypatch.setattr(precios, "gql",
-                        _router(tramos="1:1.0,10:0.9", neto=10000.0, bruto=11900.0))
+                        _router(tramos="1:1.0,10:0.9", neto=10000.0, bruto=11900.0,
+                                muestra_bruto=False))
+    d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1"}).json()
+    assert d["tramos"] == [{"desde": 1, "precio_unitario": 10000.0},
+                           {"desde": 10, "precio_unitario": 9000.0}]
+
+
+@pytest.mark.parametrize("muestra_bruto", [True, None])
+def test_si_el_channel_muestra_con_iva_la_tabla_va_con_iva(monkeypatch, cliente,
+                                                           muestra_bruto):
+    """Con `displayGrossPrices` activo —o sin el dato, que es lo que Saleor usa
+    por omisión— la tabla se lee con IVA, como el precio de al lado."""
+    monkeypatch.setattr(main.company_svc, "obtener_de_usuario", lambda uid: _company())
+    monkeypatch.setattr(precios, "gql",
+                        _router(tramos="1:1.0,10:0.9", neto=10000.0, bruto=11900.0,
+                                muestra_bruto=muestra_bruto))
     d = cliente.get(f"/tramos/{VAR}", params={"user_id": "VXNlcjo1"}).json()
     assert d["tramos"] == [{"desde": 1, "precio_unitario": 11900.0},
                            {"desde": 10, "precio_unitario": 10710.0}]

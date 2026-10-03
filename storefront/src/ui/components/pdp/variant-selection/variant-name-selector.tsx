@@ -1,6 +1,7 @@
 "use client";
 
 import { cn, formatMoney } from "@/lib/utils";
+import { type BaseDePrecio, elegirPrecio } from "@/lib/pricing";
 import { useIntlLocale } from "@/hooks/use-storefront-href";
 import { DiscountPercentLabel } from "@/ui/components/ui/sale-label";
 import { useVariantOptionLabels } from "@/ui/components/pdp/use-variant-option-labels";
@@ -33,8 +34,14 @@ interface VariantNameSelectorProps {
 		name: string;
 		quantityAvailable?: number | null;
 		pricing?: {
-			price?: { gross: { amount: number; currency: string } } | null;
-			priceUndiscounted?: { gross: { amount: number; currency: string } } | null;
+			price?: {
+				gross: { amount: number; currency: string };
+				net?: { amount: number; currency: string };
+			} | null;
+			priceUndiscounted?: {
+				gross: { amount: number; currency: string };
+				net?: { amount: number; currency: string };
+			} | null;
 		} | null;
 	}>;
 	selectedVariantId?: string;
@@ -42,6 +49,8 @@ interface VariantNameSelectorProps {
 	label?: string;
 	/** Whether a transition is in progress */
 	isPending?: boolean;
+	/** Neto en canales B2B; por omisión, el bruto de siempre. */
+	baseDePrecio?: BaseDePrecio;
 }
 
 export function VariantNameSelector({
@@ -50,13 +59,14 @@ export function VariantNameSelector({
 	onSelect,
 	label = "Variant",
 	isPending,
+	baseDePrecio = "gross",
 }: VariantNameSelectorProps) {
 	const intlLocale = useIntlLocale();
 	const labels = useVariantOptionLabels();
 
 	// Check if prices differ between variants (show price if so)
 	const prices = variants
-		.map((v) => v.pricing?.price?.gross?.amount)
+		.map((v) => elegirPrecio(v.pricing?.price, baseDePrecio)?.amount)
 		.filter((p): p is number => p !== undefined && p !== null);
 	const showPrices = prices.length > 1 && new Set(prices).size > 1;
 
@@ -82,8 +92,8 @@ export function VariantNameSelector({
 				{variants.map((variant) => {
 					const isSelected = variant.id === selectedVariantId;
 					const isOutOfStock = (variant.quantityAvailable ?? 0) <= 0;
-					const price = variant.pricing?.price?.gross;
-					const undiscountedPrice = variant.pricing?.priceUndiscounted?.gross;
+					const price = elegirPrecio(variant.pricing?.price, baseDePrecio);
+					const undiscountedPrice = elegirPrecio(variant.pricing?.priceUndiscounted, baseDePrecio);
 					const hasDiscount = price && undiscountedPrice && undiscountedPrice.amount > price.amount;
 					const discountPercent = hasDiscount
 						? Math.round((1 - price.amount / undiscountedPrice.amount) * 100)

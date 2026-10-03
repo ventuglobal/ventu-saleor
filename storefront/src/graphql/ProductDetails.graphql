@@ -94,12 +94,20 @@ query ProductDetails(
 		pricing {
 			priceRange {
 				start {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency
 					}
 				}
 				stop {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency

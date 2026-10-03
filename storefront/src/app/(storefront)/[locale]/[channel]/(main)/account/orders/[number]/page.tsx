@@ -15,6 +15,8 @@ import { OrderTimeline } from "@/ui/components/account/order-timeline";
 import { OrderStatusBadge } from "@/ui/components/account/order-status-badge";
 import { AccountOrderDetailSkeleton } from "@/ui/components/account/account-skeleton";
 import { type AddressDetailsFragment } from "@/gql/graphql";
+import { baseDePrecio } from "@/lib/b2b/canales";
+import { elegirPrecio } from "@/lib/pricing";
 
 type Props = {
 	params: Promise<{ locale: string; number: string }>;
@@ -60,6 +62,12 @@ async function OrderDetailContent({ params }: Props) {
 	}
 
 	const itemCount = order.lines.reduce((sum, l) => sum + l.quantity, 0);
+	// El canal es el de la orden, no el de la URL: un pedido B2B se ve neto
+	// (líneas, subtotal y despacho) con el IVA aparte, y el total con IVA.
+	const base = baseDePrecio(order.channel.slug);
+	const precioNeto = base === "net";
+	const subtotal = elegirPrecio(order.subtotal, base);
+	const despacho = elegirPrecio(order.shippingPrice, base);
 	const placedDate = formatDate(new Date(order.created), undefined, intlLocale);
 
 	return (
@@ -85,14 +93,20 @@ async function OrderDetailContent({ params }: Props) {
 								const product = variant.product;
 								const productName = pickTranslatedName(product);
 								const variantName = pickTranslatedName(variant);
-								const lineTotal = variant.pricing?.price?.gross
-									? variant.pricing.price.gross.amount * line.quantity
-									: null;
-								const currency = variant.pricing?.price?.gross.currency;
+								// En B2B, lo cobrado en la línea (con su tramo); el precio de
+								// catálogo de hoy por la cantidad no es lo que se pagó.
+								const lineTotal = precioNeto
+									? line.totalPrice.net.amount
+									: variant.pricing?.price?.gross
+										? variant.pricing.price.gross.amount * line.quantity
+										: null;
+								const currency = precioNeto
+									? line.totalPrice.net.currency
+									: variant.pricing?.price?.gross.currency;
 								return (
 									<div key={line.id} className="flex items-center gap-4 px-5 py-4">
 										{product.thumbnail && (
-											<div className="bg-secondary/30 h-16 w-16 shrink-0 overflow-hidden rounded-lg border">
+											<div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-secondary/30">
 												<Image
 													src={product.thumbnail.url}
 													alt={product.thumbnail.alt ?? productName}
@@ -129,26 +143,22 @@ async function OrderDetailContent({ params }: Props) {
 						<div className="border-t px-5 py-4">
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
-									<dt className="text-muted-foreground">{t("subtotal")}</dt>
+									<dt className="text-muted-foreground">{precioNeto ? t("subtotalNet") : t("subtotal")}</dt>
 									<dd className="tabular-nums">
-										{formatMoney(order.subtotal.gross.amount, order.subtotal.gross.currency, intlLocale)}
+										{formatMoney(subtotal.amount, subtotal.currency, intlLocale)}
 									</dd>
 								</div>
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">{t("shipping")}</dt>
 									<dd className="tabular-nums">
-										{order.shippingPrice.gross.amount === 0
+										{despacho.amount === 0
 											? tCommon("free")
-											: formatMoney(
-													order.shippingPrice.gross.amount,
-													order.shippingPrice.gross.currency,
-													intlLocale,
-												)}
+											: formatMoney(despacho.amount, despacho.currency, intlLocale)}
 									</dd>
 								</div>
-								{order.total.tax.amount > 0 && (
+								{(precioNeto || order.total.tax.amount > 0) && (
 									<div className="flex justify-between">
-										<dt className="text-muted-foreground">{t("tax")}</dt>
+										<dt className="text-muted-foreground">{precioNeto ? t("taxB2B") : t("tax")}</dt>
 										<dd className="tabular-nums">
 											{formatMoney(order.total.tax.amount, order.total.tax.currency, intlLocale)}
 										</dd>
@@ -189,7 +199,7 @@ async function OrderDetailContent({ params }: Props) {
 
 					<LinkWithChannel
 						href="/contact"
-						className="hover:bg-secondary/50 block w-full rounded-xl border px-5 py-3 text-center text-sm font-medium transition-colors"
+						className="block w-full rounded-xl border px-5 py-3 text-center text-sm font-medium transition-colors hover:bg-secondary/50"
 					>
 						{t("needHelp")}
 					</LinkWithChannel>
