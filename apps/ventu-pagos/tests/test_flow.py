@@ -54,13 +54,47 @@ def test_initialize_retail_creates_tx_and_action_required(monkeypatch):
     assert tx is not None and tx.amount == 13150 and tx.channel_slug == "retail-cl"
 
 
-def test_initialize_rejects_non_retail_channel(monkeypatch):
+def test_initialize_rejects_channel_outside_list(monkeypatch):
     called = {"create": False}
     monkeypatch.setattr(webpay_client, "create",
                         lambda **k: called.__setitem__("create", True) or {"token": "x", "url": "y"})
-    resp = handlers.handle_transaction_initialize(_init_payload(channel="b2b-cl"))
+    # retail-ar no está en WEBPAY_CHANNELS (el fixture solo habilita retail-cl).
+    resp = handlers.handle_transaction_initialize(_init_payload(channel="retail-ar"))
     assert resp["result"] == "CHARGE_FAILURE"
     assert called["create"] is False  # nunca llamó a Webpay
+
+
+def test_initialize_accepts_b2b_channel(monkeypatch):
+    # B2B paga por Webpay sobre la orden: el canal b2b-cl debe aceptarse igual.
+    config.WEBPAY_CHANNELS = {"retail-cl", "b2b-cl"}
+    monkeypatch.setattr(
+        webpay_client, "create",
+        lambda **k: {"token": "TOKB2B", "url": "https://wp/redirect"},
+    )
+    resp = handlers.handle_transaction_initialize(_init_payload(channel="b2b-cl"))
+    assert resp["result"] == "CHARGE_ACTION_REQUIRED"
+    tx = store.get_tx("TOKB2B")
+    assert tx is not None and tx.channel_slug == "b2b-cl"
+
+
+def test_initialize_accepts_order_source_object(monkeypatch):
+    # Orden-primero: el sourceObject es una Order, no un Checkout. La pasarela es
+    # agnóstica: lee canal y persiste el id de la fuente sea cual sea su tipo.
+    config.WEBPAY_CHANNELS = {"retail-cl", "b2b-cl"}
+    monkeypatch.setattr(
+        webpay_client, "create",
+        lambda **k: {"token": "TOKORD", "url": "https://wp/redirect"},
+    )
+    payload = _init_payload(channel="b2b-cl")
+    payload["sourceObject"] = {
+        "__typename": "Order",
+        "id": "T3JkZXI6MQ==",
+        "channel": {"slug": "b2b-cl", "currencyCode": "CLP"},
+    }
+    resp = handlers.handle_transaction_initialize(payload)
+    assert resp["result"] == "CHARGE_ACTION_REQUIRED"
+    tx = store.get_tx("TOKORD")
+    assert tx is not None and tx.checkout_id == "T3JkZXI6MQ=="
 
 
 def test_initialize_rejects_non_clp_currency(monkeypatch):

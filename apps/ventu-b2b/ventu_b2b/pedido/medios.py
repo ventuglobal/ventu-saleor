@@ -2,15 +2,17 @@
 
 Dos familias, y la diferencia no es cosmética:
 
-- **Inmediatos** (tarjeta de crédito, tarjeta de débito). El pedido nace pagado
-  y la pasarela es quien lo confirma. Hoy no hay pasarela conectada, así que
-  ofrecerlos y dejar el pedido «pagado» sería registrar un cobro que nadie hizo.
+- **Inmediatos** (tarjeta de crédito, tarjeta de débito). El pago lo confirma una
+  pasarela (Webpay/Transbank, vía la app `ventu-pagos`). Bajo el modelo
+  orden-primero el pedido igual nace **por pagar** y la pasarela lo cobra sobre la
+  orden ya creada; queda pagado cuando el cobro se confirma (`ORDER_FULLY_PAID`).
 - **Diferidos** (transferencia, Cheke Maxxa 30 días). El pedido nace **por
   pagar** y esa es su condición normal, no una anomalía: en distribución
   mayorista la orden se despacha contra una promesa de pago. No necesitan
   pasarela para ser correctos.
 
-Por eso el pedido diferido se puede cerrar de verdad hoy y el inmediato no.
+La diferencia ahora es *cómo* se salda —pasarela inmediata vs. promesa de pago—,
+no si el medio está conectado: ambas familias cierran el pedido de verdad.
 """
 
 from __future__ import annotations
@@ -38,7 +40,8 @@ class MedioNoDisponible(ValueError):
 class Medio:
     codigo: str
     etiqueta: str
-    #: `False` mientras no haya pasarela: se ofrece, pero no cierra el pedido.
+    #: `False` si el medio se muestra pero aún no puede usarse (p. ej. sin
+    #: pasarela conectada): se ofrece en la vitrina, pero `validar()` lo rechaza.
     operativo: bool
     #: El pedido nace por pagar en vez de pagado.
     diferido: bool
@@ -48,9 +51,9 @@ class Medio:
 
 MEDIOS: Dict[str, Medio] = {
     TARJETA_CREDITO: Medio(TARJETA_CREDITO, "Tarjeta de crédito",
-                           operativo=False, diferido=False),
+                           operativo=True, diferido=False),
     TARJETA_DEBITO: Medio(TARJETA_DEBITO, "Tarjeta de débito",
-                          operativo=False, diferido=False),
+                          operativo=True, diferido=False),
     TRANSFERENCIA: Medio(TRANSFERENCIA, "Transferencia bancaria",
                          operativo=True, diferido=True),
     MAXXA_30: Medio(MAXXA_30, "Cheke Maxxa 30 días",
