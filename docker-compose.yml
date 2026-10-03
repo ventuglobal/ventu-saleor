@@ -42,6 +42,15 @@ services:
       - api
     env_file: .env
 
+  # Correo de todo el proyecto (Resend) + correos de cuenta de Saleor.
+  ventu-correo:
+    build: ./apps/ventu-correo
+    ports:
+      - "8095:8095"
+    depends_on:
+      - api
+    env_file: .env
+
   # Storefront oficial de Saleor (vendido por git subtree en ./storefront).
   # Actualizar: `make storefront-pull`. Las NEXT_PUBLIC_* son build-time en
   # producción (Railway las inyecta como build env); acá van como runtime para dev.

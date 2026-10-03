@@ -215,36 +215,46 @@ del storefront necesita ese `tokenCreate` para obtener el id del usuario nuevo
 (Saleor 3.23 lo devuelve vacío en `accountRegister`), así que tampoco alcanza a
 registrar la empresa.
 
-Antes de abrir el registro, elige **una** de estas dos opciones:
+Estado al 2026-10-03: `allowLoginWithoutConfirmation = true` (el signup ya
+funciona) y los correos de cuenta los envía **Ventu Correo**
+(`apps/ventu-correo`), el servicio de correo de todo el proyecto (Resend). Con
+eso el cliente recibe el enlace de confirmación y la empresa queda con su correo
+verificado, sin depender de que pueda iniciar sesión antes.
 
-- **Conectar el correo (preferido).** Configura SMTP en Saleor (*Configuration →
-  Plugins → User emails*, o una app de correo) y define `DEFAULT_FROM_EMAIL`.
-  Comprueba que `saleor-worker` esté corriendo: el correo lo envía el worker, no
-  la API. Se prefiere porque así el correo de contacto de una empresa que va a
-  comprar por pagar queda verificado.
-- **No exigir la confirmación.** Desactiva la confirmación
-  (`enableAccountConfirmationByEmail = false`) o permite iniciar sesión sin
-  confirmar (`allowLoginWithoutConfirmation = true`). En ese caso, verificar el
-  contacto pasa a ser parte de la aprobación (§ g): `/company/pendientes`
-  informa `correo_confirmado`. Hace falta un token de staff con
-  `MANAGE_SETTINGS`:
+Pasos, en orden:
 
-  ```bash
-  curl -s "https://<dominio-de-la-api>/graphql/" \
-    -H "Authorization: Bearer $SALEOR_STAFF_JWT" \
-    -H "Content-Type: application/json" \
-    -d '{"query":"mutation { shopSettingsUpdate(input: {allowLoginWithoutConfirmation: true}) { shop { enableAccountConfirmationByEmail allowLoginWithoutConfirmation } errors { field code message } } }"}'
-  ```
+1. **Servicio en Railway.** Crea `ventu-correo` con *root directory*
+   `apps/ventu-correo` (Dockerfile) y dominio público. Saleor no entrega
+   webhooks a IPs privadas (`HTTP_IP_FILTER_ENABLED`), así que el destino es el
+   dominio público, no `*.railway.internal`.
+2. **Variables** (las genera y pega quien opera, no se escriben en el repo):
+   `RESEND_API_KEY` (cuenta de Resend que ya usa storefront-next), `MAIL_FROM`
+   con un remitente de un dominio verificado en Resend (p. ej.
+   `Ventu <cuentas@send.clickbox.cl>`), `SALEOR_API_URL` y
+   `CORREO_SERVICE_TOKEN` (`openssl rand -hex 32`, para los servicios que usen
+   `/enviar`). `GET /health` dice qué falta sin mostrar valores.
+3. **Instalar la app en Saleor.** En el dashboard, *Apps → Install external
+   app*, con `https://<dominio-de-ventu-correo>/manifest`. Pide `MANAGE_USERS` y
+   se suscribe a `ACCOUNT_CONFIRMATION_REQUESTED` y
+   `ACCOUNT_SET_PASSWORD_REQUESTED`. No debe haber otro plugin de correo activo
+   (*User emails*), o el cliente recibe dos correos.
 
-**Comprobación:** crea una cuenta nueva y confirma que puede iniciar sesión.
-Prueba también con una cuenta creada **antes** del cambio, que quedó sin
-confirmar. Con SMTP, revisa además que el correo haya llegado.
+Sin `RESEND_API_KEY` o `MAIL_FROM` el servicio responde 503 a los webhooks y
+Saleor los reintenta; no se pierde nada mientras se configura.
+
+**Comprobación:** crea una cuenta nueva, revisa que llegue el correo "Confirma
+tu cuenta en Ventu" y que el enlace la confirme (`/company/pendientes` pasa a
+informar `correo_confirmado`). Prueba también "Olvidé mi contraseña". En el log
+de `ventu-correo` aparece `(correo) enviado` con el destinatario abreviado.
 
 ---
 
 ## f. Celery beat y variables de negocio
 
-### Celery beat no está corriendo
+### Celery beat
+
+Activo desde el 2026-10-03: `saleor-worker` (una réplica) corre con `--beat`.
+Lo que sigue explica por qué hace falta y cómo comprobarlo.
 
 `saleor-worker` corre sin beat (sin `-B`) y no hay otro proceso beat. Las tareas
 asíncronas, como webhooks y correos, sí se ejecutan porque las toma el worker.
