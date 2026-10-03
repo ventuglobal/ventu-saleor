@@ -14,12 +14,15 @@ Este repo aloja la plataforma de venta; la sincronización saliente
 | `api` | Saleor core (GraphQL API) | Imagen oficial `ghcr.io/saleor/saleor` (pin por versión) |
 | `dashboard` | Saleor Dashboard | Imagen oficial `ghcr.io/saleor/saleor-dashboard` (pin) |
 | `ventu-sync` | **Ventu Sync App**: recibe webhooks de Saleor (órdenes → Ventu) y aloja el token de la Saleor App | Código propio (`apps/ventu-sync/`) |
-| `ventu-pagos` | **Payment App (Webpay Plus / Transbank)**: expone el gateway `cl.ventu.pagos`, procesa pagos del canal `retail-cl` por la Transactions API y reporta el resultado a Saleor | Código propio (`apps/ventu-pagos/`) |
+| `ventu-pagos` | **Payment App (Webpay Plus / Transbank)**: expone el gateway `cl.ventu.pagos`, procesa pagos de los canales en `WEBPAY_CHANNELS` (`retail-cl`, `b2b-cl`) por la Transactions API y reporta el resultado a Saleor | Código propio (`apps/ventu-pagos/`) |
 | `storefront` | Tienda pública (Next.js) | `git subtree` del oficial `saleor/storefront` (remote `upstream`) |
 | `db`, `redis` | Postgres + Redis | Imágenes oficiales |
 
-Webpay/Transbank corre **solo en el canal `retail-cl`** (ver `apps/ventu-pagos/`);
-el B2B (Transferencia/Maxxa) no se toca.
+Webpay/Transbank corre en los canales de `WEBPAY_CHANNELS` (hoy `retail-cl` y
+`b2b-cl`; ver `apps/ventu-pagos/`). Retail paga **sobre el checkout**
+(pago-para-existir); B2B paga **sobre la orden** (orden-primero: la orden nace
+por pagar y Webpay la cobra, `ORDER_FULLY_PAID` la marca pagada). Los medios
+diferidos del B2B (Transferencia/Maxxa) siguen igual, por su camino actual.
 
 ## Flujo de sincronización (bidireccional)
 
@@ -31,11 +34,13 @@ el B2B (Transferencia/Maxxa) no se toca.
 - **Saleor → Ventu** (entrante): órdenes/eventos. Los recibe `ventu-sync` vía
   webhooks de Saleor (`ORDER_CREATED`, `ORDER_FULLY_PAID`) y los reenvía al
   backend Ventu.
-- **Pagos retail** (`retail-cl`): el storefront inicia la transacción, Transbank
-  cobra y `ventu-pagos` confirma con el `commit` server-side y reporta
-  `CHARGE_SUCCESS/FAILURE` a Saleor por `transactionEventReport`. Regla de oro:
-  aprobado solo si el commit propio devuelve `response_code = 0` y
-  `status = AUTHORIZED`.
+- **Pagos con Webpay** (`retail-cl`, `b2b-cl`): el storefront inicia la
+  transacción, Transbank cobra y `ventu-pagos` confirma con el `commit`
+  server-side y reporta `CHARGE_SUCCESS/FAILURE` a Saleor por
+  `transactionEventReport`. Regla de oro: aprobado solo si el commit propio
+  devuelve `response_code = 0` y `status = AUTHORIZED`. En retail la transacción
+  va sobre el checkout; en B2B va sobre la orden ya creada (misma pasarela,
+  mismo commit).
 
 ## Cómo se mantiene sincronizado con el Saleor oficial
 
@@ -106,4 +111,4 @@ Railway → merge → producción, sin depender de ninguna máquina local.
 - [ ] `docker-compose` + servicios base (este scaffold).
 - [ ] Ventu Sync App: webhooks de órdenes → Ventu (skeleton en `apps/ventu-sync/`).
 - [x] Storefront oficial de Saleor vendido por subtree en `./storefront` + servicio en compose (`make storefront-pull` para actualizar).
-- [ ] Payment App Webpay (fase posterior).
+- [x] Payment App Webpay (`ventu-pagos`): retail sobre checkout y B2B sobre orden (`retail-cl`, `b2b-cl`).
