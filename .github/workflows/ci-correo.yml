@@ -1,0 +1,28 @@
+name: CI (correo)
+
+on:
+  pull_request:
+    paths:
+      - "apps/ventu-correo/**"
+      - ".github/workflows/ci-correo.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/ventu-correo/**"
+
+jobs:
+  ventu-correo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/ventu-correo/requirements.txt pytest
+      - name: Compile
+        run: python -m py_compile apps/ventu-correo/ventu_correo/*.py
+      - name: Test
+        run: pytest apps/ventu-correo/tests -q
