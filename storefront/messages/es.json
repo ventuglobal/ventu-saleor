@@ -11,7 +11,9 @@
 			"continueShopping": "Seguir comprando",
 			"removeItem": "Quitar {product}",
 			"decreaseQuantity": "Disminuir cantidad",
-			"increaseQuantity": "Aumentar cantidad"
+			"increaseQuantity": "Aumentar cantidad",
+			"subtotalNet": "Subtotal neto",
+			"tax": "IVA (19 %)"
 		},
 		"page": {
 			"title": "Carro de compras",
@@ -22,7 +24,9 @@
 			"checkout": "Ir a pagar",
 			"remove": "Quitar",
 			"removing": "Quitando",
-			"srLineFromCart": "producto del carro"
+			"srLineFromCart": "producto del carro",
+			"subtotalNet": "Subtotal neto",
+			"tax": "IVA (19 %)"
 		}
 	},
 	"productsListing": {
@@ -85,11 +89,12 @@
 			"title": "Precio por volumen",
 			"caption": "El precio del tramo aplica a todas las unidades de la línea. Se calcula en el carrito según la cantidad.",
 			"from": "Desde",
-			"unitPrice": "Precio unitario",
+			"unitPrice": "Precio unitario neto",
 			"discount": "Descuento",
 			"unit": "unidad",
 			"units": "unidades"
-		}
+		},
+		"priceNetHint": "+ IVA"
 	},
 	"plp": {
 		"quickAdd": "Agregar rápido",
@@ -347,7 +352,8 @@
 			"empty": "Todavía no has hecho ningún pedido.",
 			"loadMore": "Cargar más pedidos",
 			"signInRequired": "Inicia sesión para ver tus pedidos.",
-			"orderNumber": "PED-{number}"
+			"orderNumber": "PED-{number}",
+			"net": "Neto"
 		},
 		"orderDetail": {
 			"placedOn": "Realizado el {date}",
@@ -363,7 +369,9 @@
 			"needHelp": "¿Necesitas ayuda?",
 			"signInRequired": "Inicia sesión para ver este pedido.",
 			"loadFailed": "No pudimos cargar este pedido. Inténtalo de nuevo.",
-			"timeline": "Seguimiento del pedido"
+			"timeline": "Seguimiento del pedido",
+			"subtotalNet": "Subtotal neto",
+			"taxB2B": "IVA (19 %)"
 		},
 		"orderStatus": {
 			"UNFULFILLED": "En preparación",
@@ -524,7 +532,9 @@
 			"shipTo": "Despachar a",
 			"method": "Método",
 			"delivery": "Entrega",
-			"digital": "Digital"
+			"digital": "Digital",
+			"subtotalNet": "Subtotal neto",
+			"taxB2B": "IVA (19 %)"
 		},
 		"promo": {
 			"placeholder": "Código de descuento",

@@ -179,7 +179,8 @@ el dashboard, *Configuration → Taxes*:
 2. En la pestaña **Channels**, elige `b2b-cl`:
    - cobra impuestos (`chargeTaxes = true`);
    - calcula con tasas fijas (*Flat rates*, `taxCalculationStrategy = FLAT_RATES`);
-   - toma los precios como **sin** impuesto (`pricesEnteredWithTax = false`).
+   - toma los precios como **sin** impuesto (`pricesEnteredWithTax = false`);
+   - los muestra sin impuesto (`displayGrossPrices = false`).
 3. No toques `retail-cl`. Ahí los precios sí se ingresan con IVA incluido.
 
 **Comprobación:** en un carrito de `b2b-cl`, el total es el subtotal neto × 1,19
@@ -189,8 +190,11 @@ dashboard.
 **Tramos y precios negociados también van netos.** Con
 `pricesEnteredWithTax = false`, el precio que ventu-b2b fija en una línea se
 toma sin IVA y Saleor le suma el 19 %. ventu-b2b lee esta configuración del
-canal, calcula el tramo sobre el neto y muestra la tabla con IVA, igual que el
-precio de lista. Dos consecuencias para el staff:
+canal, calcula el tramo sobre el neto y muestra la tabla en la base en que el
+canal muestra sus precios (`displayGrossPrices`): neta en `b2b-cl`, igual que
+el precio de lista de la ficha. El storefront muestra netos en todo canal B2B
+(`B2B_CHANNELS`) y desglosa el IVA aparte en carrito, checkout y pedidos
+(subtotal neto, IVA, total). Dos consecuencias para el staff:
 
 - El `precio_unitario` de un carrito negociado (`POST /cart`) se ingresa
   **neto**.
@@ -385,7 +389,8 @@ Hazla con una cuenta de prueba nueva, en ventana privada.
 5. Recarga la página: ahora la transferencia está habilitada. Maxxa solo se
    habilita con crédito aprobado.
 6. Agrega al carrito un producto con tramos, en una cantidad que alcance uno. El
-   precio unitario del carrito, con IVA, debe ser el de la tabla de la ficha.
+   precio unitario neto del carrito debe ser el de la tabla de la ficha, y el
+   resumen debe mostrar subtotal neto, IVA y total.
 7. En el checkout, ingresa la dirección de despacho, elige el envío y paga con
    **Transferencia**. El pedido se crea y se muestran el número y las
    instrucciones de transferencia (§ f). El total debe ser el neto más el 19 %

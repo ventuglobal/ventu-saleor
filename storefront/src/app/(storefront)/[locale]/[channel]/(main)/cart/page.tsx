@@ -9,6 +9,8 @@ import { defaultStorefrontContent } from "@/lib/content/defaults";
 import { getStorefrontContent } from "@/lib/content/server";
 import * as Checkout from "@/lib/checkout";
 import { formatMoney, getHrefForVariant } from "@/lib/utils";
+import { elegirPrecio } from "@/lib/pricing";
+import { baseDePrecio } from "@/lib/b2b/canales";
 import { buildBrowsePageMetadata } from "@/lib/seo";
 import { resolveLocaleFromSlug } from "@/config/locale";
 import { LinkWithChannel } from "@/ui/atoms/link-with-channel";
@@ -56,6 +58,9 @@ async function CartContent({
 	const cart = surfaces.cart;
 	const intlLocale = resolveLocaleFromSlug(params.locale).bcp47;
 	const checkout = checkoutId ? await Checkout.find(checkoutId, params.locale) : null;
+	// En B2B las líneas van netas y el resumen separa neto, IVA y total. El IVA
+	// es el que calcula Saleor (`totalPrice.tax`), no un 19 % hecho aquí.
+	const base = baseDePrecio(params.channel);
 
 	if (!checkout || checkout.lines.length < 1) {
 		return (
@@ -112,7 +117,11 @@ async function CartContent({
 										)}
 									</div>
 									<p className="text-right font-semibold text-foreground">
-										{formatMoney(item.totalPrice.gross.amount, item.totalPrice.gross.currency, intlLocale)}
+										{formatMoney(
+											elegirPrecio(item.totalPrice, base).amount,
+											elegirPrecio(item.totalPrice, base).currency,
+											intlLocale,
+										)}
 									</p>
 								</div>
 								<div className="flex justify-between">
@@ -128,6 +137,30 @@ async function CartContent({
 
 				<div className="mt-12">
 					<div className="rounded-md border bg-muted px-4 py-2">
+						{base === "net" && (
+							<div className="space-y-1 border-b border-border py-2 text-sm text-muted-foreground">
+								<div className="flex justify-between gap-2">
+									<span>{t("subtotalNet")}</span>
+									<span className="tabular-nums">
+										{formatMoney(
+											checkout.totalPrice.net.amount,
+											checkout.totalPrice.net.currency,
+											intlLocale,
+										)}
+									</span>
+								</div>
+								<div className="flex justify-between gap-2">
+									<span>{t("tax")}</span>
+									<span className="tabular-nums">
+										{formatMoney(
+											checkout.totalPrice.tax.amount,
+											checkout.totalPrice.tax.currency,
+											intlLocale,
+										)}
+									</span>
+								</div>
+							</div>
+						)}
 						<div className="flex items-center justify-between gap-2 py-2">
 							<div>
 								<p className="font-semibold text-foreground">{t("yourTotal")}</p>

@@ -6,6 +6,10 @@ query CheckoutFind($id: ID!, $languageCode: LanguageCodeEnum!) {
 			id
 			quantity
 			totalPrice {
+				net {
+					amount
+					currency
+				}
 				gross {
 					amount
 					currency
@@ -35,12 +39,20 @@ query CheckoutFind($id: ID!, $languageCode: LanguageCodeEnum!) {
 				}
 				pricing {
 					price {
+						net {
+							amount
+							currency
+						}
 						gross {
 							amount
 							currency
 						}
 					}
 					priceUndiscounted {
+						net {
+							amount
+							currency
+						}
 						gross {
 							amount
 							currency
@@ -92,7 +104,15 @@ query CheckoutFind($id: ID!, $languageCode: LanguageCodeEnum!) {
 			}
 		}
 		totalPrice {
+			net {
+				amount
+				currency
+			}
 			gross {
+				amount
+				currency
+			}
+			tax {
 				amount
 				currency
 			}

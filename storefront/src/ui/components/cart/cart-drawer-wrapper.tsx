@@ -1,6 +1,7 @@
 import { deleteCartLine, updateCartLineQuantity } from "@/app/actions";
 import type { CartContent, StorefrontPolicies } from "@/lib/content";
 import * as Checkout from "@/lib/checkout";
+import { baseDePrecio } from "@/lib/b2b/canales";
 import { CartDrawer } from "./cart-drawer";
 
 interface CartDrawerWrapperProps {
@@ -20,6 +21,7 @@ export async function CartDrawerWrapper({ channel, localeSlug, cart, policies }:
 			lines={checkout?.lines ?? []}
 			totalPrice={checkout?.totalPrice ?? null}
 			channel={channel}
+			baseDePrecio={baseDePrecio(channel)}
 			localeSlug={localeSlug}
 			cart={cart}
 			policies={policies}

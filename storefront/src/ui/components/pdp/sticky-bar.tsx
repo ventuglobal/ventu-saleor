@@ -32,6 +32,8 @@ interface StickyBarProps {
 	productName: string;
 	price: string;
 	show?: boolean;
+	/** Aviso junto al precio cuando se muestra sin IVA (canales B2B). */
+	priceNote?: string | null;
 }
 
 function StickyAddButton() {
@@ -51,7 +53,7 @@ function StickyAddButton() {
 	);
 }
 
-export function StickyBar({ productName, price, show = false }: StickyBarProps) {
+export function StickyBar({ productName, price, show = false, priceNote }: StickyBarProps) {
 	const scrolledPastThreshold = useSyncExternalStore(
 		subscribeToScroll,
 		getScrollSnapshot,
@@ -70,7 +72,10 @@ export function StickyBar({ productName, price, show = false }: StickyBarProps) 
 			<div className="container-content flex items-center justify-between gap-4 py-3">
 				<div className="min-w-0 flex-1">
 					<p className="truncate font-medium">{productName}</p>
-					<p className="text-sm text-muted-foreground">{price}</p>
+					<p className="text-sm text-muted-foreground">
+						{price}
+						{priceNote ? ` ${priceNote}` : null}
+					</p>
 				</div>
 				<StickyAddButton />
 			</div>

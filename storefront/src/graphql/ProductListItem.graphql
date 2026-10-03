@@ -10,12 +10,20 @@ fragment ProductListItem on Product {
 	pricing {
 		priceRange {
 			start {
+				net {
+					amount
+					currency
+				}
 				gross {
 					amount
 					currency
 				}
 			}
 			stop {
+				net {
+					amount
+					currency
+				}
 				gross {
 					amount
 					currency
@@ -24,12 +32,20 @@ fragment ProductListItem on Product {
 		}
 		priceRangeUndiscounted {
 			start {
+				net {
+					amount
+					currency
+				}
 				gross {
 					amount
 					currency
 				}
 			}
 			stop {
+				net {
+					amount
+					currency
+				}
 				gross {
 					amount
 					currency

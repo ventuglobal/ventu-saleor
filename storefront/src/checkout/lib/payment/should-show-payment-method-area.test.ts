@@ -3,22 +3,46 @@ import { shouldShowPaymentMethodArea } from "./should-show-payment-method-area";
 
 const freeCheckout = {
 	authorizeStatus: "FULL" as const,
-	totalPrice: { gross: { amount: 0, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
-	subtotalPrice: { gross: { amount: 10, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
+	totalPrice: {
+		net: { amount: 0, currency: "USD" },
+		gross: { amount: 0, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
+	subtotalPrice: {
+		net: { amount: 10, currency: "USD" },
+		gross: { amount: 10, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
 	discount: { amount: 10, currency: "USD" },
 };
 
 const paidAuthorizedCheckout = {
 	authorizeStatus: "FULL" as const,
-	totalPrice: { gross: { amount: 10, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
-	subtotalPrice: { gross: { amount: 10, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
+	totalPrice: {
+		net: { amount: 10, currency: "USD" },
+		gross: { amount: 10, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
+	subtotalPrice: {
+		net: { amount: 10, currency: "USD" },
+		gross: { amount: 10, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
 	discount: null,
 };
 
 const unpaidCheckout = {
 	authorizeStatus: "NONE" as const,
-	totalPrice: { gross: { amount: 10, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
-	subtotalPrice: { gross: { amount: 10, currency: "USD" }, tax: { amount: 0, currency: "USD" } },
+	totalPrice: {
+		net: { amount: 10, currency: "USD" },
+		gross: { amount: 10, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
+	subtotalPrice: {
+		net: { amount: 10, currency: "USD" },
+		gross: { amount: 10, currency: "USD" },
+		tax: { amount: 0, currency: "USD" },
+	},
 	discount: null,
 };
 

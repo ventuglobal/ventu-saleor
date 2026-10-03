@@ -9,6 +9,10 @@ mutation CheckoutLinesUpdate($checkoutId: ID!, $lines: [CheckoutLineUpdateInput!
 				id
 				quantity
 				totalPrice {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency
@@ -16,7 +20,15 @@ mutation CheckoutLinesUpdate($checkoutId: ID!, $lines: [CheckoutLineUpdateInput!
 				}
 			}
 			totalPrice {
+				net {
+					amount
+					currency
+				}
 				gross {
+					amount
+					currency
+				}
+				tax {
 					amount
 					currency
 				}

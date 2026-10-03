@@ -8,6 +8,7 @@ import { resolveBrowseLocaleForCheckout } from "@/lib/browse-locale-server";
 import { loadCheckoutMessages } from "@/i18n/load-messages";
 import { OrderConfirmationRouteFallback } from "@/checkout/views/order-confirmation/order-confirmation-route-fallback";
 import { formatPageTitle } from "@/config/brand";
+import { esCanalB2B } from "@/lib/b2b/canales";
 
 export const metadata = {
 	title: formatPageTitle("Order confirmed"),
@@ -52,6 +53,7 @@ async function OrderCompleteContent({
 			initialUser={initialUser}
 			storefrontLocale={storefrontLocale}
 			messages={messages}
+			canalB2B={initialOrder ? esCanalB2B(initialOrder.channel.slug) : false}
 		/>
 	);
 }
