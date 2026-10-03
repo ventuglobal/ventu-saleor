@@ -31,9 +31,13 @@ RETURN_URL = os.getenv("VENTU_PAGOS_RETURN_URL", "http://localhost:3000/checkout
 # Base del storefront para construir redirects de resultado desde el fallback.
 STOREFRONT_URL = os.getenv("STOREFRONT_URL", "http://localhost:3000")
 
-# Canales donde Webpay está habilitado. El resto (B2B) se rechaza en initialize.
+# Canales donde Webpay está habilitado; un initialize de cualquier otro canal se
+# rechaza. Retail paga el total en el checkout; B2B (b2b-cl) paga sobre la orden
+# (total, parcial o combinado). Un canal fuera de esta lista no puede cobrar.
 WEBPAY_CHANNELS = {
-    c.strip() for c in os.getenv("WEBPAY_CHANNELS", "retail-cl").split(",") if c.strip()
+    c.strip()
+    for c in os.getenv("WEBPAY_CHANNELS", "retail-cl,b2b-cl").split(",")
+    if c.strip()
 }
 
 # Moneda soportada (Webpay CLP es entero, sin decimales).

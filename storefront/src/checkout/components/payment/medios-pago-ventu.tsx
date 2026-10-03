@@ -7,6 +7,8 @@ import { CreditCard, Landmark, FileClock, Loader2, Building2, Clock, LogIn } fro
 import { Button, buttonClassName } from "@/ui/components/ui/button";
 import { navigateToOrderConfirmation } from "@/checkout/lib/payment/navigate-to-order";
 import { guardarInstruccionesPago } from "@/checkout/lib/payment/instrucciones-pago";
+import { executeWebpayOrderPayment } from "@/checkout/components/payment/webpay/execute-webpay-order-payment";
+import { markWebpayOrderPending } from "@/checkout/lib/payment/webpay-order-retry";
 import {
 	estadoMediosPago,
 	estadoTrasRechazoDePedido,
@@ -60,6 +62,9 @@ const ICONOS: Record<string, typeof CreditCard> = {
 	transferencia: Landmark,
 	maxxa_30: FileClock,
 };
+
+/** Medios que se cobran con Webpay sobre la orden (no son promesa de pago). */
+const MEDIOS_TARJETA = new Set(["tarjeta_credito", "tarjeta_debito"]);
 
 const MOTIVOS: Record<string, string> = {
 	sin_credito: "Requiere crédito aprobado por Maxxa",
@@ -186,6 +191,26 @@ export const MediosPagoVentu: FC<MediosPagoVentuProps> = ({ canal, guardarFactur
 				return;
 			}
 
+			// Tarjeta: la orden nació por pagar; ahora se cobra con Webpay sobre la
+			// orden. El auto-POST se lleva la pestaña a Transbank, así que no
+			// navegamos a la confirmación aquí: eso ocurre al volver del pago. Si el
+			// pago falla, la orden queda por pagar y el reintento vive en su
+			// confirmación (marca de sesión).
+			if (MEDIOS_TARJETA.has(elegido)) {
+				markWebpayOrderPending(dato.order_id);
+				const pago = await executeWebpayOrderPayment({
+					orderId: dato.order_id,
+					channel: canal,
+					browseLocale: locale,
+				});
+				if (!pago.ok) {
+					setError(pago.message);
+					return;
+				}
+				// La pestaña está navegando a Webpay; se mantiene el estado "enviando".
+				return;
+			}
+
 			// Las instrucciones (datos de la transferencia, por ejemplo) se dejan
 			// para la confirmación. Si no hay dónde dejarlas se muestran aquí antes
 			// de salir: perderlas obligaría a quien compra a pedirlas por otro lado.
@@ -201,7 +226,7 @@ export const MediosPagoVentu: FC<MediosPagoVentuProps> = ({ canal, guardarFactur
 		} finally {
 			setEnviando(false);
 		}
-	}, [canal, elegido, estado, guardarFacturacion]);
+	}, [canal, elegido, estado, guardarFacturacion, locale]);
 
 	if (creado) {
 		return (

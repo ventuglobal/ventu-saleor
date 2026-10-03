@@ -36,6 +36,13 @@ function backToPayment(
 		// checkout guardado en cookie.
 		return sameOrigin(request, "/checkout");
 	}
+	if (ctx.kind === "order") {
+		// B2B orden-primero: la orden ya existe por pagar. Se vuelve a su
+		// confirmación con el aviso, donde se ofrece reintentar el pago.
+		const url = sameOrigin(request, buildOrderConfirmationPath({ orderId: ctx.orderId }));
+		url.searchParams.set("webpay", outcome);
+		return url;
+	}
 	const path = buildCheckoutPath({
 		checkoutId: ctx.checkoutId,
 		step: "payment",
@@ -106,9 +113,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 		return NextResponse.redirect(backToPayment(request, ctx, "failed"));
 	}
 
-	// Cobro confirmado por nuestro servidor → convertir el checkout en orden.
-	const completeResult = await runCheckoutComplete(ctx.checkoutId);
+	// Cobro confirmado por nuestro servidor (regla de oro).
 	await clearWebpayContextCookie();
+
+	if (ctx.kind === "order") {
+		// B2B orden-primero: la orden ya existe; el cobro solo la marca pagada
+		// (`ORDER_FULLY_PAID`). No hay `checkoutComplete` que llamar.
+		return NextResponse.redirect(
+			sameOrigin(request, buildOrderConfirmationPath({ orderId: ctx.orderId })),
+		);
+	}
+
+	// Retail: convertir el checkout en orden.
+	const completeResult = await runCheckoutComplete(ctx.checkoutId);
 
 	if (!completeResult.ok || !completeResult.orderId) {
 		// El pago quedó cobrado pero la orden no cerró: el reconciliador/soporte lo

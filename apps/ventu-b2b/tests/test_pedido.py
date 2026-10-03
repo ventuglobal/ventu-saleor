@@ -73,11 +73,14 @@ def test_con_credito_aprobado_maxxa_queda_habilitado():
     assert vitrina[medios.MAXXA_30]["habilitado"] is True
 
 
-def test_las_tarjetas_se_ofrecen_pero_no_estan_conectadas():
-    vitrina = {m["codigo"]: m for m in medios.disponibles(tiene_credito=True, aprobada=True)}
+def test_las_tarjetas_estan_habilitadas():
+    """Con Webpay conectado la tarjeta es un medio B2B más: la empresa aprobada
+    puede elegirla sin crédito (el cobro va por la pasarela, no a 30 días)."""
+    vitrina = {m["codigo"]: m for m in medios.disponibles(tiene_credito=False, aprobada=True)}
     for tarjeta in (medios.TARJETA_CREDITO, medios.TARJETA_DEBITO):
-        assert vitrina[tarjeta]["habilitado"] is False
-        assert vitrina[tarjeta]["motivo"] == "no_operativo"
+        assert vitrina[tarjeta]["habilitado"] is True
+        assert "motivo" not in vitrina[tarjeta]
+        assert vitrina[tarjeta]["diferido"] is False
 
 
 def test_empresa_en_revision_ve_todos_los_medios_deshabilitados():
@@ -110,11 +113,13 @@ def test_maxxa_sin_credito_se_rechaza():
         medios.validar(medios.MAXXA_30, tiene_credito=False)
 
 
-def test_tarjeta_no_conectada_se_rechaza():
-    """Cerrar el pedido con una tarjeta sin pasarela sería dar por cobrado algo
-    que nadie cobró."""
-    with pytest.raises(medios.MedioNoDisponible, match="conectado"):
-        medios.validar(medios.TARJETA_CREDITO, tiene_credito=True)
+def test_tarjeta_es_un_medio_valido():
+    """Con Webpay conectado `validar()` acepta la tarjeta: nace por pagar y la
+    pasarela la cobra sobre la orden."""
+    medio = medios.validar(medios.TARJETA_CREDITO, tiene_credito=False)
+    assert medio.codigo == medios.TARJETA_CREDITO
+    assert medio.operativo is True
+    assert medio.diferido is False
 
 
 # ───────────────── creación de la orden ─────────────────
@@ -135,6 +140,19 @@ def test_el_pedido_nace_por_pagar(monkeypatch):
     meta = {e["key"]: e["value"] for e in capturado[0]["metadata"]}
     assert meta[medios.K_ESTADO] == medios.PENDIENTE
     assert meta[medios.K_METODO] == medios.TRANSFERENCIA
+
+
+def test_tarjeta_tambien_nace_por_pagar(monkeypatch):
+    """Orden-primero: la orden de tarjeta se crea por pagar igual que la
+    diferida; Webpay la cobra después sobre la orden ya creada."""
+    capturado = []
+    monkeypatch.setattr(pedido_svc, "gql", _saleor_ok(capturado))
+    p = pedido_svc.crear(CHECKOUT, medios.TARJETA_CREDITO, tiene_credito=False)
+
+    assert p.metodo_pago == medios.TARJETA_CREDITO
+    meta = {e["key"]: e["value"] for e in capturado[0]["metadata"]}
+    assert meta[medios.K_ESTADO] == medios.PENDIENTE
+    assert meta[medios.K_METODO] == medios.TARJETA_CREDITO
 
 
 def test_la_identidad_tributaria_viaja_a_la_orden(monkeypatch):
@@ -251,7 +269,9 @@ def test_usuario_con_empresa(monkeypatch, cliente):
     assert d["aprobada"] is True
     assert d["estado"] == "aprobada"
     assert len(d["medios_pago"]) == 4
-    assert {m["codigo"] for m in d["medios_pago"] if m["habilitado"]} == {medios.TRANSFERENCIA}
+    # Sin crédito: Maxxa queda fuera; tarjeta (Webpay) y transferencia habilitadas.
+    assert {m["codigo"] for m in d["medios_pago"] if m["habilitado"]} == {
+        medios.TARJETA_CREDITO, medios.TARJETA_DEBITO, medios.TRANSFERENCIA}
 
 
 def test_empresa_en_revision_lo_dice_y_no_tiene_medios(monkeypatch, cliente):

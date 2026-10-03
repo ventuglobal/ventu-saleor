@@ -10,6 +10,7 @@ import { Button } from "@/ui/components/ui/button";
 import { useOrder } from "@/checkout/hooks/use-order";
 import { OrderSummary } from "@/checkout/views/saleor-checkout/order-summary";
 import { OrderConfirmationPageShell } from "./order-confirmation-page-shell";
+import { ReintentarPagoTarjeta } from "./reintentar-pago-tarjeta";
 import { PageNotFound } from "@/checkout/views/page-not-found";
 import { useTranslations } from "next-intl";
 import { getLocaleDefinition } from "@/config/locale";
@@ -106,6 +107,14 @@ export const OrderConfirmation = () => {
 					<div className="order-2 min-w-0 flex-1 md:order-1">
 						<div className="rounded-lg border border-border bg-card p-6 md:p-8">
 							<div className="space-y-8">
+								{/* Si el pago con tarjeta no entró, la orden existe pero queda por
+								    pagar: se ofrece reintentar aquí (solo en la sesión que la creó). */}
+								<ReintentarPagoTarjeta
+									orderId={orderId ?? order.id}
+									channel={channel}
+									isPaid={order.isPaid ?? false}
+									browseLocale={storefrontLocale}
+								/>
 								<div className="space-y-4 text-center">
 									<div className="flex justify-center">
 										<div className="relative">

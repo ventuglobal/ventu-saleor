@@ -90,6 +90,7 @@ import {
 } from "@/checkout/lib/payment/providers/webpay";
 import { buildMarketingConsentMetadata } from "@/checkout/lib/marketing-consent";
 import { fetchCheckoutOnServer } from "@/checkout/lib/server/fetch-checkout";
+import { fetchOrderOnServer } from "@/checkout/lib/server/fetch-order";
 import { getCheckoutServerTranslations } from "@/checkout/lib/server/get-checkout-server-translations";
 import { toCheckoutActionResult } from "@/checkout/lib/server/mutation-result";
 import { toTypedDocument } from "@/checkout/lib/server/to-typed-document";
@@ -536,6 +537,74 @@ export async function initializeCheckoutTransaction(
 
 	const result = await executeAuthenticatedGraphQL(transactionInitializeDocument, {
 		variables,
+		cache: "no-cache",
+	});
+
+	if (!result.ok) {
+		return { ok: false, error: result.error.message };
+	}
+
+	const payload = result.data.transactionInitialize;
+	if (!payload) {
+		return { ok: false, error: t("noSaleorResponse") };
+	}
+
+	if (payload.errors?.length) {
+		return { ok: false, error: payload.errors[0].message ?? t("paymentInitFailed") };
+	}
+
+	return { ok: true, data: payload };
+}
+
+/**
+ * Inicia una transacción de pago **sobre una orden** (flujo B2B orden-primero).
+ *
+ * Espeja `initializeCheckoutTransaction`, pero la fuente de verdad es la orden, no
+ * el checkout:
+ *  - El guard de canal de Webpay lee el canal **de la orden** (borde de seguridad:
+ *    Transbank nunca se dispara desde un canal fuera de `WEBPAY_CHANNELS`).
+ *  - El monto NO lo pone el cliente: se toma del total de la orden ya creada (2a =
+ *    pago total, una transacción). La orden nace por pagar y la pasarela la cobra.
+ *
+ * Reusa la mutación `transactionInitialize` (su `id` acepta orden o checkout; la
+ * variable se llama `checkoutId` por el storefront, pero aquí lleva el id de orden).
+ * `runCheckoutComplete` **no** entra en este camino: la orden ya existe.
+ */
+export async function initializeOrderTransaction(
+	orderId: string,
+	paymentGateway: TransactionInitializeMutationVariables["paymentGateway"],
+): Promise<TransactionInitializeActionResult> {
+	const { server: t } = await getCheckoutServerTranslations();
+
+	const webpayGuardError = getWebpayPaymentGuardError(paymentGateway?.id);
+	if (webpayGuardError) {
+		return { ok: false, error: webpayGuardError };
+	}
+
+	const isWebpay = isWebpayGateway(paymentGateway?.id ?? "");
+
+	// El id de orden es la credencial (igual que la página de confirmación). La
+	// orden da el canal (aislamiento Webpay) y el total (nunca se confía en un
+	// monto del cliente).
+	const order = await fetchOrderOnServer(orderId);
+	if (!order) {
+		return { ok: false, error: t("totalVerifyFailed") };
+	}
+
+	if (isWebpay) {
+		const channelGuardError = getWebpayChannelGuardError(paymentGateway?.id, order.channel?.slug);
+		if (channelGuardError) {
+			return { ok: false, error: channelGuardError };
+		}
+	}
+
+	const amount = order.total?.gross?.amount;
+	if (typeof amount !== "number" || amount <= 0) {
+		return { ok: false, error: t("totalVerifyFailed") };
+	}
+
+	const result = await executeAuthenticatedGraphQL(transactionInitializeDocument, {
+		variables: { checkoutId: orderId, amount, paymentGateway },
 		cache: "no-cache",
 	});
 

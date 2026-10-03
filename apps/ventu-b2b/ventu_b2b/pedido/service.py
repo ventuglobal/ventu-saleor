@@ -176,9 +176,11 @@ def crear(checkout_id: str, metodo: str, *, tiene_credito: bool,
 
     metadata = dict(extra_metadata or {})
     metadata[medios_mod.K_METODO] = medio.codigo
-    # Todo pedido diferido nace por pagar; hoy no hay ningún medio que nazca
-    # pagado, pero el estado se escribe explícitamente para que la facturación no
-    # tenga que deducirlo del método.
+    # Toda orden B2B nace por pagar, también la de tarjeta: bajo orden-primero la
+    # pasarela (Webpay) cobra sobre la orden ya creada y `ORDER_FULLY_PAID` la
+    # marca pagada después. El estado se escribe explícito para que la facturación
+    # no tenga que deducirlo del método; la verdad del cobro es el estado nativo
+    # de Saleor (`totalCharged`/`chargeStatus`), no esta metadata.
     metadata[medios_mod.K_ESTADO] = medios_mod.PENDIENTE
 
     # Nunca se reintenta: tras un timeout no se sabe si la orden se creó, y

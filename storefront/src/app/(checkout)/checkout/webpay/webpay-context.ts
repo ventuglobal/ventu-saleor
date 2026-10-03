@@ -21,13 +21,32 @@ const WEBPAY_CTX_MAX_AGE_SECONDS = 60 * 30;
 /** El token solo cruza el salto POST→GET: segundos. */
 const WEBPAY_TOKEN_MAX_AGE_SECONDS = 60 * 2;
 
-export type WebpayContext = {
-	checkoutId: string;
-	transactionId: string;
-	channel: string;
-	/** Locale de navegación para reconstruir la URL del checkout al volver. */
-	browseLocale?: string;
-};
+/**
+ * Dos caminos vuelven por el mismo `return_url` de Webpay:
+ *  - `checkout` (retail): tras el cobro hay que cerrar el checkout como orden
+ *    (`checkoutComplete`).
+ *  - `order` (B2B orden-primero): la orden ya existe; el cobro solo la marca
+ *    pagada, nunca se llama `checkoutComplete`.
+ * El `kind` decide qué hace el retorno. Una cookie vieja sin `kind` (escrita antes
+ * de este cambio) se lee como `checkout`, que es el comportamiento previo.
+ */
+export type WebpayContext =
+	| {
+			kind: "checkout";
+			checkoutId: string;
+			transactionId: string;
+			channel: string;
+			/** Locale de navegación para reconstruir la URL del checkout al volver. */
+			browseLocale?: string;
+	  }
+	| {
+			kind: "order";
+			orderId: string;
+			transactionId: string;
+			channel: string;
+			/** Locale de navegación para reconstruir la URL de vuelta. */
+			browseLocale?: string;
+	  };
 
 function isSecureCookie(): boolean {
 	return process.env.NODE_ENV === "production";
@@ -51,18 +70,23 @@ export async function readWebpayContextCookie(): Promise<WebpayContext | null> {
 		return null;
 	}
 	try {
-		const parsed = JSON.parse(raw) as Partial<WebpayContext>;
-		if (
-			typeof parsed.checkoutId === "string" &&
-			typeof parsed.transactionId === "string" &&
-			typeof parsed.channel === "string"
-		) {
-			return {
-				checkoutId: parsed.checkoutId,
-				transactionId: parsed.transactionId,
-				channel: parsed.channel,
-				browseLocale: typeof parsed.browseLocale === "string" ? parsed.browseLocale : undefined,
-			};
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		const transactionId = parsed.transactionId;
+		const channel = parsed.channel;
+		if (typeof transactionId !== "string" || typeof channel !== "string") {
+			return null;
+		}
+		const browseLocale = typeof parsed.browseLocale === "string" ? parsed.browseLocale : undefined;
+
+		// `kind` ausente ⇒ cookie previa a este cambio ⇒ checkout (retail).
+		if (parsed.kind === "order") {
+			if (typeof parsed.orderId === "string") {
+				return { kind: "order", orderId: parsed.orderId, transactionId, channel, browseLocale };
+			}
+			return null;
+		}
+		if (typeof parsed.checkoutId === "string") {
+			return { kind: "checkout", checkoutId: parsed.checkoutId, transactionId, channel, browseLocale };
 		}
 	} catch {
 		// cookie corrupta o manipulada → se trata como ausente
