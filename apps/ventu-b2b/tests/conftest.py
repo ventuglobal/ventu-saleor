@@ -22,8 +22,11 @@ def _entorno_aislado(monkeypatch):
     monkeypatch.setattr(config, "INSTRUCCIONES_TRANSFERENCIA", None)
     monkeypatch.setattr(config, "PUBLIC_URL", "")
     monkeypatch.setattr(config, "MARKUP_MINIMO", 0.0)
+    monkeypatch.setattr(config, "CORREO_URL", "")
+    monkeypatch.setattr(config, "CORREO_SERVICE_TOKEN", "")
 
     def sin_red(*a, **kw):
-        raise AssertionError("un test intentó llamar a Saleor por la red")
+        raise AssertionError("un test intentó salir a la red")
 
+    # Es el mismo módulo httpx para Saleor y para Ventu Correo.
     monkeypatch.setattr(saleor_client.httpx, "post", sin_red)

@@ -31,7 +31,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import auditoria, config
+from . import auditoria, avisos, config
 from .cart import link as link_mod
 from .cart import precios as precios_mod
 from .cart import reprecio as reprecio_mod
@@ -380,6 +380,9 @@ def actualizar_empresa(user_id: str, entrada: CompanyPatch) -> dict:
     Es la vía para **aprobar** una empresa revisada: pasarla a un nivel de
     `B2B_CANALES` la habilita para comprar, y devolverla a uno que no lo es la
     deja otra vez en revisión. El alta la deja siempre en el nivel por defecto.
+
+    Al aprobarla se avisa al cliente por correo; `aviso_cliente` en la
+    respuesta dice si salió. Que no salga no deshace la aprobación.
     """
     cambios = {campo: valor for campo, valor in entrada.model_dump().items()
                if campo != "actor" and valor is not None}
@@ -394,15 +397,21 @@ def actualizar_empresa(user_id: str, entrada: CompanyPatch) -> dict:
         raise HTTPException(422, f"condición de pago desconocida: {cambios['condicion_pago']!r}; "
                                  f"opciones: {', '.join(CONDICIONES_PAGO)}")
 
+    ahora = auditoria.ahora_utc()
     try:
-        company = company_svc.actualizar(user_id, cambios,
-                                         actor=(entrada.actor or "staff").strip() or "staff",
-                                         ahora=auditoria.ahora_utc())
+        res = company_svc.actualizar(user_id, cambios,
+                                     actor=(entrada.actor or "staff").strip() or "staff",
+                                     ahora=ahora)
     except CompanyInvalida as exc:
         raise HTTPException(422, str(exc)) from exc
-    if company is None:
+    if res is None:
         raise HTTPException(404, "el usuario no tiene empresa asociada")
-    return _vista_empresa(company)
+    vista = _vista_empresa(res.company)
+    if res.recien_aprobada:
+        # Después de escribir: solo se avisa lo que ya quedó guardado.
+        vista["aviso_cliente"] = avisos.empresa_aprobada(user_id, res.email, res.nombre,
+                                                         res.company, ahora)
+    return vista
 
 
 @app.get("/company/pendientes", dependencies=STAFF)

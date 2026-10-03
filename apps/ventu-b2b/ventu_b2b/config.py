@@ -101,3 +101,10 @@ INSTRUCCIONES_TRANSFERENCIA = os.getenv("B2B_INSTRUCCIONES_TRANSFERENCIA", "") o
 # URL pública de la app, para el manifest. Detrás del proxy de Railway el
 # proceso ve http y Saleor rechaza instalar una app que se anuncia sin TLS.
 PUBLIC_URL = os.getenv("B2B_PUBLIC_URL", "").strip().rstrip("/")
+
+# ── avisos al cliente (Ventu Correo) ──
+# Servicio de correo del proyecto y su token de /enviar. Cualquiera de los dos
+# vacío = no se avisa: la aprobación sigue funcionando y la respuesta del
+# PATCH dice que el correo no salió, para que el staff avise a mano.
+CORREO_URL = os.getenv("CORREO_URL", "").strip().rstrip("/")
+CORREO_SERVICE_TOKEN = os.getenv("CORREO_SERVICE_TOKEN", "").strip()

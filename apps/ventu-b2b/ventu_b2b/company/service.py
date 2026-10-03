@@ -55,7 +55,7 @@ query($key: String!, $value: String!) {
 
 _USUARIO = """
 query($id: ID!) {
-  user(id: $id) { id email metadata { key value } privateMetadata { key value } }
+  user(id: $id) { id email firstName metadata { key value } privateMetadata { key value } }
 }
 """
 
@@ -110,6 +110,16 @@ class EmpresaYaRegistrada(RuntimeError):
         self.rut = rut
         self.email = email
         super().__init__(f"el RUT {rut} ya está registrado")
+
+
+@dataclasses.dataclass(frozen=True)
+class Actualizacion:
+    """Resultado de `actualizar`: la empresa y lo que hace falta para avisar."""
+    company: Company
+    # El PATCH la dejó habilitada para comprar y antes no lo estaba.
+    recien_aprobada: bool
+    email: Optional[str]
+    nombre: Optional[str]
 
 
 def _pares_a_dict(pares) -> dict:
@@ -205,12 +215,13 @@ def registrar(user_id: str, company: Company) -> Company:
 
 
 def actualizar(user_id: str, cambios: Dict[str, str], *, actor: str,
-               ahora: str) -> Optional[Company]:
+               ahora: str) -> Optional[Actualizacion]:
     """Aplica cambios del staff a la empresa del usuario y deja registro.
 
-    Devuelve la empresa resultante, o `None` si el usuario no tiene empresa.
-    La validación de cada valor la hace `Company` al reconstruirse: así un
-    cambio no puede dejar una empresa que el resto de la app no sabría leer.
+    Devuelve la empresa resultante y si el cambio la aprobó (ver
+    `Actualizacion`), o `None` si el usuario no tiene empresa. La validación
+    de cada valor la hace `Company` al reconstruirse: así un cambio no puede
+    dejar una empresa que el resto de la app no sabría leer.
 
     Solo se escriben las claves que cambian. Reescribir la empresa entera
     —como hace el alta— pisaría el estado de crédito si una solicitud se
@@ -263,8 +274,17 @@ def actualizar(user_id: str, cambios: Dict[str, str], *, actor: str,
             publica[clave] = valor
     if "nivel_precio" in cambios and meta.get(K_ESTADO) != estado_de(nueva):
         publica[K_ESTADO] = estado_de(nueva)
+    # Recién aprobada: el nivel pasa a B2B, o ya lo era pero el espejo seguía
+    # «pendiente» —una escritura a medias que el staff repara reenviando el
+    # nivel, y cuyo aviso no alcanzó a salir—. Una empresa antigua sin espejo
+    # que ya compraba no cuenta: reparar su espejo no es aprobarla.
+    resultado = Actualizacion(
+        company=nueva,
+        recien_aprobada=esta_aprobada(nueva) and (
+            not esta_aprobada(actual) or meta.get(K_ESTADO) == ESTADO_PENDIENTE),
+        email=nodo.get("email"), nombre=nodo.get("firstName"))
     if not publica and not oculta:
-        return nueva
+        return resultado
     if diferencias:
         # Reparar el espejo no es un cambio de la empresa: no va al historial.
         oculta[K_LOG] = auditoria.anexar(privada.get(K_LOG, ""), {
@@ -277,7 +297,7 @@ def actualizar(user_id: str, cambios: Dict[str, str], *, actor: str,
     # a una empresa que sigue esperando.
     _escribir(user_id, _ESCRIBIR_PRIVADA, oculta, "privateMetadata")
     _escribir(user_id, _ESCRIBIR_META, publica, "metadata")
-    return nueva
+    return resultado
 
 
 def pendientes(max_paginas: Optional[int] = None) -> Tuple[List[dict], bool]:

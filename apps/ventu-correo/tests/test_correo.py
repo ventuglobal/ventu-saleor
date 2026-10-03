@@ -138,6 +138,42 @@ def test_enviar_valida(enviados):
     assert enviados == []
 
 
+def test_enviar_aviso_usa_el_marco_de_la_tienda(enviados):
+    r = cliente.post("/enviar", headers={"Authorization": "Bearer secreto"}, json={
+        "para": "a@b.cl", "asunto": "Empresa aprobada",
+        "aviso": {"nombre": "Ana", "parrafos": ["Uno <b>", "Dos"],
+                  "boton": {"texto": "Ir a la tienda", "url": "https://t.cl/es/b2b-cl"},
+                  "pie": "Pie"}})
+    assert r.status_code == 200
+    correo, _ = enviados[0]
+    assert correo.html.startswith("<!doctype html>") and "Hola Ana," in correo.html
+    assert "Uno &lt;b&gt;" in correo.html and 'href="https://t.cl/es/b2b-cl"' in correo.html
+    assert config.NOMBRE_TIENDA in correo.html
+    assert correo.texto == "Hola Ana,\n\nUno <b>\n\nDos\n\nhttps://t.cl/es/b2b-cl\n\nPie\n"
+
+
+def test_enviar_aviso_sin_boton(enviados):
+    r = cliente.post("/enviar", headers={"Authorization": "Bearer secreto"}, json={
+        "para": "a@b.cl", "asunto": "x", "aviso": {"parrafos": ["Solo texto"]}})
+    assert r.status_code == 200
+    correo, _ = enviados[0]
+    assert "<a " not in correo.html and correo.texto == "Hola,\n\nSolo texto\n"
+
+
+@pytest.mark.parametrize("cuerpo", [
+    {"asunto": "x"},  # ni html ni aviso
+    {"asunto": "x", "html": "y", "aviso": {"parrafos": ["z"]}},  # los dos
+    {"asunto": "x", "aviso": {"parrafos": []}},
+    {"asunto": "x", "aviso": {"parrafos": ["z"],
+                              "boton": {"texto": "b", "url": "javascript:alert(1)"}}},
+])
+def test_enviar_aviso_valida(enviados, cuerpo):
+    r = cliente.post("/enviar", headers={"Authorization": "Bearer secreto"},
+                     json={"para": "a@b.cl", **cuerpo})
+    assert r.status_code == 422
+    assert enviados == []
+
+
 def test_enviar_informa_fallo(monkeypatch):
     monkeypatch.setattr(resend, "enviar",
                         lambda *a, **k: resend.Resultado(False, error="no-configurado",

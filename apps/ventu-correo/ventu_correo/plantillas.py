@@ -1,8 +1,10 @@
-"""Plantillas de los correos de cuenta.
+"""Plantillas de los correos de cuenta y de los avisos de otros servicios.
 
 HTML simple con estilos en línea: es lo único que respetan todos los clientes
-de correo. Todo dato que viene del usuario se escapa; la URL viene firmada por
-Saleor, que ya validó su dominio contra ALLOWED_CLIENT_HOSTS.
+de correo. Todo dato que viene del usuario se escapa. La URL de los correos de
+cuenta viene firmada por Saleor, que ya validó su dominio contra
+ALLOWED_CLIENT_HOSTS; la de un aviso la manda un servicio con token, y `/enviar`
+solo acepta http(s).
 """
 
 from __future__ import annotations
@@ -24,12 +26,24 @@ def _saludo(nombre: Optional[str]) -> str:
     return f"Hola {nombre}," if nombre else "Hola,"
 
 
-def _marco(tienda: str, saludo: str, parrafos: list, boton: str, url: str, pie: str) -> str:
+def _marco(tienda: str, saludo: str, parrafos: list, boton: Optional[str],
+           url: Optional[str], pie: str) -> str:
     cuerpo = "".join(
         f'<p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#333">{escape(p)}</p>'
         for p in parrafos
     )
-    url_html = escape(url, quote=True)
+    enlace = ""
+    if boton and url:
+        url_html = escape(url, quote=True)
+        enlace = (
+            f'<p style="margin:24px 0"><a href="{url_html}" style="display:inline-block;padding:12px 20px;'
+            'background:#111;color:#fff;text-decoration:none;border-radius:6px;font-size:15px">'
+            f"{escape(boton)}</a></p>"
+            '<p style="margin:0 0 8px;font-size:13px;color:#666">Si el botón no funciona, copia este '
+            "enlace en tu navegador:</p>"
+            f'<p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{url_html}" '
+            f'style="color:#0645ad">{url_html}</a></p>'
+        )
     return (
         '<!doctype html><html lang="es"><body style="margin:0;padding:24px;background:#f5f5f5;'
         'font-family:Arial,Helvetica,sans-serif">'
@@ -38,17 +52,23 @@ def _marco(tienda: str, saludo: str, parrafos: list, boton: str, url: str, pie: 
         '<tr><td style="padding:32px">'
         f'<p style="margin:0 0 24px;font-size:18px;font-weight:bold;color:#111">{escape(tienda)}</p>'
         f'<p style="margin:0 0 16px;font-size:15px;color:#333">{escape(saludo)}</p>'
-        f"{cuerpo}"
-        f'<p style="margin:24px 0"><a href="{url_html}" style="display:inline-block;padding:12px 20px;'
-        'background:#111;color:#fff;text-decoration:none;border-radius:6px;font-size:15px">'
-        f"{escape(boton)}</a></p>"
-        '<p style="margin:0 0 8px;font-size:13px;color:#666">Si el botón no funciona, copia este '
-        "enlace en tu navegador:</p>"
-        f'<p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{url_html}" '
-        f'style="color:#0645ad">{url_html}</a></p>'
+        f"{cuerpo}{enlace}"
         f'<p style="margin:0;font-size:12px;color:#888">{escape(pie)}</p>'
         "</td></tr></table></body></html>"
     )
+
+
+def aviso(asunto: str, nombre: Optional[str], parrafos: list, boton: Optional[str],
+          url: Optional[str], pie: str, tienda: str) -> Contenido:
+    """Correo con el marco de la tienda para los avisos de otros servicios.
+
+    Quien lo pide manda solo el texto: el formato queda aquí, igual en todos.
+    """
+    saludo = _saludo(nombre)
+    partes = [saludo, *parrafos, url if boton and url else "", pie]
+    texto = "\n\n".join(p for p in partes if p) + "\n"
+    return Contenido(asunto=asunto, html=_marco(tienda, saludo, parrafos, boton, url, pie),
+                     texto=texto)
 
 
 def confirmar_cuenta(url: str, nombre: Optional[str], tienda: str) -> Contenido:
