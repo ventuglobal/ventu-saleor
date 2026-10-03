@@ -170,6 +170,7 @@ async function runWebpayCheckoutPayment({
 		// Persistimos el puente de estado ANTES de salir: el retorno cross-site de
 		// Transbank no trae cookies, lo recuperamos del contexto httpOnly.
 		await storeWebpayContext({
+			kind: "checkout",
 			checkoutId: liveCheckout.id,
 			transactionId,
 			channel: channelSlug,
