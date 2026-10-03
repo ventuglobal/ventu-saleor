@@ -14,10 +14,12 @@ Este repo aloja la plataforma de venta; la sincronización saliente
 | `api` | Saleor core (GraphQL API) | Imagen oficial `ghcr.io/saleor/saleor` (pin por versión) |
 | `dashboard` | Saleor Dashboard | Imagen oficial `ghcr.io/saleor/saleor-dashboard` (pin) |
 | `ventu-sync` | **Ventu Sync App**: recibe webhooks de Saleor (órdenes → Ventu) y aloja el token de la Saleor App | Código propio (`apps/ventu-sync/`) |
+| `ventu-pagos` | **Payment App (Webpay Plus / Transbank)**: expone el gateway `cl.ventu.pagos`, procesa pagos del canal `retail-cl` por la Transactions API y reporta el resultado a Saleor | Código propio (`apps/ventu-pagos/`) |
 | `storefront` | Tienda pública (Next.js) | `git subtree` del oficial `saleor/storefront` (remote `upstream`) |
 | `db`, `redis` | Postgres + Redis | Imágenes oficiales |
 
-Webpay/Transbank (Payment App) se agrega en una fase posterior.
+Webpay/Transbank corre **solo en el canal `retail-cl`** (ver `apps/ventu-pagos/`);
+el B2B (Transferencia/Maxxa) no se toca.
 
 ## Flujo de sincronización (bidireccional)
 
@@ -29,6 +31,11 @@ Webpay/Transbank (Payment App) se agrega en una fase posterior.
 - **Saleor → Ventu** (entrante): órdenes/eventos. Los recibe `ventu-sync` vía
   webhooks de Saleor (`ORDER_CREATED`, `ORDER_FULLY_PAID`) y los reenvía al
   backend Ventu.
+- **Pagos retail** (`retail-cl`): el storefront inicia la transacción, Transbank
+  cobra y `ventu-pagos` confirma con el `commit` server-side y reporta
+  `CHARGE_SUCCESS/FAILURE` a Saleor por `transactionEventReport`. Regla de oro:
+  aprobado solo si el commit propio devuelve `response_code = 0` y
+  `status = AUTHORIZED`.
 
 ## Cómo se mantiene sincronizado con el Saleor oficial
 
@@ -42,7 +49,10 @@ No se forkea el código de Saleor (evita conflictos eternos). Cada componente:
   git subtree add  --prefix=storefront upstream main --squash   # una vez
   git subtree pull --prefix=storefront upstream main --squash   # traer updates
   ```
-- **ventu-sync** → código propio, sin upstream.
+- **ventu-sync / ventu-pagos** → código propio, sin upstream. Como Saleor se
+  consume por imagen (no forkeado), subir su tag **no** toca estas apps; lo único
+  a verificar en un salto de versión mayor es que la Transactions API que usa
+  `ventu-pagos` siga compatible.
 
 **Automático:** `renovate.json` hace que Renovate vigile los releases de Saleor
 y abra un PR cuando salga una versión nueva de las imágenes. Railway levanta el
