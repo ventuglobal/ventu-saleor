@@ -29,16 +29,25 @@ fragment OrderLineFragment on OrderLine {
 		}
 	}
 	totalPrice {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}
 	}
 	undiscountedUnitPrice {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}
 	}
 	unitPrice {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}
@@ -84,6 +93,9 @@ fragment OrderFragment on Order {
 		...ShippingFragment
 	}
 	total {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}
@@ -95,11 +107,17 @@ fragment OrderFragment on Order {
 		code
 	}
 	shippingPrice {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}
 	}
 	subtotal {
+		net {
+			...Money
+		}
 		gross {
 			...Money
 		}

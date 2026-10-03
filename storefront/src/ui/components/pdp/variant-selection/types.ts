@@ -5,6 +5,8 @@
  * enabling type-safe customization and replacement of renderers.
  */
 
+import type { BaseDePrecio } from "@/lib/pricing";
+
 /**
  * A single variant option that can be selected.
  */
@@ -121,8 +123,14 @@ export interface VariantSelectionSectionProps {
 		}>;
 		/** Pricing info for discount detection */
 		pricing?: {
-			price?: { gross: { amount: number; currency: string } } | null;
-			priceUndiscounted?: { gross: { amount: number; currency: string } } | null;
+			price?: {
+				gross: { amount: number; currency: string };
+				net?: { amount: number; currency: string };
+			} | null;
+			priceUndiscounted?: {
+				gross: { amount: number; currency: string };
+				net?: { amount: number; currency: string };
+			} | null;
 		} | null;
 	}>;
 	/** Currently selected variant ID from URL params */
@@ -131,6 +139,8 @@ export interface VariantSelectionSectionProps {
 	productSlug: string;
 	/** Channel slug for URL building */
 	channel: string;
+	/** Precio que se muestra: neto en canales B2B. Lo decide el servidor. */
+	baseDePrecio?: BaseDePrecio;
 	/** Optional: Custom renderer registry to override defaults */
 	renderers?: Partial<RendererRegistry>;
 	/** Optional: Override the entire section rendering */

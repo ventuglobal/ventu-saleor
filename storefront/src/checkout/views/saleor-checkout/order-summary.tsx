@@ -15,6 +15,8 @@ import { getLocaleDefinition } from "@/config/locale";
 import { localeConfig } from "@/config/locale";
 import { contactFieldAttributes } from "@/checkout/lib/consts/input-attributes";
 import { pickTranslatedName } from "@/lib/saleor-translations";
+import { useCheckoutCanalB2B } from "@/checkout/providers/checkout-canal-b2b";
+import { type BaseDePrecio, baseDePrecioDe, elegirPrecio } from "@/lib/pricing";
 
 // ============================================================================
 // Types
@@ -104,7 +106,9 @@ function orderLineDisplayName(line: OrderFragment["lines"][number]): string {
 	return "";
 }
 
-function extractCheckoutData(checkout: CheckoutFragment): OrderSummaryData {
+// En B2B las líneas, el subtotal y el despacho van netos; el IVA es el que
+// calcula Saleor y el total sigue siendo el bruto, que es lo que se cobra.
+function extractCheckoutData(checkout: CheckoutFragment, base: BaseDePrecio): OrderSummaryData {
 	const lines: LineItem[] = checkout.lines.map((line) => {
 		const variantImage = line.variant?.media?.find((m) => m.type === "IMAGE");
 		const productImage = line.variant?.product?.media?.find((m) => m.type === "IMAGE");
@@ -117,15 +121,15 @@ function extractCheckoutData(checkout: CheckoutFragment): OrderSummaryData {
 			attributes: translatedAttributeLabels(line.variant?.attributes),
 			imageUrl: image?.url,
 			imageAlt: image?.alt,
-			totalAmount: line.totalPrice?.gross?.amount || 0,
+			totalAmount: elegirPrecio(line.totalPrice, base)?.amount || 0,
 		};
 	});
 
 	return {
 		lines,
 		currency: checkout.totalPrice?.gross?.currency || localeConfig.fallbackCurrency,
-		subtotal: checkout.subtotalPrice?.gross?.amount || 0,
-		shipping: checkout.shippingPrice?.gross?.amount || 0,
+		subtotal: elegirPrecio(checkout.subtotalPrice, base)?.amount || 0,
+		shipping: elegirPrecio(checkout.shippingPrice, base)?.amount || 0,
 		tax: checkout.totalPrice?.tax?.amount || 0,
 		discount: checkout.discount?.amount || 0,
 		total: checkout.totalPrice?.gross?.amount || 0,
@@ -133,7 +137,7 @@ function extractCheckoutData(checkout: CheckoutFragment): OrderSummaryData {
 	};
 }
 
-function extractOrderData(order: OrderFragment): OrderSummaryData {
+function extractOrderData(order: OrderFragment, base: BaseDePrecio): OrderSummaryData {
 	const lines: LineItem[] = order.lines.map((line) => {
 		return {
 			id: line.id,
@@ -142,7 +146,7 @@ function extractOrderData(order: OrderFragment): OrderSummaryData {
 			attributes: translatedAttributeLabels(line.variant?.attributes),
 			imageUrl: line.thumbnail?.url,
 			imageAlt: line.thumbnail?.alt,
-			totalAmount: line.totalPrice?.gross?.amount || 0,
+			totalAmount: elegirPrecio(line.totalPrice, base)?.amount || 0,
 		};
 	});
 
@@ -151,8 +155,8 @@ function extractOrderData(order: OrderFragment): OrderSummaryData {
 	return {
 		lines,
 		currency: order.total?.gross?.currency || localeConfig.fallbackCurrency,
-		subtotal: order.subtotal?.gross?.amount || 0,
-		shipping: order.shippingPrice?.gross?.amount || 0,
+		subtotal: elegirPrecio(order.subtotal, base)?.amount || 0,
+		shipping: elegirPrecio(order.shippingPrice, base)?.amount || 0,
 		tax: order.total?.tax?.amount || 0,
 		discount,
 		total: order.total?.gross?.amount || 0,
@@ -175,9 +179,11 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 	const localeBcp47 = getLocaleDefinition(localeSlug)?.bcp47 ?? localeConfig.default;
 	// Collapsed by default on mobile
 	const [isExpanded, setIsExpanded] = useState(false);
+	const precioNeto = useCheckoutCanalB2B();
+	const base = baseDePrecioDe(precioNeto);
 
 	// Extract data from either checkout or order
-	const data = checkout ? extractCheckoutData(checkout) : order ? extractOrderData(order) : null;
+	const data = checkout ? extractCheckoutData(checkout, base) : order ? extractOrderData(order, base) : null;
 
 	if (!data) {
 		return null;
@@ -269,7 +275,7 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 			</button>
 
 			{/* Desktop Header - Only visible on desktop */}
-			<header className="bg-secondary/30 hidden items-center gap-2 px-5 py-4 md:flex">
+			<header className="hidden items-center gap-2 bg-secondary/30 px-5 py-4 md:flex">
 				<h2 className="text-base font-semibold">{t("title")}</h2>
 				<span className="text-sm text-muted-foreground">({t("itemCount", { count: itemCount })})</span>
 			</header>
@@ -337,7 +343,7 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 					<section className="border-t border-border px-5 py-4">
 						<dl className="space-y-2 text-sm tabular-nums">
 							<div className="flex justify-between">
-								<dt className="text-muted-foreground">{t("subtotal")}</dt>
+								<dt className="text-muted-foreground">{precioNeto ? t("subtotalNet") : t("subtotal")}</dt>
 								<dd>{formatMoney(subtotal)}</dd>
 							</div>
 							<div className="flex justify-between">
@@ -346,9 +352,9 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 									{shipping === 0 ? tCommon("free") : formatMoney(shipping)}
 								</dd>
 							</div>
-							{tax > 0 && (
+							{(precioNeto || tax > 0) && (
 								<div className="flex justify-between">
-									<dt className="text-muted-foreground">{t("taxVat")}</dt>
+									<dt className="text-muted-foreground">{precioNeto ? t("taxB2B") : t("taxVat")}</dt>
 									<dd>{formatMoney(tax)}</dd>
 								</div>
 							)}
@@ -361,7 +367,7 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 						</dl>
 
 						{/* Total */}
-						<div className="border-border/50 mt-4 flex items-baseline justify-between border-t pt-4">
+						<div className="mt-4 flex items-baseline justify-between border-t border-border/50 pt-4">
 							<div className="flex flex-col">
 								<span className="text-base font-semibold">{t("total")}</span>
 								{tax > 0 && <span className="text-xs text-muted-foreground">{t("includingVat")}</span>}
@@ -373,7 +379,7 @@ export const OrderSummary: FC<OrderSummaryProps> = ({ checkout, order, editable,
 					</section>
 
 					{/* Trust/Social proof */}
-					<footer className="bg-secondary/30 grid grid-cols-3 gap-2 border-t border-border px-5 py-4">
+					<footer className="grid grid-cols-3 gap-2 border-t border-border bg-secondary/30 px-5 py-4">
 						<div className="flex flex-col items-center rounded-lg bg-secondary p-2.5 text-center">
 							<ShieldCheck className="mb-1 h-4 w-4 text-muted-foreground" />
 							<span className="text-[10px] leading-tight text-muted-foreground">

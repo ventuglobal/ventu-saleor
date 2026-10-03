@@ -1,6 +1,6 @@
 import { formatMoney, formatMoneyRange } from "@/lib/utils";
 import { resolveLocaleFromSlug } from "@/config/locale";
-import { getDiscountInfo } from "@/lib/pricing";
+import { elegirPrecio, getDiscountInfo } from "@/lib/pricing";
 import { resolveChannelCurrency } from "@/lib/channels/resolve-channel-currency";
 import { getStorefrontContent } from "@/lib/content/server";
 import {
@@ -15,7 +15,7 @@ import { resolvePdpVariants } from "@/lib/catalog/get-product-data";
 import { pickTranslatedSlug } from "@/lib/saleor-translations";
 import { getHeaderAuthState } from "@/lib/auth/get-header-user";
 import { getTramos } from "@/lib/b2b/tramos";
-import { esCanalB2B } from "@/lib/b2b/canales";
+import { baseDePrecio, esCanalB2B } from "@/lib/b2b/canales";
 import { reprecificar } from "@/lib/b2b/carrito";
 
 import { TramosTable } from "./tramos-table";
@@ -99,33 +99,30 @@ export async function VariantSectionDynamic({
 			? await getTramos(decodeURIComponent(selectedVariantID), auth.user.id, channel)
 			: null;
 
-	const price = selectedVariant?.pricing?.price?.gross
-		? selectedVariant.pricing.price.gross.amount === 0
+	// En canales B2B todo el bloque de precio va neto (sin IVA), igual que la
+	// tabla de tramos; el IVA aparece recién en el carrito.
+	const base = baseDePrecio(channel);
+	const precioVariante = elegirPrecio(selectedVariant?.pricing?.price, base);
+	const precioSinDescuento = elegirPrecio(selectedVariant?.pricing?.priceUndiscounted, base);
+	const priceNote = base === "net" ? t("priceNetHint") : null;
+
+	const price = precioVariante
+		? precioVariante.amount === 0
 			? t("free")
-			: formatMoney(
-					selectedVariant.pricing.price.gross.amount,
-					selectedVariant.pricing.price.gross.currency,
-					intlLocale,
-				)
+			: formatMoney(precioVariante.amount, precioVariante.currency, intlLocale)
 		: formatMoneyRange(
 				{
-					start: product.pricing?.priceRange?.start?.gross,
-					stop: product.pricing?.priceRange?.stop?.gross,
+					start: elegirPrecio(product.pricing?.priceRange?.start, base),
+					stop: elegirPrecio(product.pricing?.priceRange?.stop, base),
 				},
 				intlLocale,
 			) || "";
 
-	const currentPrice = selectedVariant?.pricing?.price?.gross?.amount;
-	const undiscountedPrice = selectedVariant?.pricing?.priceUndiscounted?.gross?.amount;
-	const { isOnSale, discountPercent } = getDiscountInfo(currentPrice, undiscountedPrice);
+	const { isOnSale, discountPercent } = getDiscountInfo(precioVariante?.amount, precioSinDescuento?.amount);
 
 	const compareAtPrice =
-		isOnSale && selectedVariant?.pricing?.priceUndiscounted?.gross
-			? formatMoney(
-					selectedVariant.pricing.priceUndiscounted.gross.amount,
-					selectedVariant.pricing.priceUndiscounted.gross.currency,
-					intlLocale,
-				)
+		isOnSale && precioSinDescuento
+			? formatMoney(precioSinDescuento.amount, precioSinDescuento.currency, intlLocale)
 			: null;
 
 	const freeShippingThreshold = content.policies.shipping.freeShippingThreshold;
@@ -193,6 +190,7 @@ export async function VariantSectionDynamic({
 				selectedVariantId={selectedVariantID}
 				productSlug={pickTranslatedSlug(product)}
 				channel={channel}
+				baseDePrecio={base}
 			/>
 		) : (
 			<NonMatrixBuyBox
@@ -244,9 +242,15 @@ export async function VariantSectionDynamic({
 					disabledReason={disabledReason}
 					secureCheckoutLabel={secureCheckoutLabel}
 					freeShippingTrustLabel={freeShippingTrustLabel}
+					priceNote={priceNote}
 				/>
 
-				<StickyBar productName={product.name} price={price} show={!isAddToCartDisabled} />
+				<StickyBar
+					productName={product.name}
+					price={price}
+					priceNote={priceNote}
+					show={!isAddToCartDisabled}
+				/>
 			</form>
 		</>
 	);

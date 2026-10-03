@@ -54,6 +54,7 @@ export function VariantSelectionSection({
 	selectedVariantId,
 	productSlug,
 	channel,
+	baseDePrecio,
 	renderers: customRenderers,
 	children,
 }: VariantSelectionSectionProps) {
@@ -218,6 +219,7 @@ export function VariantSelectionSection({
 					selectedVariantId={optimisticVariantId}
 					onSelect={handleVariantSelect}
 					isPending={isPending}
+					baseDePrecio={baseDePrecio}
 				/>
 			</div>
 		);

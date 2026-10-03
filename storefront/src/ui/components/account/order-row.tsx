@@ -4,6 +4,7 @@ import { type OrderDetailsFragment } from "@/gql/graphql";
 import { LinkWithChannel } from "@/ui/atoms/link-with-channel";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { resolveLocaleFromSlug } from "@/config/locale";
+import { esCanalB2B } from "@/lib/b2b/canales";
 import { orderStatusStyle, defaultStatusStyle } from "./order-status-config";
 import { type OrderRowLabels } from "./order-row-labels";
 import { accountRoutes } from "./routes";
@@ -24,17 +25,20 @@ export function OrderRow({ order, localeSlug, labels }: Props) {
 
 	const style = orderStatusStyle[order.status] ?? defaultStatusStyle;
 	const StatusIcon = style.icon;
+	// Cada pedido se muestra según su propio canal: en B2B el total va con su
+	// desglose neto + IVA, el mismo que el detalle del pedido.
+	const precioNeto = esCanalB2B(order.channel.slug);
 
 	return (
 		<LinkWithChannel
 			href={accountRoutes.orderDetail(order.number)}
-			className="hover:bg-secondary/30 flex items-center gap-4 rounded-lg border px-5 py-4 transition-colors"
+			className="flex items-center gap-4 rounded-lg border px-5 py-4 transition-colors hover:bg-secondary/30"
 		>
 			<div className="flex -space-x-3">
 				{thumbnails.map((thumb, i) => (
 					<div
 						key={i}
-						className="bg-secondary/40 h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 border-background"
+						className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 border-background bg-secondary/40"
 					>
 						<Image
 							src={thumb.url}
@@ -66,8 +70,16 @@ export function OrderRow({ order, localeSlug, labels }: Props) {
 					<StatusIcon className="h-4 w-4" strokeWidth={1.75} />
 					<span className="hidden sm:inline">{labels.statusLabel}</span>
 				</span>
-				<span className="text-sm font-semibold tabular-nums">
-					{formatMoney(order.total.gross.amount, order.total.gross.currency, intlLocale)}
+				<span className="flex flex-col items-end">
+					<span className="text-sm font-semibold tabular-nums">
+						{formatMoney(order.total.gross.amount, order.total.gross.currency, intlLocale)}
+					</span>
+					{precioNeto && (
+						<span className="text-xs tabular-nums text-muted-foreground">
+							{labels.net} {formatMoney(order.total.net.amount, order.total.net.currency, intlLocale)} ·{" "}
+							{labels.tax} {formatMoney(order.total.tax.amount, order.total.tax.currency, intlLocale)}
+						</span>
+					)}
 				</span>
 				<ArrowRight className="h-4 w-4 text-muted-foreground" />
 			</div>

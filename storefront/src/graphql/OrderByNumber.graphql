@@ -2,6 +2,10 @@ fragment OrderFullDetails on Order {
 	id
 	number
 	created
+	# Decide si la orden se muestra en neto (canal B2B) o con IVA.
+	channel {
+		slug
+	}
 	status
 	statusDisplay
 	paymentStatus
@@ -13,18 +17,30 @@ fragment OrderFullDetails on Order {
 		...AddressDetails
 	}
 	subtotal {
+		net {
+			amount
+			currency
+		}
 		gross {
 			amount
 			currency
 		}
 	}
 	shippingPrice {
+		net {
+			amount
+			currency
+		}
 		gross {
 			amount
 			currency
 		}
 	}
 	total {
+		net {
+			amount
+			currency
+		}
 		gross {
 			amount
 			currency
@@ -37,6 +53,17 @@ fragment OrderFullDetails on Order {
 	lines {
 		id
 		quantity
+		# Lo pagado por la línea (con el precio por tramo B2B), no el de catálogo.
+		totalPrice {
+			net {
+				amount
+				currency
+			}
+			gross {
+				amount
+				currency
+			}
+		}
 		variant {
 			id
 			name
@@ -57,6 +84,10 @@ fragment OrderFullDetails on Order {
 			}
 			pricing {
 				price {
+					net {
+						amount
+						currency
+					}
 					gross {
 						amount
 						currency

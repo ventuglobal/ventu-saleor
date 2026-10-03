@@ -7,6 +7,7 @@ import type { CheckoutUser, ServerOrder } from "@/checkout/lib/checkout-types";
 import { CheckoutBrowseProvider } from "@/checkout/providers/checkout-browse";
 import { OrderDataProvider } from "@/checkout/providers/order-data";
 import { CheckoutUserProvider } from "@/checkout/providers/checkout-user";
+import { CheckoutCanalB2BProvider } from "@/checkout/providers/checkout-canal-b2b";
 import { OrderConfirmation, OrderConfirmationSkeleton } from "@/checkout/views/order-confirmation";
 import { CheckoutCrashFallback } from "@/checkout/views/page-not-found";
 import "./index.css";
@@ -21,6 +22,8 @@ type OrderConfirmationAppProps = {
 	initialUser: CheckoutUser | null;
 	storefrontLocale: LocaleSlug;
 	messages: CheckoutMessages;
+	/** Lo decide el servidor con el canal de la orden: en B2B el resumen va neto. */
+	canalB2B?: boolean;
 };
 
 /**
@@ -32,17 +35,20 @@ export function OrderConfirmationApp({
 	initialUser,
 	storefrontLocale,
 	messages,
+	canalB2B = false,
 }: OrderConfirmationAppProps) {
 	return (
 		<CheckoutIntlProvider locale={storefrontLocale} messages={messages}>
 			<CheckoutBrowseProvider locale={storefrontLocale}>
 				<CheckoutUserProvider initialUser={initialUser}>
 					<OrderDataProvider orderId={orderId} initialOrder={initialOrder}>
-						<ErrorBoundary FallbackComponent={CheckoutCrashFallback}>
-							<Suspense fallback={<OrderConfirmationSkeleton />}>
-								<OrderConfirmation />
-							</Suspense>
-						</ErrorBoundary>
+						<CheckoutCanalB2BProvider canalB2B={canalB2B}>
+							<ErrorBoundary FallbackComponent={CheckoutCrashFallback}>
+								<Suspense fallback={<OrderConfirmationSkeleton />}>
+									<OrderConfirmation />
+								</Suspense>
+							</ErrorBoundary>
+						</CheckoutCanalB2BProvider>
 					</OrderDataProvider>
 				</CheckoutUserProvider>
 			</CheckoutBrowseProvider>

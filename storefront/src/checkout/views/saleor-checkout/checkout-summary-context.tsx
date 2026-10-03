@@ -4,6 +4,7 @@ import { type FC } from "react";
 import { useTranslations } from "next-intl";
 import { type CheckoutFragment } from "@/checkout/graphql";
 import { formatShippingPrice } from "@/checkout/lib/utils/money";
+import { type BaseDePrecio, elegirPrecio } from "@/lib/pricing";
 
 interface SummaryRow {
 	label: string;
@@ -65,12 +66,12 @@ export function formatAddressLine(address: CheckoutFragment["shippingAddress"]):
 	return `${address.streetAddress1}, ${address.city} ${address.postalCode}, ${address.country?.country}`;
 }
 
-/** Get shipping method display string */
-export function formatShippingMethod(checkout: CheckoutFragment): string {
+/** Get shipping method display string (neto en canales B2B, como el resumen). */
+export function formatShippingMethod(checkout: CheckoutFragment, base: BaseDePrecio = "gross"): string {
 	const delivery = checkout.delivery;
 	if (!delivery?.shippingMethod) return "—";
 
-	const priceStr = formatShippingPrice(checkout.shippingPrice?.gross);
+	const priceStr = formatShippingPrice(elegirPrecio(checkout.shippingPrice, base));
 
 	return `${delivery.shippingMethod.name}${priceStr ? ` · ${priceStr}` : ""}`;
 }
@@ -90,13 +91,14 @@ export function buildShippingSummaryRows(
 export function buildPaymentSummaryRows(
 	checkout: CheckoutFragment,
 	labels: CheckoutSummaryLabels,
+	base: BaseDePrecio = "gross",
 ): SummaryRow[] {
 	const rows: SummaryRow[] = [{ label: labels.contact, value: checkout.email || "", onChangeStep: 1 }];
 
 	if (checkout.isShippingRequired) {
 		rows.push(
 			{ label: labels.shipTo, value: formatAddressLine(checkout.shippingAddress), onChangeStep: 1 },
-			{ label: labels.method, value: formatShippingMethod(checkout), onChangeStep: 2 },
+			{ label: labels.method, value: formatShippingMethod(checkout, base), onChangeStep: 2 },
 		);
 	} else {
 		rows.push({ label: labels.delivery, value: labels.digital });

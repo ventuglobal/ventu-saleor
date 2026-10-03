@@ -33,6 +33,7 @@ import { updateCheckoutBilling, usesClientPaymentSubmit } from "@/checkout/lib/p
 import { consumePaymentCompletionError } from "@/checkout/lib/payment/checkout-payment-completion";
 import { useCheckoutPaymentReturnError } from "@/checkout/providers/checkout-payment-return-error";
 import { useCheckoutCanalB2B } from "@/checkout/providers/checkout-canal-b2b";
+import { baseDePrecioDe } from "@/lib/pricing";
 import { useSyncCheckoutRouterUrl } from "@/checkout/hooks/use-sync-checkout-router-url";
 
 /** Avisos del retorno de Webpay (canal retail; copy en español, ver plan Fase 3). */
@@ -206,8 +207,8 @@ export const PaymentStep: FC<PaymentStepProps> = ({
 
 	const summaryLabels = useCheckoutSummaryLabels();
 	const summaryRows = useMemo(
-		() => buildPaymentSummaryRows(checkout, summaryLabels),
-		[checkout, summaryLabels],
+		() => buildPaymentSummaryRows(checkout, summaryLabels, baseDePrecioDe(canalB2B)),
+		[checkout, summaryLabels, canalB2B],
 	);
 
 	const handleGoToStep = (step: number) => {

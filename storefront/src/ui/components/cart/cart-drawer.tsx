@@ -13,19 +13,22 @@ import type { DeleteCartLine, UpdateCartLineQuantity } from "./cart-mutations";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/utils";
 import { localeConfig, resolveLocaleFromSlug } from "@/config/locale";
-import { hasDiscount } from "@/lib/pricing";
+import { type BaseDePrecio, elegirPrecio, hasDiscount } from "@/lib/pricing";
 import { buildCheckoutPath } from "@paper/session-bridge";
 import type { CartContent, StorefrontPolicies } from "@/lib/content";
 import { formatContentLabel } from "@/lib/content/format-label";
+
+interface Monto {
+	amount: number;
+	currency: string;
+}
 
 interface CartLine {
 	id: string;
 	quantity: number;
 	totalPrice: {
-		gross: {
-			amount: number;
-			currency: string;
-		};
+		gross: Monto;
+		net?: Monto;
 	};
 	variant: {
 		id: string;
@@ -41,16 +44,12 @@ interface CartLine {
 		};
 		pricing?: {
 			price?: {
-				gross: {
-					amount: number;
-					currency: string;
-				};
+				gross: Monto;
+				net?: Monto;
 			} | null;
 			priceUndiscounted?: {
-				gross: {
-					amount: number;
-					currency: string;
-				};
+				gross: Monto;
+				net?: Monto;
 			} | null;
 		} | null;
 		attributes?: Array<{
@@ -108,12 +107,16 @@ interface CartDrawerProps {
 	checkoutId: string | null;
 	lines: CartLine[];
 	totalPrice: {
-		gross: {
-			amount: number;
-			currency: string;
-		};
+		gross: Monto;
+		net?: Monto;
+		tax?: Monto;
 	} | null;
 	channel: string;
+	/**
+	 * Neto en canales B2B: líneas sin IVA y un resumen que separa neto, IVA y
+	 * total. Lo calcula el servidor, porque `B2B_CHANNELS` no llega al navegador.
+	 */
+	baseDePrecio?: BaseDePrecio;
 	localeSlug: string;
 	cart: CartContent;
 	policies: StorefrontPolicies;
@@ -131,6 +134,7 @@ export function CartDrawer({
 	policies,
 	deleteCartLine,
 	updateCartLineQuantity,
+	baseDePrecio = "gross",
 }: CartDrawerProps) {
 	const { isOpen, closeCart } = useCart();
 	const [isCartBusy, setIsCartBusy] = useState(false);
@@ -138,7 +142,10 @@ export function CartDrawer({
 	const t = useTranslations("cart.drawer");
 
 	const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+	// El umbral de despacho gratis se sigue midiendo contra el bruto, también en
+	// B2B: es el monto que de verdad se paga.
 	const subtotal = totalPrice?.gross.amount ?? 0;
+	const precioNeto = baseDePrecio === "net";
 	const currency = totalPrice?.gross.currency ?? localeConfig.fallbackCurrency;
 	const intlLocale = resolveLocaleFromSlug(localeSlug).bcp47;
 
@@ -193,7 +200,7 @@ export function CartDrawer({
 
 				{/* Free Shipping Progress */}
 				{lines.length > 0 && freeShippingEnabled && (
-					<div className="bg-secondary/50 border-b border-border px-6 py-4">
+					<div className="border-b border-border bg-secondary/50 px-6 py-4">
 						<div className="mb-2 flex items-center gap-2 text-sm">
 							<Truck className={cn("h-4 w-4", amountToFreeShipping <= 0 && "text-success")} />
 							{amountToFreeShipping > 0 ? (
@@ -239,9 +246,14 @@ export function CartDrawer({
 						<ul className="divide-y divide-border">
 							{lines.map((line) => {
 								const variantAttributes = getVariantDetails(line.variant);
+								const precioLinea = elegirPrecio(line.totalPrice, baseDePrecio);
+								const precioSinDescuento = elegirPrecio(
+									line.variant.pricing?.priceUndiscounted,
+									baseDePrecio,
+								);
 								const isDiscounted = hasDiscount(
-									line.variant.pricing?.price?.gross.amount,
-									line.variant.pricing?.priceUndiscounted?.gross.amount,
+									elegirPrecio(line.variant.pricing?.price, baseDePrecio)?.amount,
+									precioSinDescuento?.amount,
 								);
 
 								return (
@@ -337,17 +349,13 @@ export function CartDrawer({
 													{/* Price */}
 													<div className="text-right">
 														<span className="text-sm font-medium">
-															{formatMoney(
-																line.totalPrice.gross.amount,
-																line.totalPrice.gross.currency,
-																intlLocale,
-															)}
+															{formatMoney(precioLinea.amount, precioLinea.currency, intlLocale)}
 														</span>
-														{isDiscounted && line.variant.pricing?.priceUndiscounted && (
+														{isDiscounted && precioSinDescuento && (
 															<span className="block text-xs text-muted-foreground line-through">
 																{formatMoney(
-																	line.variant.pricing.priceUndiscounted.gross.amount * line.quantity,
-																	line.variant.pricing.priceUndiscounted.gross.currency,
+																	precioSinDescuento.amount * line.quantity,
+																	precioSinDescuento.currency,
 																	intlLocale,
 																)}
 															</span>
@@ -368,10 +376,23 @@ export function CartDrawer({
 					<div className="border-t border-border bg-background">
 						{/* Order Summary */}
 						<div className="space-y-2 px-6 py-4">
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-muted-foreground">{t("subtotal")}</span>
-								<span>{formatMoney(subtotal, currency, intlLocale)}</span>
-							</div>
+							{precioNeto && totalPrice?.net && totalPrice.tax ? (
+								<>
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">{t("subtotalNet")}</span>
+										<span>{formatMoney(totalPrice.net.amount, totalPrice.net.currency, intlLocale)}</span>
+									</div>
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">{t("tax")}</span>
+										<span>{formatMoney(totalPrice.tax.amount, totalPrice.tax.currency, intlLocale)}</span>
+									</div>
+								</>
+							) : (
+								<div className="flex items-center justify-between text-sm">
+									<span className="text-muted-foreground">{t("subtotal")}</span>
+									<span>{formatMoney(subtotal, currency, intlLocale)}</span>
+								</div>
+							)}
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">{t("shipping")}</span>
 								<span>{qualifiesForFreeShipping ? t("shippingFree") : t("shippingCalculated")}</span>

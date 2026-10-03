@@ -29,8 +29,14 @@ export type SaleorVariant = {
 	selectionAttributes: SaleorVariantAttribute[];
 	nonSelectionAttributes?: SaleorVariantAttribute[];
 	pricing?: {
-		price?: { gross: { amount: number; currency: string } } | null;
-		priceUndiscounted?: { gross: { amount: number; currency: string } } | null;
+		price?: {
+			gross: { amount: number; currency: string };
+			net?: { amount: number; currency: string };
+		} | null;
+		priceUndiscounted?: {
+			gross: { amount: number; currency: string };
+			net?: { amount: number; currency: string };
+		} | null;
 	} | null;
 };
 
