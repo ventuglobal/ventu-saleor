@@ -45,7 +45,9 @@ export function resolvePaymentProvider(
 
 /** Client-driven gateways render their own Pay button (e.g. Stripe Elements). */
 export function usesClientPaymentSubmit(provider: ResolvedPaymentProvider): boolean {
-	return provider.type === "stripe" || provider.type === "dummy" ? provider.submitMode === "client" : false;
+	return provider.type === "stripe" || provider.type === "dummy" || provider.type === "webpay"
+		? provider.submitMode === "client"
+		: false;
 }
 
 /** Whether the checkout Pay button can run for the resolved provider. */

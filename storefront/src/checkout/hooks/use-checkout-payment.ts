@@ -6,10 +6,12 @@ import { type BillingAddressData } from "@/checkout/components/payment";
 import {
 	canSubmitPayment,
 	executePayment,
+	isWebpayGateway,
 	resolvePaymentProvider,
 	updateCheckoutBilling,
 	type ResolvedPaymentProvider,
 } from "@/checkout/lib/payment";
+import { esCanalWebpay } from "@/lib/b2b/canales";
 import {
 	buildCheckoutPriceChangeNotice,
 	getCheckoutPayAmount,
@@ -76,7 +78,13 @@ export function useCheckoutPayment({
 		setPriceChangeNotice(notice);
 	}, []);
 
-	const provider: ResolvedPaymentProvider = resolvePaymentProvider(checkout.availablePaymentGateways);
+	// La resolución de providers es channel-blind: aislamos Webpay al canal retail
+	// filtrándolo aquí (el borde de seguridad real está en las server actions).
+	const availableGateways = esCanalWebpay(checkout.channel.slug)
+		? checkout.availablePaymentGateways
+		: checkout.availablePaymentGateways.filter((gateway) => !isWebpayGateway(gateway.id));
+
+	const provider: ResolvedPaymentProvider = resolvePaymentProvider(availableGateways);
 
 	const submit = useCallback(
 		async (event?: React.FormEvent) => {

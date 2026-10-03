@@ -8,12 +8,17 @@ import {
 	isStripeGateway,
 	isStripePaymentEnabled,
 } from "@/checkout/lib/payment/providers/stripe";
+import {
+	findWebpayGateway,
+	isWebpayGateway,
+	isWebpayPaymentEnabled,
+} from "@/checkout/lib/payment/providers/webpay";
 import { type PaymentGatewayLike, type PaymentSubmitMode } from "./types";
 
 /** Built-in gateways this UI does not integrate with but should not block checkout. */
 export const IGNORABLE_GATEWAY_IDS = ["saleor.io.gift-card-payment-gateway"] as const;
 
-export type IntegratedGatewayType = "stripe" | "dummy";
+export type IntegratedGatewayType = "stripe" | "dummy" | "webpay";
 
 type IntegratedGatewayDefinition = {
 	type: IntegratedGatewayType;
@@ -28,6 +33,13 @@ type IntegratedGatewayDefinition = {
  * Add a new Saleor payment app here plus its provider module and UI component.
  */
 export const INTEGRATED_GATEWAYS: readonly IntegratedGatewayDefinition[] = [
+	{
+		type: "webpay",
+		submitMode: "client",
+		findGateway: (gateways) => findWebpayGateway(gateways),
+		isEnabled: isWebpayPaymentEnabled,
+		matchesGateway: (gateway) => isWebpayGateway(gateway.id),
+	},
 	{
 		type: "stripe",
 		submitMode: "client",

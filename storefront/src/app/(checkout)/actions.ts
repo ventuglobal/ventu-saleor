@@ -82,6 +82,12 @@ import {
 	hasMaterialCheckoutTotalChange,
 } from "@/checkout/lib/payment/checkout-pay-amount";
 import { getStripePaymentGuardError, isStripePaymentEnabled } from "@/checkout/lib/payment/providers/stripe";
+import {
+	getWebpayChannelGuardError,
+	getWebpayPaymentGuardError,
+	isWebpayGateway,
+	isWebpayPaymentEnabled,
+} from "@/checkout/lib/payment/providers/webpay";
 import { buildMarketingConsentMetadata } from "@/checkout/lib/marketing-consent";
 import { fetchCheckoutOnServer } from "@/checkout/lib/server/fetch-checkout";
 import { getCheckoutServerTranslations } from "@/checkout/lib/server/get-checkout-server-translations";
@@ -490,20 +496,41 @@ export async function initializeCheckoutTransaction(
 		return { ok: false, error: t("stripeNotEnabled") };
 	}
 
+	const webpayGuardError = getWebpayPaymentGuardError(variables.paymentGateway?.id);
+	if (webpayGuardError) {
+		return { ok: false, error: webpayGuardError };
+	}
+
+	const isWebpay = isWebpayGateway(variables.paymentGateway?.id ?? "");
+
 	// Defense in depth: never trust the client-supplied amount. Saleor re-validates
 	// coverage at checkoutComplete, but rejecting here avoids authorizing a wrong amount.
-	if (typeof variables.amount === "number") {
+	// For Webpay this fetch is also the security boundary for channel isolation:
+	// Transbank must never be driven from a channel outside WEBPAY_CHANNELS.
+	if (typeof variables.amount === "number" || isWebpay) {
 		const live = await fetchCheckoutOnServer(variables.checkoutId);
 		if (!live.ok || !live.checkout) {
 			return { ok: false, error: t("totalVerifyFailed") };
 		}
 
-		const liveAmount = getCheckoutPayAmount(live.checkout);
-		if (liveAmount === null || hasMaterialCheckoutTotalChange(liveAmount, variables.amount)) {
-			return {
-				ok: false,
-				error: t("totalChanged"),
-			};
+		if (isWebpay) {
+			const channelGuardError = getWebpayChannelGuardError(
+				variables.paymentGateway?.id,
+				live.checkout.channel?.slug,
+			);
+			if (channelGuardError) {
+				return { ok: false, error: channelGuardError };
+			}
+		}
+
+		if (typeof variables.amount === "number") {
+			const liveAmount = getCheckoutPayAmount(live.checkout);
+			if (liveAmount === null || hasMaterialCheckoutTotalChange(liveAmount, variables.amount)) {
+				return {
+					ok: false,
+					error: t("totalChanged"),
+				};
+			}
 		}
 	}
 
@@ -534,7 +561,7 @@ export async function processCheckoutTransaction(
 	// Mirror the initialize guards: when every integrated gateway is disabled for this
 	// environment, a direct call to this action must not drive transactions either.
 	// Forks adding gateways should extend this check alongside the initialize guards.
-	if (!isStripePaymentEnabled() && !isDummyPaymentAllowed()) {
+	if (!isStripePaymentEnabled() && !isDummyPaymentAllowed() && !isWebpayPaymentEnabled()) {
 		const { server: t } = await getCheckoutServerTranslations();
 		return { ok: false, error: t("paymentsDisabled") };
 	}
