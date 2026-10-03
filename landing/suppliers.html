@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventu · Para proveedores | Vende más sin cambiar cómo trabajas</title>
+<meta name="description" content="Ventu te lleva demanda empresarial agregada y se encarga de la cotización, la venta y la coordinación. Tú despachas. Sin comisión al proveedor.">
+
+<!-- Satoshi via Fontshare -->
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700,900&display=swap" rel="stylesheet">
+
+<!-- JetBrains Mono via Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- ════════════════════════════════════════════════════════════
+     NAV
+     ════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand" aria-label="Ventu">
+      <img src="ventu-logo.png" alt="Ventu" class="brand-mark"/>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#stack" class="nav-link" data-lang="es">tecnología</a>
+      <a href="index.html#stack" class="nav-link" data-lang="en">technology</a>
+      <a href="suppliers.html" class="nav-link" data-lang="es">proveedores</a>
+      <a href="suppliers.html" class="nav-link" data-lang="en">suppliers</a>
+      <a href="drivers.html" class="nav-link" data-lang="es">transportistas</a>
+      <a href="drivers.html" class="nav-link" data-lang="en">drivers</a>
+
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-set-lang="es">ES</button>
+        <button class="lang-btn" data-set-lang="en">EN</button>
+      </div>
+
+      <a href="#registro" data-registro="supplier" class="btn btn-primary" data-lang="es">Conecta tu catálogo</a>
+      <a href="#registro" data-registro="supplier" class="btn btn-primary" data-lang="en">Connect your catalog</a>
+    </div>
+  </div>
+</nav>
+<!-- ════════════════════════════════════════════════════════════
+     SUPPLIERS HERO
+     ════════════════════════════════════════════════════════════ -->
+<section class="hero" style="padding-top: 120px; padding-bottom: 80px;">
+  <div class="hero-inner hero-2col">
+
+    <div class="hero-copy">
+      <div class="hero-eyebrow">
+        <span class="pulse"></span>
+        <span data-lang="es"><span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> PARA PROVEEDORES</span>
+        <span data-lang="en"><span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> FOR SUPPLIERS</span>
+      </div>
+
+      <h1 class="hero-h1" data-lang="es">
+        Vende más sin
+        <em>cambiar cómo trabajas.</em>
+      </h1>
+      <h1 class="hero-h1" data-lang="en">
+        Sell more without
+        <em>changing how you work.</em>
+      </h1>
+
+      <p class="hero-sub" data-lang="es">
+        Ventu te lleva demanda empresarial agregada y se encarga de la
+        cotización, la venta y la coordinación. Tú despachas.
+      </p>
+      <p class="hero-sub" data-lang="en">
+        Ventu brings you aggregated business demand and handles quoting,
+        selling and coordination. You ship.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="#registro" data-registro="supplier" class="btn btn-primary btn-large" data-lang="es">Quiero vender en Ventu →</a>
+        <a href="#registro" data-registro="supplier" class="btn btn-primary btn-large" data-lang="en">I want to sell on Ventu →</a>
+      </div>
+
+      <div class="hero-offer">
+        <span class="offer-tag">●</span>
+        <span data-lang="es"><strong>Sin comisiones ni costos adicionales</strong> para proveedores</span>
+        <span data-lang="en"><strong>No commissions or additional fees</strong> for suppliers</span>
+      </div>
+    </div>
+
+    <!-- Supplier dashboard mockup -->
+    <div class="phone-wrap" style="min-height: 540px;">
+      <div style="width: 100%; max-width: 460px; background: white; border: 1px solid var(--line-bright); border-radius: 16px; box-shadow: 0 30px 80px rgba(40, 0, 80, 0.12); overflow: hidden;">
+
+        <div style="background: #f6f0fc; border-bottom: 1px solid #ebe2f5; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; gap: 5px;">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: #ff5f57;"></span>
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: #febc2e;"></span>
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: #28c840;"></span>
+          </div>
+          <div style="flex: 1; background: white; border: 1px solid #ebe2f5; border-radius: 6px; padding: 4px 10px; font-family: var(--font-mono); font-size: 10px; color: #6a5a7a;">supplier.ventu.cl/dashboard</div>
+        </div>
+
+        <div style="padding: 22px;">
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; color: var(--brand); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;" data-lang="es">→ DASHBOARD PROVEEDOR</div>
+              <div style="font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; color: var(--brand); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;" data-lang="en">→ SUPPLIER DASHBOARD</div>
+              <div style="font-family: var(--font-sans); font-size: 16px; font-weight: 700; color: var(--fg); letter-spacing: -0.025em;" data-lang="es">Tu mes en <span class="ventu-mark" role="img" aria-label="Ventu"></span></div>
+              <div style="font-family: var(--font-sans); font-size: 16px; font-weight: 700; color: var(--fg); letter-spacing: -0.025em;" data-lang="en">Your month on <span class="ventu-mark" role="img" aria-label="Ventu"></span></div>
+            </div>
+            <span style="background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-line); border-radius: 100px; padding: 3px 10px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.06em;">EN VIVO</span>
+          </div>
+
+          <!-- Stats grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+            <div style="padding: 14px; background: var(--bg-soft); border-radius: 8px;">
+              <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;" data-lang="es">PEDIDOS · MES</div>
+              <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;" data-lang="en">ORDERS · MONTH</div>
+              <div style="font-family: var(--font-sans); font-size: 22px; font-weight: 800; color: var(--brand); letter-spacing: -0.02em;">847</div>
+            </div>
+            <div style="padding: 14px; background: var(--bg-soft); border-radius: 8px;">
+              <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;" data-lang="es">VENTAS · MES</div>
+              <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;" data-lang="en">SALES · MONTH</div>
+              <div style="font-family: var(--font-sans); font-size: 22px; font-weight: 800; color: var(--brand); letter-spacing: -0.02em;">$32K</div>
+            </div>
+          </div>
+
+          <!-- Recent orders list -->
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px;" data-lang="es">PEDIDOS RECIENTES</div>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px;" data-lang="en">RECENT ORDERS</div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line);">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 10px; color: var(--brand); font-weight: 700;">#VT-2847</div>
+              <div style="font-size: 11px; color: var(--fg); margin-top: 2px;">25× silla ergonómica</div>
+            </div>
+            <span style="background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-line); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="es">EN PREPARACIÓN</span>
+            <span style="background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-line); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="en">PREPARING</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line);">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 10px; color: var(--brand); font-weight: 700;">#VT-2846</div>
+              <div style="font-size: 11px; color: var(--fg); margin-top: 2px;">5× monitor 27" 4K</div>
+            </div>
+            <span style="background: rgba(0, 184, 115, 0.15); color: var(--accent); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="es">RETIRADO</span>
+            <span style="background: rgba(0, 184, 115, 0.15); color: var(--accent); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="en">PICKED UP</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 10px; color: var(--brand); font-weight: 700;">#VT-2844</div>
+              <div style="font-size: 11px; color: var(--fg); margin-top: 2px;">2× cable cat6 305m</div>
+            </div>
+            <span style="background: var(--bg-soft); color: var(--fg-muted); border: 1px solid var(--line); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="es">PAGADO</span>
+            <span style="background: var(--bg-soft); color: var(--fg-muted); border: 1px solid var(--line); border-radius: 100px; padding: 2px 8px; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.06em;" data-lang="en">PAID</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- VALUE PROPS -->
+<section class="valueprop" style="padding: 80px 0;">
+  <div class="valueprop-inner">
+    <div class="valueprop-header">
+      <div class="eyebrow" data-lang="es">LA OPORTUNIDAD</div>
+      <div class="eyebrow" data-lang="en">THE OPPORTUNITY</div>
+      <h2 data-lang="es">Demanda que ya decidió comprar, <em>sin costo de adquisición.</em></h2>
+      <h2 data-lang="en">Demand that already decided to buy, <em>at no acquisition cost.</em></h2>
+      <p data-lang="es">
+        Tu catálogo entra a una demanda que ya está comprando. Sin
+        prospectar, sin licitar y sin cambiar tus procesos internos.
+      </p>
+      <p data-lang="en">
+        Your catalog plugs into demand that is already buying. No
+        prospecting, no tenders and no changes to your internal processes.
+      </p>
+    </div>
+
+    <div class="valueprop-grid valueprop-grid-4">
+
+      <div class="vp-card">
+        <div class="vp-illus">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="8" width="20" height="16" rx="2"/>
+            <path d="M6 13h20"/>
+            <path d="M11 18h4M11 21h6"/>
+            <path d="M21 19l1.5 1.5L26 17" stroke="#00b873" stroke-width="2"/>
+          </svg>
+        </div>
+        <h3 class="vp-title" data-lang="es">Demanda calificada</h3>
+        <h3 class="vp-title" data-lang="en">Qualified demand</h3>
+        <p class="vp-body" data-lang="es">
+          Clientes que ya decidieron comprar. Pedidos consolidados y predecibles, sin que tengas que prospectar ni negociar.
+        </p>
+        <p class="vp-body" data-lang="en">
+          Customers who already decided to buy. Consolidated, predictable orders, with no prospecting or negotiating on your side.
+        </p>
+      </div>
+
+      <div class="vp-card">
+        <div class="vp-illus">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8h20l-3 18H9z"/>
+            <path d="M11 4l1 4M21 4l-1 4"/>
+            <path d="M16 14v6"/>
+            <path d="M13 17h6"/>
+          </svg>
+        </div>
+        <h3 class="vp-title" data-lang="es">Sin comisión al proveedor</h3>
+        <h3 class="vp-title" data-lang="en">No supplier commission</h3>
+        <p class="vp-body" data-lang="es">
+          Nuestro margen está en la transacción, no en tu bolsillo. Ventu te compra al contado y te paga cada semana, aunque el cliente final pague a 30 días.
+        </p>
+        <p class="vp-body" data-lang="en">
+          Our margin sits in the transaction, not in your pocket. Ventu buys from you in cash and pays weekly, even when the end customer pays in 30 days.
+        </p>
+      </div>
+
+      <div class="vp-card">
+        <div class="vp-illus">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 16h6l3-8 4 16 3-8h6"/>
+          </svg>
+        </div>
+        <h3 class="vp-title" data-lang="es">Integración simple</h3>
+        <h3 class="vp-title" data-lang="en">Simple integration</h3>
+        <p class="vp-body" data-lang="es">
+          Nos conectamos con tu catálogo en el formato que ya tengas: API, planilla o CSV. Sin rehacer tus procesos.
+        </p>
+        <p class="vp-body" data-lang="en">
+          We connect to your catalog in whatever format you already have: API, spreadsheet or CSV. No reworking your processes.
+        </p>
+      </div>
+
+      <div class="vp-card">
+        <div class="vp-illus">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 10a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-7l-5 4v-4H9a3 3 0 0 1-3-3z"/>
+            <path d="M12 14h8" stroke="#00b873" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="vp-text">
+        <h3 class="vp-title" data-lang="es">Un solo interlocutor</h3>
+        <h3 class="vp-title" data-lang="en">A single point of contact</h3>
+        <p class="vp-body" data-lang="es">
+          Nosotros atendemos al cliente final: cotización, dudas, postventa y
+          coordinación de la entrega. Tú tratas solo con Ventu.
+        </p>
+        <p class="vp-body" data-lang="en">
+          We handle the end customer: quoting, questions, after-sales and
+          delivery coordination. You deal only with Ventu.
+        </p>
+      </div>
+        </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS · 3 STEPS -->
+<section class="get-started" id="empezar">
+  <div class="get-started-inner">
+
+    <div class="get-started-header">
+      <div class="eyebrow" data-lang="es">CÓMO EMPEZAR</div>
+      <div class="eyebrow" data-lang="en">GET STARTED</div>
+      <h2 data-lang="es">
+        Comienza a vender <em>en la primera semana.</em>
+      </h2>
+      <h2 data-lang="en">
+        Start selling <em>in the first week.</em>
+      </h2>
+      <p data-lang="es">
+        Sin contrato anual, sin mínimos mensuales, sin costos de setup.
+        Sin comisiones ni costos adicionales.
+      </p>
+      <p data-lang="en">
+        No annual contract, no monthly minimums, no setup costs. No
+        commissions or additional fees.
+      </p>
+    </div>
+
+    <div class="steps-grid">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3 class="step-title" data-lang="es">Postula tu empresa</h3>
+        <h3 class="step-title" data-lang="en">Apply your company</h3>
+        <p class="step-body" data-lang="es">
+          Cuéntanos qué vendes, tu volumen mensual y tus categorías.
+          Validamos antecedentes y confirmamos en 48 horas.
+        </p>
+        <p class="step-body" data-lang="en">
+          Tell us what you sell, your monthly volume, and your
+          categories. We validate background and confirm in 48 hours.
+        </p>
+        <span class="step-time" data-lang="es">● 48 HORAS</span>
+        <span class="step-time" data-lang="en">● 48 HOURS</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3 class="step-title" data-lang="es">Conecta tu catálogo</h3>
+        <h3 class="step-title" data-lang="en">Connect your catalog</h3>
+        <p class="step-body" data-lang="es">
+          API REST documentada o carga inicial vía CSV. Sincronizamos
+          stock, precios y disponibilidad de forma automática. Te
+          ayudamos en la integración.
+        </p>
+        <p class="step-body" data-lang="en">
+          Documented REST API or initial upload via CSV. We sync stock,
+          prices, and availability automatically. We help with the
+          integration.
+        </p>
+        <span class="step-time" data-lang="es">● 1 SEMANA</span>
+        <span class="step-time" data-lang="en">● 1 WEEK</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3 class="step-title" data-lang="es">Empieza a vender</h3>
+        <h3 class="step-title" data-lang="en">Start selling</h3>
+        <p class="step-body" data-lang="es">
+          Tus productos aparecen en el catálogo de Ventu. Recibes pedidos
+          consolidados, los preparas, los retira nuestro transportista y
+          cobras semanalmente.
+        </p>
+        <p class="step-body" data-lang="en">
+          Your products show up in the Ventu catalog. You receive
+          consolidated orders, prepare them, our carrier picks up, and
+          you get paid weekly.
+        </p>
+        <span class="step-time" data-lang="es">● MISMO DÍA</span>
+        <span class="step-time" data-lang="en">● SAME DAY</span>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="faq-inner">
+    <div class="faq-header">
+      <div class="eyebrow" data-lang="es">PREGUNTAS FRECUENTES</div>
+      <div class="eyebrow" data-lang="en">FAQ</div>
+      <h2 data-lang="es">Lo que <em>preguntan los proveedores.</em></h2>
+      <h2 data-lang="en">What suppliers <em>ask us most.</em></h2>
+    </div>
+
+    <div class="faq-list">
+
+      <div class="faq-item open">
+        <button class="faq-q">
+          <span data-lang="es">¿Tiene costo participar como proveedor?</span>
+          <span data-lang="en">Is there a cost to join as a supplier?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner" data-lang="es">
+            No. Actualmente los proveedores pueden integrarse a la red
+            sin comisiones ni costos adicionales. El objetivo es
+            facilitar el acceso a nueva demanda B2B y simplificar el
+            proceso desde la recepción del pedido hasta la entrega.
+          </div>
+          <div class="faq-a-inner" data-lang="en">
+            No. Currently, suppliers can join the network with no
+            commissions or additional fees. The goal is to make access to
+            new B2B demand easy and to simplify the process from order
+            reception to delivery.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Cómo y cuándo me pagan?</span>
+          <span data-lang="en">How and when do I get paid?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner" data-lang="es">
+            Al contado. Cada lunes recibes por transferencia el pago de todos
+            los pedidos retirados la semana anterior, sin descuentos ni
+            retenciones. Ventu asume el riesgo de cobranza con el cliente
+            final: aunque él pague a 30 días, tú ya cobraste. Eso acelera la
+            rotación de tu inventario y mejora tu rentabilidad sobre el mismo
+            stock.
+          </div>
+          <div class="faq-a-inner" data-lang="en">
+            In cash. Every Monday you receive payment by transfer for every order
+            picked up the previous week, with no deductions or withholdings.
+            Ventu absorbs the collection risk with the end customer: even if
+            they pay in 30 days, you have already been paid. That speeds up
+            your inventory turnover and improves your margin on the same
+            stock.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Quién emite la factura?</span>
+          <span data-lang="en">Who issues the invoice?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner" data-lang="es">
+            Tú emites factura a Ventu por cada pedido retirado. Ventu
+            emite factura al cliente final consolidando todo el pedido.
+            Los flujos contables quedan limpios para ambos lados.
+          </div>
+          <div class="faq-a-inner" data-lang="en">
+            You issue an invoice to Ventu for each picked-up order.
+            Ventu issues a consolidated invoice to the end customer.
+            Accounting flows stay clean on both sides.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Tengo que entregar yo los productos?</span>
+          <span data-lang="en">Do I have to deliver the products?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner" data-lang="es">
+            No. Tú preparas el pedido en tu bodega y nuestro transportista
+            lo retira. Solo necesitas tener el pedido listo en el horario
+            agendado. Ventu se encarga del resto hasta el cliente final.
+          </div>
+          <div class="faq-a-inner" data-lang="en">
+            No. You prepare the order in your warehouse and our carrier
+            picks it up. You just need to have the order ready at the
+            scheduled time. Ventu handles the rest to the end customer.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Qué tipos de productos puedo vender?</span>
+          <span data-lang="en">What products can I sell?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner" data-lang="es">
+            Productos B2B no perecibles: mobiliario, tecnología, insumos,
+            herramientas, materiales de construcción, equipamiento.
+            Trabajamos con proveedores cuyo catálogo encaja con el flujo
+            de empresas que compran en Ventu.
+          </div>
+          <div class="faq-a-inner" data-lang="en">
+            Non-perishable B2B products: furniture, technology, supplies,
+            tools, construction materials, equipment. We work with
+            suppliers whose catalog fits the flow of companies that buy
+            on Ventu.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta">
+  <div class="cta-inner">
+    <h2 class="cta-h2" data-lang="es">
+      Tú produces.
+      <em>Nosotros vendemos.</em>
+    </h2>
+    <h2 class="cta-h2" data-lang="en">
+      You produce.
+      <em>We sell.</em>
+    </h2>
+
+    <p class="cta-sub" data-lang="es">
+      Postúlate hoy y empieza a vender este mes.
+    </p>
+    <p class="cta-sub" data-lang="en">
+      Apply today and start selling this month.
+    </p>
+
+    <div class="cta-ctas">
+      <a href="#registro" data-registro="supplier" class="btn btn-primary btn-large" data-lang="es">Quiero vender en Ventu →</a>
+      <a href="#registro" data-registro="supplier" class="btn btn-primary btn-large" data-lang="en">I want to sell on Ventu →</a>
+
+      <a href="index.html" class="btn btn-secondary btn-large" data-lang="es">Volver a <span class="ventu-mark" role="img" aria-label="Ventu"></span></a>
+      <a href="index.html" class="btn btn-secondary btn-large" data-lang="en">Back to <span class="ventu-mark" role="img" aria-label="Ventu"></span></a>
+    </div>
+  </div>
+</section>
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand">
+        <img src="ventu-logo.png" alt="Ventu" class="brand-mark"/>
+      </div>
+      <p class="footer-tagline" data-lang="es">
+        Compra los productos que tu operación necesita con certeza de
+        entrega y una sola factura.
+      </p>
+      <p class="footer-tagline" data-lang="en">
+        Buy what your operation needs with delivery certainty and a
+        single invoice.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">PRODUCTO</h4>
+      <h4 data-lang="en">PRODUCT</h4>
+      <ul>
+        <li><a href="index.html#stack" data-lang="es">Tecnología</a><a href="index.html#stack" data-lang="en">Technology</a></li>
+        <li><a href="index.html#red" data-lang="es">La red</a><a href="index.html#red" data-lang="en">The network</a></li>
+        <li><a href="index.html#faq" data-lang="es">Preguntas frecuentes</a><a href="index.html#faq" data-lang="en">FAQ</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">RED</h4>
+      <h4 data-lang="en">NETWORK</h4>
+      <ul>
+        <li><a href="drivers.html" data-lang="es">Para transportistas</a><a href="drivers.html" data-lang="en">For carriers</a></li>
+        <li><a href="suppliers.html" data-lang="es">Para proveedores</a><a href="suppliers.html" data-lang="en">For suppliers</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">CONTACTO</h4>
+      <h4 data-lang="en">CONTACT</h4>
+      <ul>
+        <li><a href="mailto:soporte@ventu.cl">soporte@ventu.cl</a></li>
+        <li><span data-lang="es">Santiago, Chile</span><span data-lang="en">Santiago, Chile</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span data-lang="es">© 2026 VENTU · LAS BELLOTAS 199, OF. 62, PROVIDENCIA, SANTIAGO</span>
+    <span data-lang="en">© 2026 VENTU · LAS BELLOTAS 199, OF. 62, PROVIDENCIA, SANTIAGO</span>
+    <span>VENTU.CL</span>
+  </div>
+</footer>
+
+
+<script src="main.js"></script>
+</body>
+</html>

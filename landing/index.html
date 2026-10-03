@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventu · Agentic Commerce para empresas | Cotiza, financia y entrega</title>
+<meta name="description" content="Manda una foto, un PDF o una lista. Ventu cotiza entre múltiples proveedores, verifica stock y precio, y ejecuta la compra completa con entrega coordinada. Una plataforma, una factura, un contacto.">
+
+<!-- Satoshi via Fontshare -->
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700,900&display=swap" rel="stylesheet">
+
+<!-- JetBrains Mono via Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     NAV
+     ════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand" aria-label="Ventu">
+      <img src="ventu-logo.png" alt="Ventu" class="brand-mark"/>
+    </a>
+    <div class="nav-links">
+      <a href="#stack" class="nav-link" data-lang="es">tecnología</a>
+      <a href="#stack" class="nav-link" data-lang="en">technology</a>
+      <a href="suppliers.html" class="nav-link" data-lang="es">proveedores</a>
+      <a href="suppliers.html" class="nav-link" data-lang="en">suppliers</a>
+      <a href="drivers.html" class="nav-link" data-lang="es">transportistas</a>
+      <a href="drivers.html" class="nav-link" data-lang="en">drivers</a>
+
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-set-lang="es">ES</button>
+        <button class="lang-btn" data-set-lang="en">EN</button>
+      </div>
+
+      <a href="#registro" data-registro="seller" class="btn btn-primary" data-lang="es">Quiero probar Ventu</a>
+      <a href="#registro" data-registro="seller" class="btn btn-primary" data-lang="en">I want to try Ventu</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════
+     HERO
+     ════════════════════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">
+        <span class="pulse"></span>
+        <span data-lang="es">AI PROCUREMENT AGENT</span>
+        <span data-lang="en">AI PROCUREMENT AGENT</span>
+      </div>
+
+      <h1 class="hero-h1" data-lang="es">
+        Pide lo que tu empresa necesita.
+        <em>Nuestra IA lo encuentra, lo compra y asegura su entrega.</em>
+      </h1>
+      <h1 class="hero-h1" data-lang="en">
+        Ask for what your company needs.
+        <em>Our AI finds it, buys it and guarantees delivery.</em>
+      </h1>
+
+      <p class="hero-sub" data-lang="es">
+        Envíanos una lista, una foto, un PDF o un audio. Buscamos productos y
+        proveedores, verificamos precio, stock y plazo, y te devolvemos una sola
+        solución de compra.
+      </p>
+      <p class="hero-sub" data-lang="en">
+        Send us a list, a photo, a PDF or a voice note. We search products and
+        suppliers, verify price, stock and lead time, and hand you a single
+        purchasing solution.
+      </p>
+
+      <div class="hero-facts">
+        <div class="hero-fact">
+          <span class="hero-fact-k" data-lang="es">Disponibilidad</span>
+          <span class="hero-fact-k" data-lang="en">Availability</span>
+          <span class="hero-fact-v" data-lang="es">Stock verificado</span>
+          <span class="hero-fact-v" data-lang="en">Verified stock</span>
+        </div>
+        <div class="hero-fact">
+          <span class="hero-fact-k" data-lang="es">Financiamiento</span>
+          <span class="hero-fact-k" data-lang="en">Financing</span>
+          <span class="hero-fact-v" data-lang="es">Hasta 30 días</span>
+          <span class="hero-fact-v" data-lang="en">Up to 30 days</span>
+        </div>
+        <div class="hero-fact">
+          <span class="hero-fact-k" data-lang="es">Entrega</span>
+          <span class="hero-fact-k" data-lang="en">Delivery</span>
+          <span class="hero-fact-v" data-lang="es">Desde el mismo día*</span>
+          <span class="hero-fact-v" data-lang="en">From same day*</span>
+        </div>
+      </div>
+
+      <div class="hero-legal">
+        <span data-lang="es">*Disponible para productos seleccionados, ingresando el pedido antes de las 9:00 hrs en días hábiles.</span>
+        <span data-lang="en">*Available for selected products, placing the order before 9:00 am on business days.</span>
+      </div>
+
+      <div class="hero-sourcing">
+        <p data-lang="es">
+          <strong>¿No está disponible de inmediato?</strong> Lo buscamos en nuestra red de
+          proveedores y te respondemos en 48 horas.
+        </p>
+        <p data-lang="en">
+          <strong>Not available right away?</strong> We search our supplier network and come
+          back to you within 48 hours.
+        </p>
+      </div>
+
+      <div class="hero-cta">
+        <a href="#registro" data-registro="seller" class="btn btn-primary btn-large" data-lang="es">Quiero probar Ventu</a>
+        <a href="#registro" data-registro="seller" class="btn btn-primary btn-large" data-lang="en">I want to try Ventu</a>
+        <span class="hero-launch" data-lang="es">Lanzamiento Q4 2026</span>
+        <span class="hero-launch" data-lang="en">Launching Q4 2026</span>
+      </div>
+    </div>
+
+    <!-- CONVERSACIÓN END-TO-END EN MÓVIL (HTML/CSS real) -->
+    <div class="hero-visual">
+      <div class="phone-wrap wa-wrap">
+        <div class="phone phone-chat">
+          <div class="phone-screen">
+
+            <div class="wa-head">
+              <div class="wa-id">
+                <span class="ventu-mark wa-mark" role="img" aria-label="Ventu"></span>
+                <span class="wa-status" data-lang="es">en línea</span>
+                <span class="wa-status" data-lang="en">online</span>
+              </div>
+              <div class="wa-channel">WHATSAPP</div>
+            </div>
+
+            <div class="wa-body">
+            <div class="wa-stage">
+              <span data-lang="es">1 · SOLICITUD</span>
+              <span data-lang="en">1 · REQUEST</span>
+            </div>
+            <div class="wa-msg wa-out">
+              <div class="wa-from">M. ROJAS</div>
+              <div class="wa-text" data-lang="es">20 cables, 5 switches, 40 carpetas, café, limpiador.</div>
+              <div class="wa-text" data-lang="en">20 cables, 5 switches, 40 folders, coffee, cleaner.</div>
+              <div class="wa-file">
+                <svg class="wa-file-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>
+                </svg>
+                <div class="wa-file-txt">
+                  <div class="wa-file-name">lista-bodega.jpg</div>
+                  <div class="wa-file-meta" data-lang="es">JPG · 1,2 MB</div>
+                  <div class="wa-file-meta" data-lang="en">JPG · 1.2 MB</div>
+                </div>
+              </div>
+              <div class="wa-time">09:12</div>
+            </div>
+            <div class="wa-stage">
+              <span data-lang="es">2 · RESPUESTA</span>
+              <span data-lang="en">2 · RESPONSE</span>
+            </div>
+            <div class="wa-msg wa-in">
+              <div class="wa-from">VENTU</div>
+              <div class="wa-text" data-lang="es">5 productos verificados. $1.925.000, hoy 18:12.</div>
+              <div class="wa-text" data-lang="en">5 products verified. $1,925,000, today 6:12 pm.</div>
+              <div class="wa-time">09:26</div>
+            </div>
+            <div class="wa-stage">
+              <span data-lang="es">3 · PAGO Y FACTURA</span>
+              <span data-lang="en">3 · PAYMENT & INVOICE</span>
+            </div>
+            <div class="wa-msg wa-in">
+              <div class="wa-from">VENTU</div>
+              <div class="wa-text" data-lang="es">Pago a 30 días. Factura única.</div>
+              <div class="wa-text" data-lang="en">30-day terms. Single invoice.</div>
+              <div class="wa-file">
+                <svg class="wa-file-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>
+                </svg>
+                <div class="wa-file-txt">
+                  <div class="wa-file-name">factura-847.pdf</div>
+                  <div class="wa-file-meta" data-lang="es">PDF · 1 página</div>
+                  <div class="wa-file-meta" data-lang="en">PDF · 1 page</div>
+                </div>
+              </div>
+              <div class="wa-time">09:34</div>
+            </div>
+            <div class="wa-stage">
+              <span data-lang="es">4 · ENTREGA</span>
+              <span data-lang="en">4 · DELIVERY</span>
+            </div>
+            <div class="wa-msg wa-in">
+              <div class="wa-from">VENTU</div>
+              <div class="wa-text" data-lang="es">Entregado · Las Condes 502.</div>
+              <div class="wa-text" data-lang="en">Delivered · Las Condes 502.</div>
+              <div class="wa-time">18:12</div>
+            </div>
+            <div class="wa-msg wa-out">
+              <div class="wa-from">M. ROJAS</div>
+              <div class="wa-text" data-lang="es">Todo conforme. Gracias.</div>
+              <div class="wa-text" data-lang="en">All good. Thanks.</div>
+              <div class="wa-time">18:20</div>
+            </div>
+            </div>
+
+            <div class="wa-bar">
+              <span class="wa-bar-field" data-lang="es">Escribe lo que necesitas…</span>
+              <span class="wa-bar-field" data-lang="en">Type what you need…</span>
+              <span class="wa-bar-send" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12L4 4l6 8-6 8z"/>
+                </svg>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="wa-note">
+        <div class="wa-note-chips">
+          <span>WhatsApp</span><span data-lang="es">Correo</span><span data-lang="en">E-mail</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+
+<!-- ════════════════════════════════════════════════════════════
+     CÓMO FUNCIONA + FLUJO DE NEGOCIO CON IA
+     ════════════════════════════════════════════════════════════ -->
+<section class="section section-alt" id="funciona">
+  <div class="section-inner">
+
+    <div class="hiw-head">
+      <div class="eyebrow" data-lang="es">CÓMO FUNCIONA</div>
+      <div class="eyebrow" data-lang="en">HOW IT WORKS</div>
+      <h2 data-lang="es">De un mensaje a la entrega, <em>en cuatro pasos.</em></h2>
+      <h2 data-lang="en">From a message to delivery, <em>in four steps.</em></h2>
+    </div>
+
+    <div class="hiw-grid">
+        <div class="hiw-step">
+          <div class="hiw-num">01</div>
+          <div class="hiw-ic">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-8l-6 4v-4H9a3 3 0 0 1-3-3z"/><path d="M12 12h8" stroke="#00b873" stroke-width="2"/></svg>
+          </div>
+          <h3 class="hiw-title" data-lang="es">Pides como quieras</h3>
+          <h3 class="hiw-title" data-lang="en">Ask however you want</h3>
+          <p class="hiw-text" data-lang="es">Describes lo que necesitas en el formato que ya tengas. Sin códigos ni fichas técnicas.</p>
+          <p class="hiw-text" data-lang="en">You describe what you need in whatever format you already have. No part numbers or spec sheets.</p>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-num">02</div>
+          <div class="hiw-ic">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="10" width="18" height="14" rx="3"/><path d="M16 5v5"/><circle cx="16" cy="4" r="1.5" fill="currentColor"/><circle cx="12.5" cy="16" r="1.4" fill="currentColor"/><circle cx="19.5" cy="16" r="1.4" fill="currentColor"/><path d="M13 20h6" stroke="#00b873" stroke-width="2"/></svg>
+          </div>
+          <h3 class="hiw-title" data-lang="es">La IA busca y compara</h3>
+          <h3 class="hiw-title" data-lang="en">The AI searches and compares</h3>
+          <p class="hiw-text" data-lang="es">Identifica los productos, encuentra equivalencias y compara precios con stock verificado.</p>
+          <p class="hiw-text" data-lang="en">It identifies the products, finds equivalents and compares prices against verified stock.</p>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-num">03</div>
+          <div class="hiw-ic">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="24" height="16" rx="2"/><path d="M4 13h24"/><path d="M8 19h6" stroke="#00b873" stroke-width="2"/></svg>
+          </div>
+          <h3 class="hiw-title" data-lang="es">Eliges y pagas</h3>
+          <h3 class="hiw-title" data-lang="en">You choose and pay</h3>
+          <p class="hiw-text" data-lang="es">Recibes una cotización unificada con precio final y eliges pago al contado o a 30 días.</p>
+          <p class="hiw-text" data-lang="en">You get a unified quote with a final price and choose to pay now or in 30 days.</p>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-num">04</div>
+          <div class="hiw-ic">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l12-5 12 5v12l-12 5-12-5z"/><path d="M4 10l12 5 12-5M16 15v12"/><path d="M10 20l3 3 6-6" stroke="#00b873" stroke-width="2"/></svg>
+          </div>
+          <h3 class="hiw-title" data-lang="es">Recibes y cierras</h3>
+          <h3 class="hiw-title" data-lang="en">You receive and close</h3>
+          <p class="hiw-text" data-lang="es">Emitimos factura única, gestionamos la orden y monitoreamos el despacho hasta la entrega confirmada.</p>
+          <p class="hiw-text" data-lang="en">We issue a single invoice, manage the order and monitor the shipment through to confirmed delivery.</p>
+        </div>
+    </div>
+
+
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="stats-inner">
+    <div class="stats-header">
+      <h2 data-lang="es">
+        La infraestructura de procurement con IA <em>para empresas en Latinoamérica.</em>
+      </h2>
+      <h2 data-lang="en">
+        The AI procurement infrastructure <em>for companies across Latin America.</em>
+      </h2>
+      <p data-lang="es">
+        Agentes de IA que cotizan, financian y ejecutan cada pedido, conectando en tiempo real a compradores, proveedores y redes de transporte.
+      </p>
+      <p data-lang="en">
+        AI agents that quote, finance and execute every order, connecting buyers, suppliers and transport networks in real time.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     CLICKBOX · the live operation the technology was built inside
+     ════════════════════════════════════════════════════════════ -->
+<section class="section section-alt" id="clickbox">
+  <div class="section-inner">
+
+    <div class="hiw-head">
+      <div class="eyebrow" data-lang="es">EL LABORATORIO</div>
+      <div class="eyebrow" data-lang="en">THE LAB</div>
+      <h2 data-lang="es">De la operación real a <em>la infraestructura de IA.</em></h2>
+      <h2 data-lang="en">From a real operation to <em>AI infrastructure.</em></h2>
+    </div>
+
+    <div class="cbx cbx--stack">
+      <div class="cbx-copy">
+        <img class="cbx-logo" src="clickbox-logo.png" alt="Clickbox" width="1000" height="353" loading="lazy">
+        <p class="cbx-lead" data-lang="es">
+          Clickbox nació en 2017 como distribuidor tradicional, y ocho años de operación real
+          lo convirtieron en nuestro laboratorio: ahí probamos esquemas logísticos, tecnologías
+          y modelos de negocio con proveedores, inventario, precios y despachos de verdad.
+          Desde 2024 corre sobre el stack de Ventu, y cada mejora del motor se prueba ahí antes
+          de llegar a un cliente.
+        </p>
+        <p class="cbx-lead" data-lang="en">
+          Clickbox started in 2017 as a traditional distributor, and eight years of real trading
+          turned it into our lab: the place where we test logistics models, technology and
+          business models against real suppliers, inventory, pricing and deliveries. Since 2024
+          it has run on the Ventu stack, and every improvement to the engine is proven there
+          before it reaches a customer.
+        </p>
+        <a class="cbx-link" href="https://clickbox.cl" target="_blank" rel="noopener">
+          <span data-lang="es">Ver la operación en clickbox.cl</span>
+          <span data-lang="en">See the operation at clickbox.cl</span>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h7v7"/><path d="M13 3L4 12"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="cbx-pf">
+      <article class="cbx-pf-card">
+        <div class="cbx-pf-lab" data-lang="es">INTEGRACIÓN DE CATÁLOGO</div>
+        <div class="cbx-pf-lab" data-lang="en">CATALOGUE INTEGRATION</div>
+        <div class="cbx-pf-fig">
+          <span class="cbx-pf-from" data-lang="es">7.000</span>
+          <span class="cbx-pf-from" data-lang="en">7,000</span>
+          
+          <span class="cbx-pf-arrow" aria-hidden="true"><svg viewBox="0 0 32 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h28"/><path d="M24 1.5L29.5 6 24 10.5"/></svg></span>
+          <span class="cbx-pf-to" data-lang="es">21.000</span>
+          <span class="cbx-pf-to" data-lang="en">21,000</span>
+          <span class="cbx-pf-word" data-lang="es">SKUs</span><span class="cbx-pf-word" data-lang="en">SKUs</span>
+        </div>
+        <div class="cbx-pf-sub" data-lang="es">en 3 días</div>
+        <div class="cbx-pf-sub" data-lang="en">in 3 days</div>
+        <p class="cbx-pf-txt" data-lang="es">Incluyendo el software que hubo que construir. Los próximos 100.000 entran a la misma velocidad.</p>
+        <p class="cbx-pf-txt" data-lang="en">Including the software we had to build. The next 100,000 come in just as fast.</p>
+      </article>
+      <article class="cbx-pf-card">
+        <div class="cbx-pf-lab" data-lang="es">EFECTO MEDIDO</div>
+        <div class="cbx-pf-lab" data-lang="en">MEASURED EFFECT</div>
+        <div class="cbx-pf-fig">
+          <span class="cbx-pf-from" data-lang="es">3×</span>
+          <span class="cbx-pf-from" data-lang="en">3×</span>
+          <span class="cbx-pf-word" data-lang="es">catálogo</span><span class="cbx-pf-word" data-lang="en">catalogue</span>
+          <span class="cbx-pf-arrow" aria-hidden="true"><svg viewBox="0 0 32 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h28"/><path d="M24 1.5L29.5 6 24 10.5"/></svg></span>
+          <span class="cbx-pf-to" data-lang="es">2,07×</span>
+          <span class="cbx-pf-to" data-lang="en">2.07×</span>
+          <span class="cbx-pf-word" data-lang="es">ingreso</span><span class="cbx-pf-word" data-lang="en">revenue</span>
+        </div>
+        <p class="cbx-pf-txt" data-lang="es">Sostenido el mes siguiente, sin campaña ni evento promocional.</p>
+        <p class="cbx-pf-txt" data-lang="en">Held the following month, with no campaign or promotional event.</p>
+      </article>
+      <article class="cbx-pf-card">
+        <div class="cbx-pf-lab" data-lang="es">TICKET PROMEDIO · CANAL DIRECTO</div>
+        <div class="cbx-pf-lab" data-lang="en">AVERAGE ORDER VALUE · DIRECT CHANNEL</div>
+        <div class="cbx-pf-fig">
+          <span class="cbx-pf-from" data-lang="es">US$220</span>
+          <span class="cbx-pf-from" data-lang="en">US$220</span>
+          
+          <span class="cbx-pf-arrow" aria-hidden="true"><svg viewBox="0 0 32 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h28"/><path d="M24 1.5L29.5 6 24 10.5"/></svg></span>
+          <span class="cbx-pf-to" data-lang="es">US$550</span>
+          <span class="cbx-pf-to" data-lang="en">US$550</span>
+          
+        </div>
+        <p class="cbx-pf-txt" data-lang="es">El mismo comprador arma una canasta 2,5× más grande cuando encuentra todo en un lugar.</p>
+        <p class="cbx-pf-txt" data-lang="en">The same buyer builds a basket 2.5× larger when everything is in one place.</p>
+      </article>
+      <article class="cbx-pf-card">
+        <div class="cbx-pf-lab" data-lang="es">OPERACIÓN CONTINUA</div>
+        <div class="cbx-pf-lab" data-lang="en">CONTINUOUS OPERATION</div>
+        <div class="cbx-pf-fig">
+          <span class="cbx-pf-from" data-lang="es">2024</span>
+          <span class="cbx-pf-from" data-lang="en">2024</span>
+          
+          <span class="cbx-pf-arrow" aria-hidden="true"><svg viewBox="0 0 32 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h28"/><path d="M24 1.5L29.5 6 24 10.5"/></svg></span>
+          <span class="cbx-pf-to" data-lang="es">2026</span>
+          <span class="cbx-pf-to" data-lang="en">2026</span>
+          
+        </div>
+        <div class="cbx-pf-sub" data-lang="es">en producción sobre Ventu</div>
+        <div class="cbx-pf-sub" data-lang="en">in production on Ventu</div>
+        <p class="cbx-pf-txt" data-lang="es">Proveedores, precios, inventario y despachos reales. No es un piloto.</p>
+        <p class="cbx-pf-txt" data-lang="en">Real suppliers, pricing, inventory and deliveries. Not a pilot.</p>
+      </article>
+    </div>
+
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     STACK · one diagram: the core, three engines, twelve modules
+     ════════════════════════════════════════════════════════════ -->
+<section class="section" id="stack">
+  <div class="section-inner">
+
+    <div class="hiw-head">
+      <div class="eyebrow" data-lang="es">STACK TECNOLÓGICO</div>
+      <div class="eyebrow" data-lang="en">TECHNOLOGY STACK</div>
+      <h2 data-lang="es">Un cerebro de IA, tres motores <em>y once módulos.</em></h2>
+      <h2 data-lang="en">One AI brain, three engines <em>and eleven modules.</em></h2>
+    </div>
+
+    <div class="stk">
+
+      <article class="stk-core">
+        <div class="stk-core-top">
+          <div class="stk-core-mark">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8.5A3.5 3.5 0 0 1 8.5 5h15A3.5 3.5 0 0 1 27 8.5v10a3.5 3.5 0 0 1-3.5 3.5H14l-6.5 4.5V22h-.5A3.5 3.5 0 0 1 5 18.5z"/><path d="M16 8.5l1.55 3.45L21 13.5l-3.45 1.55L16 18.5l-1.55-3.45L11 13.5l3.45-1.55z"/></svg>
+          </div>
+          <div class="stk-core-body">
+            <div class="stk-kicker" data-lang="es">EL CEREBRO</div>
+            <div class="stk-kicker" data-lang="en">THE BRAIN</div>
+            <div class="stk-core-line">
+              <h3 class="stk-core-title"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Agent</h3>
+              <span class="stk-tag stk-tag--beta" data-lang="es">Beta privada</span>
+              <span class="stk-tag stk-tag--beta" data-lang="en">Private beta</span>
+            </div>
+            <p class="stk-benefit" data-lang="es">El comprador virtual que entiende WhatsApp y orquesta toda la plataforma en segundos.</p>
+            <p class="stk-benefit" data-lang="en">The virtual buyer that understands WhatsApp and orchestrates the whole platform in seconds.</p>
+            <p class="stk-desc" data-lang="es">Capa de orquestación agéntica con acceso nativo a catálogo, inventario, precios y logística. Interpreta la intención en lenguaje natural y ejecuta cada módulo en el orden correcto, con permisos y trazabilidad total. Cotizar, reponer o cerrar una venta ocurre directamente en el chat.</p>
+            <p class="stk-desc" data-lang="en">An agentic orchestration layer with native access to catalogue, inventory, pricing and logistics. It reads intent in natural language and runs each module in the right order, with full permissions and traceability. Quoting, restocking or closing a sale happens right in the chat.</p>
+          </div>
+        </div>
+      </article>
+
+      <div class="stk-branch" aria-hidden="true">
+        <span class="stk-branch-stem"></span>
+        <span class="stk-branch-bar"></span>
+        <span class="stk-branch-drop"></span>
+        <span class="stk-branch-drop"></span>
+        <span class="stk-branch-drop"></span>
+      </div>
+
+      <div class="stk-engines">
+        <div class="stk-engine stk-engine--1">
+          <div class="stk-engine-head">
+            <div class="stk-num">01</div>
+            <h3 class="stk-title" data-lang="es">Data &amp; Supply Hub</h3>
+            <h3 class="stk-title" data-lang="en">Data &amp; Supply Hub</h3>
+          </div>
+          <div class="stk-modlist">
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="16" height="18" rx="2"/><path d="M8 5h16a2 2 0 0 1 2 2v16"/><path d="M8 15h8M8 20h5"/><path d="M24 16l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Catalog AI</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Limpia, estandariza y enriquece la información de miles de productos automáticamente.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It cleans, standardises and enriches information for thousands of products automatically.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">PIM que recibe planillas, PDFs, feeds y APIs, mapea atributos contra un esquema canónico por categoría, deduplica por código de parte y completa lo que falta con modelos de lenguaje. Semanas de limpieza manual pasan a minutos.</p>
+                  <p class="stk-modcard-tech" data-lang="en">A PIM that reads spreadsheets, PDFs, feeds and APIs, maps attributes onto a canonical per-category schema, deduplicates by part number and fills the gaps with language models. Weeks of manual clean-up become minutes.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="11" width="9" height="10" rx="2"/><rect x="21" y="11" width="9" height="10" rx="2"/><path d="M11 16h10"/><path d="M18 13l3 3-3 3"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Supply</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Conecta en tiempo real con proveedores para verificar precios, stock y disponibilidad.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It connects to suppliers in real time to verify prices, stock and availability.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Integración por API, archivo o EDI que normaliza a cada proveedor en un modelo único de disponibilidad y resuelve el mapeo de SKU. Pricing y OMS deciden sobre costo y lead time reales, no sobre una planilla vieja.</p>
+                  <p class="stk-modcard-tech" data-lang="en">Integration over API, file or EDI that normalises every supplier into a single availability model and resolves SKU mapping. Pricing and OMS then decide on real cost and lead time, not on a stale spreadsheet.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="8"/><path d="M20 20l7.5 7.5"/><path d="M14 10.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Search IA</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Buscador inteligente que entiende la intención del comprador y encuentra el producto exacto.</p>
+              <p class="stk-modcard-benefit" data-lang="en">A smart search engine that understands buyer intent and finds the exact product.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Motor híbrido de búsqueda léxica combinado con embeddings semánticos y reordenamiento (reranking). Maneja códigos de parte, equivalencias, sinónimos técnicos y errores de tipeo. Indexable y optimizado para SEO, captando además demanda orgánica.</p>
+                  <p class="stk-modcard-tech" data-lang="en">A hybrid engine of lexical search combined with semantic embeddings and reranking. It handles part numbers, equivalents, technical synonyms and typos. Indexable and SEO-ready, so it also captures organic demand.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5v22h24"/><path d="M8 21l6-7 5 4 8-9"/><path d="M27 9h-4.5M27 9v4.5"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Intelligence</h4>
+                <span class="stk-tag stk-tag--beta" data-lang="es">Beta privada</span>
+                <span class="stk-tag stk-tag--beta" data-lang="en">Private beta</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Analiza el historial de compras y convierte datos en decisiones automáticas de reabastecimiento.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It reads purchase history and turns data into automatic replenishment decisions.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Capa analítica sobre los eventos del stack que proyecta demanda y calcula punto de reposición y cantidad por SKU, considerando lead time y cumplimiento real de cada proveedor. Entrega órdenes de compra sugeridas, no un tablero.</p>
+                  <p class="stk-modcard-tech" data-lang="en">An analytics layer over the stack's events that forecasts demand and computes reorder point and quantity per SKU, factoring in each supplier's lead time and actual performance. It delivers suggested purchase orders, not a dashboard.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="stk-engine stk-engine--2">
+          <div class="stk-engine-head">
+            <div class="stk-num">02</div>
+            <h3 class="stk-title" data-lang="es">Smart Commerce &amp; Fintech</h3>
+            <h3 class="stk-title" data-lang="en">Smart Commerce &amp; Fintech</h3>
+          </div>
+          <div class="stk-modlist">
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.4V6a2 2 0 0 1 2-2h9.4a2 2 0 0 1 1.4.6l10.2 10.2a2 2 0 0 1 0 2.8l-9.4 9.4a2 2 0 0 1-2.8 0L4.6 16.8A2 2 0 0 1 4 15.4z"/><circle cx="10" cy="10" r="1.9"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Pricing</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Calcula márgenes, reglas de descuento y precios competitivos automáticamente.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It computes margins, discount rules and competitive prices automatically.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Motor de reglas que resuelve el precio en tiempo de consulta según cliente, volumen y canal, con márgenes piso, repricing dentro de bandas definidas y alertas bajo margen objetivo. Cada cambio queda auditable.</p>
+                  <p class="stk-modcard-tech" data-lang="en">A rules engine that resolves price at query time by customer, volume and channel, with margin floors, repricing inside defined bands and alerts below target margin. Every change stays auditable.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="6" r="3"/><circle cx="6" cy="25" r="3"/><circle cx="26" cy="25" r="3"/><path d="M16 9v6M16 15L8 21.5M16 15l8 6.5"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Channels</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Sincroniza el catálogo y la oferta en Shopify, Mercado Libre y múltiples canales simultáneamente.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It syncs catalogue and offers across Shopify, Mercado Libre and several channels simultaneously.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Conectores nativos con sincronización bidireccional de catálogo, precio, stock y órdenes, cada canal con su mapeo y política de precio desde una sola fuente de verdad. El stock se reserva de forma centralizada: no hay sobreventa.</p>
+                  <p class="stk-modcard-tech" data-lang="en">Native connectors with two-way sync of catalogue, price, stock and orders, each channel carrying its own mapping and pricing policy from a single source of truth. Stock is reserved centrally, so nothing oversells.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h13l6 6v18H7z"/><path d="M20 4v6h6"/><path d="M11 16h10M11 20h10M11 24h6"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Billing</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Emite y gestiona automáticamente facturas electrónicas consolidadas ante el SII.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It issues and manages consolidated electronic invoices with the Chilean tax authority automatically.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Emisión de DTE integrada con el SII (factura, guía de despacho y notas de crédito) desde el evento de venta o despacho, con folios, firma electrónica y acuses. Consolida varios despachos en un documento y concilia contra la orden en OMS.</p>
+                  <p class="stk-modcard-tech" data-lang="en">Electronic tax document issuance integrated with Chile's SII (invoice, dispatch note, credit notes) triggered by the sale or dispatch event, with folio numbers, digital signature and acknowledgements. It consolidates several dispatches into one document and reconciles against the order in OMS.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="8" width="28" height="16" rx="2.5"/><path d="M2 14h28"/><path d="M7 19h5"/><circle cx="24" cy="19" r="3.2"/><path d="M24 17.2V19l1.3 1"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Financing</h4>
+                <span class="stk-tag stk-tag--soon" data-lang="es">En desarrollo</span>
+                <span class="stk-tag stk-tag--soon" data-lang="en">In development</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Financiamiento B2B a 30 días integrado en el checkout con partners regulados.</p>
+              <p class="stk-modcard-benefit" data-lang="en">B2B financing at 30 days built into checkout with regulated partners.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Evaluación crediticia en línea durante el flujo de compra, sin redirigir al comprador fuera del checkout. La orden se procesa únicamente tras la aprobación. El partner financiero asume el riesgo crediticio mientras la operación liquida al contado.</p>
+                  <p class="stk-modcard-tech" data-lang="en">Credit assessment online during the purchase flow, without redirecting the buyer out of checkout. The order only proceeds once approved. The financing partner carries the credit risk while the operation settles in cash.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="stk-engine stk-engine--3">
+          <div class="stk-engine-head">
+            <div class="stk-num">03</div>
+            <h3 class="stk-title" data-lang="es">Asset-Light Logistics</h3>
+            <h3 class="stk-title" data-lang="en">Asset-Light Logistics</h3>
+          </div>
+          <div class="stk-modlist">
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="2"/><path d="M11 11h10M11 16h7"/><path d="M11 21.5l2.5 2.5L19 18.5"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> OMS</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Centraliza, orquesta y gestiona todas las órdenes en un solo lugar.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It centralises, orchestrates and manages every order in one place.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Normaliza órdenes de cualquier origen a un modelo único con máquina de estados unificada. Rutea mediante reglas hacia la bodega, tienda o proveedor (dropshipping) que mejor resuelva cada ítem, gestionando split, backorder y reasignación ante quiebre.</p>
+                  <p class="stk-modcard-tech" data-lang="en">It normalises orders from any origin into a single model with a unified state machine. It routes by rules to the warehouse, store or dropship supplier that best resolves each item, handling splits, backorders and reassignment on stockout.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h26v6H3z"/><path d="M5 15v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V15"/><path d="M13 20h6"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Fulfillment</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Gestión de recepción, preparación de pedidos (picking &amp; packing) y despacho express.</p>
+              <p class="stk-modcard-benefit" data-lang="en">Receiving, order preparation (picking and packing) and express dispatch.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">WMS que valida recepciones contra orden de compra, picking guiado por oleadas, packing verificado por escaneo y expedición con manifiesto desde dispositivos móviles. Registra la trazabilidad por operador, y los cortes horarios de los couriers ordenan la oleada para despachar el mismo día.</p>
+                  <p class="stk-modcard-tech" data-lang="en">A WMS that validates receipts against the purchase order, wave-guided picking, scan-verified packing and manifest-based dispatch from mobile devices. It records traceability by operator, and courier cut-off times drive the wave so same-day dispatch is met.</p>
+                </div>
+              </div>
+            </article>
+            <article class="stk-modcard">
+              <div class="stk-modcard-head">
+                <div class="stk-modcard-ic">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h14v13H3z"/><path d="M17 13h5l4.5 4.5V21H17z"/><circle cx="9" cy="24" r="2.6"/><circle cx="22" cy="24" r="2.6"/></svg>
+                </div>
+                <h4 class="stk-modcard-name"><span class="ventu-mark" role="img" aria-label="Ventu"></span> Logistics</h4>
+                <span class="stk-tag stk-tag--live" data-lang="es">En producción</span>
+                <span class="stk-tag stk-tag--live" data-lang="en">Live</span>
+              </div>
+              <p class="stk-modcard-benefit" data-lang="es">Asigna transportistas externos y rastrea el estado de cada entrega en tiempo real.</p>
+              <p class="stk-modcard-benefit" data-lang="en">It assigns third-party carriers and tracks the status of every delivery in real time.</p>
+              <button class="stk-modcard-more" type="button" aria-expanded="false">
+                <span class="sr-only" data-lang="es">Ver detalle técnico</span>
+                <span class="sr-only" data-lang="en">Show technical detail</span>
+                <span class="stk-chev" aria-hidden="true"></span>
+              </button>
+              <div class="stk-modcard-panel">
+                <div class="stk-modcard-panel-in">
+                  <p class="stk-modcard-tech" data-lang="es">Capa multi-courier que asigna por destino, peso, costo y promesa de entrega, genera etiquetas y consolida el tracking en una vista única hasta la prueba de entrega. Registra cumplimiento por courier para renegociar con datos.</p>
+                  <p class="stk-modcard-tech" data-lang="en">A multi-carrier layer that assigns by destination, weight, cost and delivery promise, generates labels and consolidates tracking into a single view through to proof of delivery. It records performance by carrier so rates get renegotiated with data.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="faq-section" id="faq">
+  <div class="faq-inner">
+    <div class="faq-header">
+      <div class="eyebrow" data-lang="es">PREGUNTAS FRECUENTES</div>
+      <div class="eyebrow" data-lang="en">FAQ</div>
+      <h2 data-lang="es">Lo que <em>nos preguntan más.</em></h2>
+      <h2 data-lang="en">What people <em>ask us most.</em></h2>
+      <p data-lang="es">
+        Si tu pregunta no aparece aquí, escríbenos a soporte@ventu.cl y
+        respondemos el mismo día.
+      </p>
+      <p data-lang="en">
+        If your question isn't here, email us at soporte@ventu.cl and we
+        respond the same day.
+      </p>
+    </div>
+
+    <div class="faq-list">
+
+      <div class="faq-item open">
+        <button class="faq-q">
+          <span data-lang="es">¿Qué puedo pedirle a Ventu?</span>
+          <span data-lang="en">What can I ask Ventu for?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              Todo lo que tu empresa necesita para operar o ejecutar un proyecto: ferretería, eléctrico, redes, seguridad, aseo, oficina y equipamiento técnico. Si un producto no está en catálogo lo buscamos con nuestra red de proveedores y te decimos si existe y a qué precio.
+            </span>
+            <span data-lang="en">
+              Everything your company needs to operate or run a project: hardware, electrical, networking, security, cleaning, office and technical equipment. If a product is not in the catalogue we source it through our supplier network and tell you whether it exists and at what price.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Cómo hago un pedido?</span>
+          <span data-lang="en">How do I place an order?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              Escribes por WhatsApp o correo con lo que necesitas, en el formato que ya tengas: una foto de la caja, un PDF, una planilla o un mensaje escrito. No necesitas códigos de parte ni fichas técnicas.
+            </span>
+            <span data-lang="en">
+              You write on WhatsApp or by email with what you need, in whatever format you already have: a photo of the box, a PDF, a spreadsheet or a plain message. No part numbers or spec sheets required.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Ventu es un marketplace donde yo busco el producto?</span>
+          <span data-lang="en">Is Ventu a marketplace where I do the searching?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              No. Tú pides y nosotros compramos. Ventu cotiza entre varios proveedores, verifica stock y precio reales, ejecuta la compra y coordina la entrega. Tú recibes una cotización, una factura y un solo contacto.
+            </span>
+            <span data-lang="en">
+              No. You ask and we buy. Ventu quotes across several suppliers, verifies real stock and price, executes the purchase and coordinates delivery. You get one quote, one invoice and one point of contact.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Cuánto cuesta usar Ventu?</span>
+          <span data-lang="en">What does using Ventu cost?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              No hay suscripción, mínimo de compra ni contrato. Pagas el producto y el despacho de ese pedido, y ambos aparecen calculados antes de que confirmes. Nuestro margen está dentro del precio que te cotizamos, así que lo que ves es lo que pagas.
+            </span>
+            <span data-lang="en">
+              There is no subscription, order minimum or contract. You pay for the product and that order's delivery, both shown calculated before you confirm. Our margin sits inside the price we quote, so what you see is what you pay.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿En cuánto tiempo recibo la cotización y el pedido?</span>
+          <span data-lang="en">How fast do I get the quote and the order?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              La cotización llega en minutos, con stock y precio ya verificados. En la Región Metropolitana entregamos el mismo día si pides antes de las 9:00. En regiones despachamos con couriers, en general al día siguiente.
+            </span>
+            <span data-lang="en">
+              The quote arrives in minutes, with stock and price already verified. In Santiago we deliver the same day if you order before 9:00. Elsewhere in Chile we ship through couriers, usually next day.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Cómo funciona el crédito a 30 días?</span>
+          <span data-lang="en">How does the 30-day credit work?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              Se evalúa junto con el pedido, sin trámite aparte, y financia esa compra calzada a su factura. No es una línea abierta ni una tarjeta, y queda sujeto a la aprobación de nuestros partners financieros.
+            </span>
+            <span data-lang="en">
+              It is assessed alongside the order, with no separate paperwork, and finances that purchase matched to its invoice. It is not an open line or a card, and it remains subject to approval by our financing partners.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Cómo llega la factura si el pedido viene de varios proveedores?</span>
+          <span data-lang="en">How does invoicing work when one order comes from several suppliers?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              Llega una sola factura electrónica emitida ante el SII con el RUT de tu empresa, aunque los productos vengan de proveedores distintos. Es la diferencia entre conciliar un documento y conciliar cinco.
+            </span>
+            <span data-lang="en">
+              You get a single electronic invoice issued through Chile's tax authority under your company's tax ID, even when the products come from different suppliers. That is the difference between reconciling one document and reconciling five.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Qué pasa si algo llega mal, incompleto o no era lo que necesitaba?</span>
+          <span data-lang="en">What if something arrives wrong, incomplete or not what I needed?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              Lo reportas por el mismo canal donde pediste y nosotros gestionamos el reemplazo, la devolución o el ajuste de la factura con el proveedor. No tienes que llamar ni perseguir a nadie.
+            </span>
+            <span data-lang="en">
+              You report it through the same channel you ordered from and we handle the replacement, the return or the invoice adjustment with the supplier. You do not have to call or chase anyone.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span data-lang="es">¿Tengo que cambiar a mis proveedores actuales?</span>
+          <span data-lang="en">Do I have to drop my current suppliers?</span>
+          <span class="toggle"></span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            <span data-lang="es">
+              No. Ventu resuelve lo que hoy te cuesta tiempo: cotizar, comparar, perseguir stock y coordinar entregas. La mayoría parte por las compras urgentes o dispersas y mantiene sus acuerdos grandes donde están.
+            </span>
+            <span data-lang="en">
+              No. Ventu takes on what costs you time today: quoting, comparing, chasing stock and coordinating deliveries. Most customers start with the urgent or scattered purchases and keep their large agreements where they are.
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     2-CTAs BANNER · Driver + Supplier
+     ════════════════════════════════════════════════════════════ -->
+<section class="three-ctas">
+  <div class="three-ctas-inner">
+    <div class="three-ctas-grid two-cols">
+
+      <a href="drivers.html" class="cta-card driver">
+        <div class="cta-eyebrow" data-lang="es">→ <span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> B2B DELIVERY</div>
+        <div class="cta-eyebrow" data-lang="en">→ <span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> B2B DELIVERY</div>
+        <h3 data-lang="es">Sé transportista <span class="ventu-mark" role="img" aria-label="Ventu"></span></h3>
+        <h3 data-lang="en">Become a <span class="ventu-mark" role="img" aria-label="Ventu"></span> carrier</h3>
+        <p data-lang="es">
+          Cada pedido llega con retiro, entrega e instrucciones claras. Capacitación inicial y acompañamiento al empezar.
+        </p>
+        <p data-lang="en">
+          Every order arrives with pickup, delivery and clear instructions. Onboarding and support when you start.
+        </p>
+        <span class="cta-btn" data-lang="es">Conocer más →</span>
+        <span class="cta-btn" data-lang="en">Learn more →</span>
+      </a>
+
+      <a href="suppliers.html" class="cta-card merchant">
+        <div class="cta-eyebrow" data-lang="es">→ <span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> PARA PROVEEDORES</div>
+        <div class="cta-eyebrow" data-lang="en">→ <span class="ventu-mark ventu-mark--caps" role="img" aria-label="Ventu"></span> FOR SUPPLIERS</div>
+        <h3 data-lang="es">Vende más sin cambiar cómo trabajas</h3>
+        <h3 data-lang="en">Sell more without changing how you work</h3>
+        <p data-lang="es">
+          Conecta tu catálogo una sola vez y accede a demanda B2B nueva.
+          Sin comisiones ni costos adicionales, sin contrato anual ni
+          mínimos.
+        </p>
+        <p data-lang="en">
+          Connect your catalog once and access new B2B demand. No
+          commissions or extra fees, no annual contract or minimums.
+        </p>
+        <span class="cta-btn" data-lang="es">Conocer más →</span>
+        <span class="cta-btn" data-lang="en">Learn more →</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-inner">
+    <h2 class="cta-h2" data-lang="es">
+      Tu próxima compra
+      <em>puede tomar cinco minutos.</em>
+    </h2>
+    <h2 class="cta-h2" data-lang="en">
+      Your next purchase
+      <em>can take five minutes.</em>
+    </h2>
+
+    <p class="cta-sub" data-lang="es">
+      Mándanos lo que necesitas, como lo tengas. Nosotros nos encargamos
+      del resto.
+    </p>
+    <p class="cta-sub" data-lang="en">
+      Send us what you need, in whatever form you have it. We take care of
+      the rest.
+    </p>
+
+    <div class="cta-ctas">
+      <a href="#registro" data-registro="seller" class="btn btn-primary btn-large" data-lang="es">Quiero probar Ventu →</a>
+      <a href="#registro" data-registro="seller" class="btn btn-primary btn-large" data-lang="en">I want to try Ventu →</a>
+      <a href="mailto:soporte@ventu.cl" class="btn btn-secondary btn-large" data-lang="es">Hablar con nosotros</a>
+      <a href="mailto:soporte@ventu.cl" class="btn btn-secondary btn-large" data-lang="en">Talk to us</a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand">
+        <img src="ventu-logo.png" alt="Ventu" class="brand-mark"/>
+      </div>
+      <p class="footer-tagline" data-lang="es">
+        Ventu es la capa agéntica de compras empresariales: cotiza, financia
+        y ejecuta cada compra de punta a punta.
+      </p>
+      <p class="footer-tagline" data-lang="en">
+        Ventu is the B2B agentic commerce layer: an agent that sources,
+        finances and fulfills every business purchase.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">PRODUCTO</h4>
+      <h4 data-lang="en">PRODUCT</h4>
+      <ul>
+        <li><a href="#stack" data-lang="es">Tecnología</a><a href="#stack" data-lang="en">Technology</a></li>
+        <li><a href="#clickbox" data-lang="es">Clickbox</a><a href="#clickbox" data-lang="en">Clickbox</a></li>
+        <li><a href="#faq" data-lang="es">Preguntas frecuentes</a><a href="#faq" data-lang="en">FAQ</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">RED</h4>
+      <h4 data-lang="en">NETWORK</h4>
+      <ul>
+        <li><a href="drivers.html" data-lang="es">Para transportistas</a><a href="drivers.html" data-lang="en">For carriers</a></li>
+        <li><a href="suppliers.html" data-lang="es">Para proveedores</a><a href="suppliers.html" data-lang="en">For suppliers</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 data-lang="es">CONTACTO</h4>
+      <h4 data-lang="en">CONTACT</h4>
+      <ul>
+        <li><a href="mailto:soporte@ventu.cl">soporte@ventu.cl</a></li>
+        <li><span data-lang="es">Santiago, Chile</span><span data-lang="en">Santiago, Chile</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span data-lang="es">© 2026 VENTU · LAS BELLOTAS 199, OF. 62, PROVIDENCIA, SANTIAGO</span>
+    <span data-lang="en">© 2026 VENTU · LAS BELLOTAS 199, OF. 62, PROVIDENCIA, SANTIAGO</span>
+    <span>VENTU.CL</span>
+  </div>
+</footer>
+
+
+<script src="main.js"></script>
+</body>
+</html>
