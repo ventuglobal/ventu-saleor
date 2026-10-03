@@ -13,6 +13,10 @@ MAIL_FROM = os.getenv("MAIL_FROM", "")
 # Respuestas de los clientes. Vacío = responden al remitente.
 MAIL_REPLY_TO = os.getenv("MAIL_REPLY_TO", "")
 
+# Nombre que encabeza los avisos de /enviar. Los correos de cuenta usan el
+# nombre de la tienda que manda Saleor.
+NOMBRE_TIENDA = os.getenv("CORREO_NOMBRE_TIENDA", "") or "Ventu"
+
 # Tiempo máximo de espera a Resend. Saleor reintenta los webhooks que fallan,
 # así que es preferible cortar y reintentar a quedarse colgado.
 RESEND_TIMEOUT = float(os.getenv("RESEND_TIMEOUT", "10") or 10)

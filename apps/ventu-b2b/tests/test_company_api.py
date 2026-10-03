@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from ventu_b2b import config, main
+from ventu_b2b import avisos, config, main
 from ventu_b2b.company import models
 from ventu_b2b.company import service as company_service
 from ventu_b2b.company.models import Company
@@ -134,7 +135,7 @@ def _saleor(meta=None, privada=None, existe=True, capturas=None, legado=False):
             if not existe:
                 return {"data": {"user": None}}
             return {"data": {"user": {
-                "id": USUARIO, "email": "compras@ejemplo.cl",
+                "id": USUARIO, "email": "compras@ejemplo.cl", "firstName": "Ana",
                 "metadata": [{"key": k, "value": v} for k, v in meta.items()],
                 "privateMetadata": [{"key": k, "value": v} for k, v in privada.items()],
             }}}
@@ -365,6 +366,145 @@ def test_el_espejo_no_decide_la_aprobacion(monkeypatch, cliente):
                         _saleor(meta={models.K_ESTADO: "aprobada"},
                                 privada={models.K_NIVEL: "retail-cl"}))
     assert cliente.get(f"/company/de-usuario/{USUARIO}").json()["aprobada"] is False
+
+
+# ───────────────────────── aviso de empresa aprobada ─────────────────────────
+
+class _Correo:
+    """Ventu Correo falso: guarda cada llamada y responde lo que se le pide.
+    Una respuesta que es una excepción se lanza, como haría httpx."""
+
+    def __init__(self, *respuestas):
+        self.respuestas = list(respuestas) or [
+            httpx.Response(200, json={"enviado": True, "id": "msg_1", "error": None})]
+        self.llamadas = []
+
+    def __call__(self, url, json, headers):
+        self.llamadas.append((url, json, headers))
+        r = self.respuestas.pop(0) if len(self.respuestas) > 1 else self.respuestas[0]
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+
+@pytest.fixture
+def correo(monkeypatch):
+    monkeypatch.setattr(config, "CORREO_URL", "https://correo.test")
+    monkeypatch.setattr(config, "CORREO_SERVICE_TOKEN", "tok")
+    monkeypatch.setattr(config, "STOREFRONT_URL", "https://tienda.test")
+    falso = _Correo()
+    monkeypatch.setattr(avisos, "_publicar", falso)
+    return falso
+
+
+def _aprobar(monkeypatch, cliente, **saleor):
+    saleor.setdefault("meta", {models.K_ESTADO: "pendiente"})
+    saleor.setdefault("privada", {models.K_NIVEL: "retail-cl"})
+    monkeypatch.setattr(company_service, "gql", _saleor(**saleor))
+    return cliente.patch(f"/company/{USUARIO}", json={"nivel_precio": "b2b-cl"})
+
+
+def test_aprobar_avisa_al_cliente(monkeypatch, cliente, correo):
+    r = _aprobar(monkeypatch, cliente)
+    assert r.status_code == 200
+    assert r.json()["aviso_cliente"] == {"enviado": True, "id": "msg_1"}
+
+    (url, cuerpo, cabeceras), = correo.llamadas
+    assert url == "https://correo.test/enviar"
+    assert cabeceras == {"Authorization": "Bearer tok"}
+    assert cuerpo["para"] == "compras@ejemplo.cl"
+    assert cuerpo["asunto"] == "Tu empresa ya puede comprar en Ventu"
+    assert cuerpo["etiqueta"] == "empresa-aprobada"
+    assert cuerpo["clave_idempotencia"].startswith("empresa-aprobada-")
+    aviso = cuerpo["aviso"]
+    assert aviso["nombre"] == "Ana"
+    assert "Comercial Ventu SpA (RUT 76.543.210-3)" in aviso["parrafos"][0]
+    assert aviso["boton"] == {"texto": "Ir a la tienda", "url": "https://tienda.test/es/b2b-cl"}
+
+
+@pytest.mark.parametrize("meta,privada,cambio", [
+    # ya aprobada: reenviar el nivel no es aprobarla otra vez
+    ({models.K_ESTADO: "aprobada"}, {models.K_NIVEL: "b2b-cl"}, {"nivel_precio": "b2b-cl"}),
+    # antigua sin espejo que ya compraba: reparar el espejo no es aprobarla
+    ({}, {models.K_NIVEL: "b2b-cl"}, {"nivel_precio": "b2b-cl"}),
+    # devolverla a revisión
+    ({models.K_ESTADO: "aprobada"}, {models.K_NIVEL: "b2b-cl"}, {"nivel_precio": "retail-cl"}),
+    # otro cambio sobre una pendiente
+    ({models.K_ESTADO: "pendiente"}, {models.K_NIVEL: "retail-cl"}, {"condicion_pago": "credito_30"}),
+    # otro cambio sobre una aprobada
+    ({models.K_ESTADO: "aprobada"}, {models.K_NIVEL: "b2b-cl"}, {"condicion_pago": "credito_30"}),
+])
+def test_solo_se_avisa_al_aprobar(monkeypatch, cliente, correo, meta, privada, cambio):
+    monkeypatch.setattr(company_service, "gql", _saleor(meta=meta, privada=privada))
+    r = cliente.patch(f"/company/{USUARIO}", json=cambio)
+    assert r.status_code == 200
+    assert "aviso_cliente" not in r.json()
+    assert correo.llamadas == []
+
+
+def test_reenviar_el_nivel_tras_una_escritura_a_medias_avisa(monkeypatch, cliente, correo):
+    """El nivel B2B alcanzó a escribirse pero el espejo no: el PATCH falló
+    antes de avisar. Reenviar el nivel repara el espejo y manda el aviso."""
+    r = _aprobar(monkeypatch, cliente, privada={models.K_NIVEL: "b2b-cl"})
+    assert r.json()["aviso_cliente"]["enviado"] is True
+    assert len(correo.llamadas) == 1
+
+
+def test_si_falla_la_escritura_no_se_avisa(monkeypatch, cliente, correo):
+    base = _saleor(meta={models.K_ESTADO: "pendiente"}, privada={models.K_NIVEL: "retail-cl"})
+
+    def gql(query, variables=None, **kw):
+        if "updatePrivateMetadata" in query:
+            return {"data": {"updatePrivateMetadata": {"errors": [{"message": "no"}]}}}
+        return base(query, variables, **kw)
+
+    monkeypatch.setattr(company_service, "gql", gql)
+    r = cliente.patch(f"/company/{USUARIO}", json={"nivel_precio": "b2b-cl"})
+    assert r.status_code == 502
+    assert correo.llamadas == []
+
+
+def test_sin_correo_configurado_aprueba_igual(monkeypatch, cliente, correo):
+    monkeypatch.setattr(config, "CORREO_SERVICE_TOKEN", "")
+    r = _aprobar(monkeypatch, cliente)
+    assert r.status_code == 200
+    assert r.json()["aprobada"] is True
+    assert r.json()["aviso_cliente"] == {"enviado": False, "motivo": "correo no configurado"}
+    assert correo.llamadas == []
+
+
+@pytest.mark.parametrize("respuesta,motivo", [
+    (httpx.Response(502, json={"enviado": False, "id": None, "error": "dominio no verificado"}),
+     "dominio no verificado"),
+    (httpx.Response(503, json={"detail": "CORREO_SERVICE_TOKEN no configurado"}),
+     "CORREO_SERVICE_TOKEN no configurado"),
+    (httpx.Response(500, text="Internal Server Error"), "HTTP 500"),
+    (httpx.ReadTimeout("lento"), "puede haber salido"),
+    (httpx.ConnectError("caído"), "inalcanzable"),
+])
+def test_si_el_correo_falla_la_aprobacion_queda(monkeypatch, cliente, correo, respuesta, motivo):
+    correo.respuestas = [respuesta]
+    r = _aprobar(monkeypatch, cliente)
+    assert r.status_code == 200
+    assert r.json()["aprobada"] is True
+    aviso = r.json()["aviso_cliente"]
+    assert aviso["enviado"] is False and motivo in aviso["motivo"]
+
+
+def test_reintenta_una_vez_si_el_correo_no_conecta(monkeypatch, cliente, correo):
+    """Ventu Correo reiniciando por un deploy: el segundo intento lo alcanza, y
+    la misma clave impide que Resend lo mande dos veces."""
+    correo.respuestas = [httpx.ConnectError("reiniciando"), *correo.respuestas]
+    r = _aprobar(monkeypatch, cliente)
+    assert r.json()["aviso_cliente"]["enviado"] is True
+    assert len(correo.llamadas) == 2
+    assert correo.llamadas[0][1] == correo.llamadas[1][1]
+
+
+def test_sin_storefront_el_aviso_va_sin_boton(monkeypatch, cliente, correo):
+    monkeypatch.setattr(config, "STOREFRONT_URL", "")
+    _aprobar(monkeypatch, cliente)
+    assert "boton" not in correo.llamadas[0][1]["aviso"]
 
 
 # ───────────────────────── /company/pendientes ─────────────────────────

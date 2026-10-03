@@ -29,6 +29,19 @@ curl -s https://<dominio>/enviar \
        "adjuntos": [{"nombre": "cotizacion.pdf", "contenido_b64": "…", "tipo": "application/pdf"}]}'
 ```
 
+En vez de `html` se puede mandar un `aviso`: solo el texto, y el servicio lo
+arma con el mismo marco que los correos de cuenta (nombre de la tienda,
+saludo, botón, enlace de respaldo y pie). Así los avisos de todos los servicios
+se ven iguales sin repetir HTML.
+
+```json
+{"para": "cliente@ejemplo.cl", "asunto": "Tu empresa ya puede comprar en Ventu",
+ "aviso": {"nombre": "Ana", "parrafos": ["…", "…"],
+           "boton": {"texto": "Ir a la tienda", "url": "https://…/es/b2b-cl"},
+           "pie": "…"},
+ "etiqueta": "empresa-aprobada", "clave_idempotencia": "…"}
+```
+
 Respuesta `{"enviado": bool, "id": str|null, "error": str|null}`: 200 si salió,
 503 si falta configurar el servicio, 502 si Resend lo rechazó. Quien reintenta
 debe mandar la misma `clave_idempotencia` (Resend descarta el duplicado 24 h).
@@ -55,6 +68,7 @@ MAIL_REPLY_TO=                # opcional
 SALEOR_API_URL=https://<saleor-api>/graphql/
 CORREO_SERVICE_TOKEN=...      # para /enviar; vacío = /enviar cerrado (503)
 CORREO_AUTH_ABIERTA=1         # solo local: /enviar sin token
+CORREO_NOMBRE_TIENDA=Ventu    # encabezado de los avisos (por omisión, Ventu)
 ```
 
 Instalación y comprobación: `docs/b2b/lanzamiento.md` § e.

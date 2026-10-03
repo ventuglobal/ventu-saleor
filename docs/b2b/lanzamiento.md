@@ -232,7 +232,8 @@ Pasos, en orden:
    con un remitente de un dominio verificado en Resend (p. ej.
    `Ventu <cuentas@send.clickbox.cl>`), `SALEOR_API_URL` y
    `CORREO_SERVICE_TOKEN` (`openssl rand -hex 32`, para los servicios que usen
-   `/enviar`). `GET /health` dice qué falta sin mostrar valores.
+   `/enviar`; ventu-b2b lo toma por referencia, ver § g). `GET /health` dice
+   qué falta sin mostrar valores.
 3. **Instalar la app en Saleor.** En el dashboard, *Apps → Install external
    app*, con `https://<dominio-de-ventu-correo>/manifest`. Pide `MANAGE_USERS` y
    se suscribe a `ACCOUNT_CONFIRMATION_REQUESTED` y
@@ -288,6 +289,7 @@ antes.
 | `PRICING_TIERS_B2B_CL` | vacío (usa `PRICING_TIERS`) | los productos sin tabla propia no tienen tramos. Es válido: la tabla del producto manda siempre | factores sobre el precio del canal (el neto en `b2b-cl`, § d): `1:1.0,10:0.9,50:0.8` |
 | `B2B_MARKUP_MINIMO` | `0` | `POST /cart` no revisa el margen de los precios negociados | fracción de utilidad neta sobre costo: `0.25` = 25 % (se combina con `B2B_COMISION_PASARELA`, también fracción) |
 | `B2B_STOCK_MINIMO_TRAMOS` | `0` | la tabla se publica con cualquier stock. Los tramos que el stock no cubre se descartan igual | entero: `10` |
+| `CORREO_URL` y `CORREO_SERVICE_TOKEN` | vacíos | la empresa se aprueba igual, pero el cliente no recibe el aviso (§ g): la respuesta lo dice y hay que avisar a mano | `https://<dominio-de-ventu-correo>` y la referencia `${{ventu-correo.CORREO_SERVICE_TOKEN}}`, que no copia el secreto |
 
 > **`B2B_DEFAULT_NIVEL_PRECIO` debe quedar en `retail-cl`.** Una empresa está
 > aprobada cuando su nivel es un canal de `B2B_CANALES`. Si el nivel por
@@ -349,14 +351,21 @@ curl -s -X PATCH "$B2B_URL/company/<user_id>" \
   -H "Authorization: Bearer $B2B_STAFF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"nivel_precio": "b2b-cl", "actor": "<tu-correo>"}' \
-  | jq '{aprobada, estado, nivel_precio}'
+  | jq '{aprobada, estado, nivel_precio, aviso_cliente}'
 ```
 
-Se espera `{"aprobada": true, "estado": "aprobada", "nivel_precio": "b2b-cl"}`.
-El cambio queda en `ventu.b2b.company_log` con tu `actor`.
+Se espera `"aprobada": true`, `"estado": "aprobada"`, `"nivel_precio": "b2b-cl"`
+y `"aviso_cliente": {"enviado": true, "id": "<id de Resend>"}`. El cambio queda
+en `ventu.b2b.company_log` con tu `actor`.
 
-**4. Avisar al cliente.** La app no envía correos: el aviso es manual, por correo
-o WhatsApp.
+**4. El aviso al cliente sale solo.** Al aprobarla, ventu-b2b le manda por
+Ventu Correo «Tu empresa ya puede comprar en Ventu», con un botón a la tienda
+B2B. Sale una sola vez: reenviar el nivel de una empresa ya aprobada, cambiarle
+otro dato o devolverla a revisión no manda nada. Si `aviso_cliente.enviado` es
+`false`, la empresa queda aprobada igual; `motivo` dice por qué no salió
+(«correo no configurado», servicio caído, Resend lo rechazó) y el aviso es
+manual, por correo o WhatsApp. Con «puede haber salido», revisa el log de
+`ventu-correo` antes de avisar de nuevo.
 
 **Otros casos:**
 
@@ -395,7 +404,8 @@ Hazla con una cuenta de prueba nueva, en ventana privada.
    producto con tramos, la tabla **sí** se ve.
 3. Si intentas crear el pedido, el mensaje debe ser exactamente «Tu empresa está
    en revisión. Te avisaremos cuando esté habilitada para comprar.».
-4. Como staff: la empresa aparece en `/company/pendientes`. Apruébala (§ g).
+4. Como staff: la empresa aparece en `/company/pendientes`. Apruébala (§ g) y
+   revisa que llegue el correo «Tu empresa ya puede comprar en Ventu».
 5. Recarga la página: ahora la transferencia está habilitada. Maxxa solo se
    habilita con crédito aprobado.
 6. Agrega al carrito un producto con tramos, en una cantidad que alcance uno. El

@@ -90,10 +90,25 @@ class AdjuntoIn(BaseModel):
     tipo: Optional[str] = None
 
 
+class BotonIn(BaseModel):
+    texto: str = Field(min_length=1, max_length=60)
+    url: str = Field(min_length=1, max_length=2000)
+
+
+class AvisoIn(BaseModel):
+    """Solo el texto del correo; el formato lo pone `plantillas.aviso`."""
+    nombre: Optional[str] = Field(default=None, max_length=100)
+    parrafos: List[str] = Field(min_length=1, max_length=10)
+    boton: Optional[BotonIn] = None
+    pie: str = Field(default="", max_length=500)
+
+
 class EnviarIn(BaseModel):
     para: Union[str, List[str]]
     asunto: str = Field(min_length=1, max_length=300)
-    html: str = Field(min_length=1)
+    # Uno de los dos: el HTML ya armado, o un aviso con el marco de la tienda.
+    html: Optional[str] = Field(default=None, min_length=1)
+    aviso: Optional[AvisoIn] = None
     texto: Optional[str] = None
     responder_a: Optional[str] = None
     adjuntos: List[AdjuntoIn] = []
@@ -110,11 +125,28 @@ def _respuesta(r: resend.Resultado) -> JSONResponse:
     return JSONResponse(cuerpo, status_code=503 if not r.configurado else 502)
 
 
+def _contenido(entrada: EnviarIn) -> tuple:
+    """`(html, texto)` del correo, del HTML recibido o del aviso."""
+    if (entrada.html is None) == (entrada.aviso is None):
+        raise HTTPException(422, "manda `html` o `aviso`, uno de los dos")
+    if entrada.html is not None:
+        return entrada.html, entrada.texto
+    a = entrada.aviso
+    boton, url = (a.boton.texto, a.boton.url) if a.boton else (None, None)
+    if url and urlsplit(url).scheme not in ("https", "http"):
+        # El enlace va a un botón: un `javascript:` ahí no tiene uso legítimo.
+        raise HTTPException(422, "el enlace del botón debe ser http(s)")
+    c = plantillas.aviso(entrada.asunto, a.nombre, a.parrafos, boton, url, a.pie,
+                         config.NOMBRE_TIENDA)
+    return c.html, entrada.texto or c.texto
+
+
 @app.post("/enviar", dependencies=[Depends(_requiere_servicio)])
 def enviar(entrada: EnviarIn) -> JSONResponse:
     para = resend.como_lista(entrada.para)
     if not para or len(para) > 50 or any("@" not in d for d in para):
         raise HTTPException(422, "destinatarios inválidos (1 a 50 correos)")
+    html, texto = _contenido(entrada)
     adjuntos = []
     total = 0
     for a in entrada.adjuntos:
@@ -126,8 +158,8 @@ def enviar(entrada: EnviarIn) -> JSONResponse:
         if total > _ADJUNTOS_MAX_BYTES:
             raise HTTPException(413, "adjuntos demasiado grandes")
         adjuntos.append(resend.Adjunto(a.nombre, contenido, a.tipo))
-    correo = resend.Correo(para=para, asunto=entrada.asunto, html=entrada.html,
-                           texto=entrada.texto, responder_a=entrada.responder_a,
+    correo = resend.Correo(para=para, asunto=entrada.asunto, html=html,
+                           texto=texto, responder_a=entrada.responder_a,
                            adjuntos=adjuntos, etiqueta=entrada.etiqueta)
     return _respuesta(resend.enviar(correo, clave_idempotencia=entrada.clave_idempotencia))
 
